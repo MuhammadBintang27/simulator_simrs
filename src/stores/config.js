@@ -10,18 +10,25 @@ export const useConfigStore = defineStore('config', {
       mode: isProd ? 'production' : 'development',
 
       apiBaseUrl:
-        isProd == true ? 'https://ws-simrs.link/ws_sim_v2' : 'https://ws-simrs.link/ws_sim_v2',
+        isProd == true
+          ? 'https://ws-simrs.link/ws_sim_v2'
+          : 'https://ws-simrs.link/ws_sim_v2_tester',
 
       apiApotikUrl:
-        isProd == false
+        isProd == true
           ? 'https://ws-simrs.link/ws_posindo_v2.1'
-          : 'https://ws-simrs.link/ws_posindo_v2.1',
+          : 'https://ws-simrs.link/ws_posindo_v2.1_tester',
 
-      simrs: isProd == true ? 'https://ws-simrs.link/ws_sim_v2' : 'https://ws-simrs.link/ws_sim_v2',
+      simrs:
+        isProd == true
+          ? 'https://ws-simrs.link/ws_sim_v2'
+          : 'https://ws-simrs.link/ws_sim_v2_tester',
 
       laravel: isProd == true ? 'https://simrs-link.site/api' : 'https://simrs-link.site/api',
     }
   },
+
+  //////TESTING UPDATE
 
   getters: {
     getApiUrl: (state) => state.apiBaseUrl,
