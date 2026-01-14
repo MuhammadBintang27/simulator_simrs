@@ -865,16 +865,17 @@ const saveItems = async () => {
   }
 
   loading.value = true
+
   try {
     const url = configStore.apiApotikUrl
     const response = await axios.post(`${url}/index.php/api/sales/insert_sales_v2`, headerObat)
-    console.log(response.data)
 
     if (response.data?.metadata?.code == 200) {
       showSuccess('Data berhasil disimpan')
       selectedObatObatan.value = []
       klinis.value = ''
       catatan.value = ''
+
       await get_riwayat()
     } else {
       showError(response.data?.metadata?.message || 'Gagal menyimpan data')

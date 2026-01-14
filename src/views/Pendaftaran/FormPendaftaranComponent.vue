@@ -1259,7 +1259,7 @@ const submitForm = async () => {
       showSuccess(response.data.metadata.message)
 
       if (carabayarSelected.value.KODE == 5) {
-        PrintSEP(response.data.sep, response.data.metadata.noregiter)
+        PrintSEP(response.data.data_trans.metadata.sep, response.data.data_trans.metadata.no_reg)
       }
     } else {
       showInfo(response.data.metadata.message)
@@ -1284,6 +1284,8 @@ const PrintSEP = async (nosep, noregister) => {
 
   const url = configStore.laravel
   const response = await axios.post(`${url}/get_data_sep_api`, payLoad)
+
+  console.log('prin sep', response)
 
   window.open(response.data, '_blank')
 }
