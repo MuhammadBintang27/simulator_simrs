@@ -195,9 +195,6 @@ const detailsBill = async () => {
   const url = configStore.apiBaseUrl
   let paramURL = `${route.params.norm}/${id_client.value}/${route.params.noreg}`
 
-  console.log('🔎 Param URL:', paramURL)
-  console.log('🔎 Full URL:', `${url}/index.php/api/laporan/history_berobat_pasien/${paramURL}`)
-
   try {
     const res = await axios.post(`${url}/index.php/api/laporan/history_berobat_pasien/${paramURL}`)
 
@@ -205,7 +202,6 @@ const detailsBill = async () => {
       datarincianMedis.value = res.data[0]
       datarincianMedis.value.PASIEN = res.data[0].PASIEN[0]
     } else {
-      console.warn('⚠️ Tidak ada data tagihan ditemukan.')
       datarincianMedis.value = null
     }
   } catch (error) {

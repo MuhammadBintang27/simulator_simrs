@@ -33,7 +33,7 @@
           class="round-button2"
           icon="pi pi-search"
           :loading="loadingTemplate"
-          @click="getTemplatePemeriksaan"
+          @click="panggilTemplate()"
           label="Template"
         />
       </template>
@@ -183,6 +183,24 @@
           <div class="row">
             <!-- Jenis Spesimen -->
             <div class="col-md-12">
+              <div class="card elevation-0">
+                <div class="flex items-center gap-2">
+                  <InputText
+                    v-model="no_laboratorium"
+                    placeholder="Sink dengan LIS"
+                    class="w-50"
+                    style="width: 5em"
+                  />
+                  <Button
+                    class=""
+                    icon="pi pi-sync"
+                    :loading="loadingTemplate"
+                    @click="sync_data_LIS"
+                    style="height: 37px"
+                    label=""
+                  />
+                </div>
+              </div>
               <div class="card elevation-0" style="background-color: aliceblue">
                 <div class="card-body">
                   <h6 class="mb-1">Jenis Spesimen</h6>
@@ -232,6 +250,12 @@
               :disabled="hasOtorisasi?.status == 1"
             />
             <Button label="Cetak" severity="default" icon="pi pi-print" @click="prinHasilLab" />
+            <Button
+              label="Cetak Pengantar"
+              severity="info"
+              icon="pi pi-print"
+              @click="printPengantar"
+            />
           </div>
 
           <div class="col-md-4">
@@ -307,6 +331,85 @@
   </Dialog>
 
   <TtdDigitalComponent_v2 v-model:showFormOtorisasi="showDialog" @otpVerified="handleTTD" />
+
+  <Dialog
+    v-model:visible="showPreviewLis"
+    modal
+    header="Hasil Pemeriksaan Laboratorium"
+    style="width: 75vw"
+    :breakpoints="{ '960px': '95vw' }"
+  >
+    <!-- INFORMASI PASIEN -->
+
+    <div class="mb-4 grid">
+      <div class="col-6"><b>Nama</b> : {{ pasien.nama_pasien }}</div>
+      <div class="col-6"><b>No RM</b> : {{ pasien.no_rm }}</div>
+      <div class="col-6"><b>JK</b> : {{ pasien.jenis_kelamin }}</div>
+      <div class="col-6"><b>Tgl Lahir</b> : {{ pasien.tanggal_lahir }}</div>
+      <div class="col-12"><b>No Lab</b> : {{ dataLab.no_laboratorium }}</div>
+    </div>
+
+    <Divider />
+
+    <!-- SUB KATEGORI -->
+    <div v-for="(items, sub) in groupedPemeriksaan" :key="sub" class="mb-4">
+      <div class="row">
+        <div class="col-md-6">
+          <h5 class="mb-2">{{ sub }}</h5>
+        </div>
+        <div class="col-md-6" style="text-align: right">
+          <Button
+            label="Sinkronkan data"
+            class="round-button2 mb-1"
+            severity="warn"
+            icon="pi pi-sync"
+            @click="singkron_data(items)"
+          />
+        </div>
+      </div>
+
+      <DataTable :value="items" size="small" stripedRows responsiveLayout="scroll">
+        <Column field="nama_pemeriksaan" header="Pemeriksaan" />
+
+        <Column header="Hasil">
+          <template #body="{ data }">
+            {{ data.hasil.nilai_hasil }}
+          </template>
+        </Column>
+
+        <Column header="Satuan">
+          <template #body="{ data }">
+            {{ data.hasil.satuan || '-' }}
+          </template>
+        </Column>
+
+        <Column header="Nilai Normal">
+          <template #body="{ data }">
+            {{ data.hasil.nilai_normal }}
+          </template>
+        </Column>
+
+        <Column header="Flag" style="width: 80px">
+          <template #body="{ data }">
+            <Tag
+              :severity="flagSeverity(data.hasil.flag_kode)"
+              :value="data.hasil.flag_kode"
+              rounded
+            />
+          </template>
+        </Column>
+      </DataTable>
+    </div>
+
+    <Divider />
+
+    <!-- FOOTER -->
+    <div class="grid text-sm">
+      <div class="col-6"><b>Analis</b> : {{ dataLab.analis }}</div>
+      <div class="col-6"><b>Waktu Verifikasi</b> : {{ dataLab.waktu_verifikasi }}</div>
+    </div>
+  </Dialog>
+
   <Toast />
   <ConfirmDialog />
 </template>
@@ -326,9 +429,11 @@ import LabRequestCard from '@/components/Laboratorium/cardpemeriksaanComponent.v
 import { FilterMatchMode } from '@primevue/core/api'
 const configStore = useConfigStore()
 const authStore = useAuthStore()
-const { id_client, user_id } = storeToRefs(authStore)
+const { id_client, user_id, url_lis } = storeToRefs(authStore)
 const toast = useToast()
 const route = useRoute()
+
+const showPreviewLis = ref(false)
 
 import TtdDigitalComponent_v2 from '@/components/TtdDigitalComponent_v2.vue'
 
@@ -372,6 +477,28 @@ const groupedTemplate = computed(() => {
 
   return groups
 })
+
+const singkron_data = async (items) => {
+  const clean = (val) =>
+    val
+      ?.toString()
+      .replace(/[\r\n]/g, '')
+      .trim() ?? ''
+
+  LoadHasilPemeriksaanlist.value.forEach((template) => {
+    console.log(template)
+    items.forEach((item) => {
+      if (clean(item.kode_pemeriksaan) === clean(template.SUB_KATEGORI)) {
+        template.HASIL = item.hasil?.nilai_hasil ?? null
+        template.HASIL_TIDAK_NORMAL = item.hasil.flag_kode == 'N' ? '0' : '1'
+      }
+    })
+  })
+
+  items.forEach((item) => {
+    console.log(item)
+  })
+}
 
 // Tunggu DOM update (PrimeVue dynamic rows)
 const moveToNextInput = (event) => {
@@ -459,13 +586,72 @@ const data = ref({
   ],
 })
 
+// DATA dari API LIS
+const dataLab = ref({
+  /* tempel JSON LIS kamu di sini */
+})
+
+const pasien = computed(() => dataLab.value.pasien || {})
+
+const groupedPemeriksaan = computed(() => {
+  const groups = {}
+  if (!dataLab.value?.pemeriksaan) return groups
+
+  dataLab.value.pemeriksaan.forEach((item) => {
+    const key = item.sub_kategori_pemeriksaan.nama_sub_kategori
+    if (!groups[key]) groups[key] = []
+    groups[key].push(item)
+  })
+  return groups
+})
+
+const flagSeverity = (flag) => {
+  switch (flag) {
+    case 'H':
+      return 'danger'
+    case 'L':
+      return 'warning'
+    default:
+      return 'success'
+  }
+}
+
+const no_laboratorium = ref('')
+
+const sync_lis = async () => {
+  try {
+    loading.value = true
+
+    const url = configStore.apiBaseUrl
+    const response = await axios.post(
+      `${url}/index.php/api/penunjang/list_get_hasil/${no_laboratorium.value}`,
+    )
+
+    console.log(response.data)
+
+    if (response.data.status == 200) {
+      showSuccess(response.data.message)
+      dataLab.value = response.data.response
+      showPreviewLis.value = true
+    } else {
+      showSuccess(response.data.message)
+    }
+  } catch (error) {
+    console.error('Error fetching data:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
 const addKategori = (items) => {
+  console.log(items)
   items.forEach((item) => {
     LoadHasilPemeriksaanlist.value.push({
       ID: item.ID,
       BARCODE: selectedItems.value.BARCODE,
       RECEIPT_NO: selectedItems.value.RECEIPT_NO,
       KATEGORI: item.KATEGORI,
+      SUB_KATEGORI: item.SUB_KATEGORI,
       HASIL: '',
       HASIL_TIDAK_NORMAL: '0',
       KET_HASIL: '',
@@ -549,6 +735,17 @@ const prinHasilLab = async () => {
   window.open(routeData.href, '_blank')
 }
 
+const printPengantar = async () => {
+  const routeData = router.resolve({
+    name: 'PrintPengantarView',
+    params: {
+      noreceipt: route.params.noreceipt, // <-- ini benar
+    },
+  })
+
+  window.open(routeData.href, '_blank')
+}
+
 const fetchData = async () => {
   try {
     loading.value = true
@@ -581,20 +778,53 @@ const fetchData = async () => {
 const templateList = ref([])
 
 const loadingTemplate = ref(false)
+
+const panggilTemplate = async () => {
+  showTemplate.value = true
+  await getTemplatePemeriksaan()
+  loadingTemplate.value = false
+}
+
+const sync_data_LIS = async () => {
+  try {
+    loading.value = true
+    const payload = {
+      noregister: '',
+      no_receipt: route.params.noreceipt,
+      norm: fact.value?.NOMR,
+      no_pemeriksaan: no_laboratorium.value,
+      id_client: id_client.value,
+    }
+
+    const url = configStore.apiBaseUrl
+    const response = await axios.post(`${url}/index.php/api/penunjang/get_hasil_lis`, payload)
+
+    console.log(response.data)
+    //templateList.value = response.data.response || []
+    // loadingTemplate.value = false
+    loading.value = false 
+    if (response.data.metadata.code == 200) {
+      showSuccess(response.data.metadata.message)
+    } else {
+      showWarning(response.data.message)
+    }
+  } catch (error) {
+    console.error('Error fetching data:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
 const getTemplatePemeriksaan = async () => {
   try {
-    showTemplate.value = true
     const url = configStore.apiApotikUrl
     const response = await axios.get(
       `${url}/index.php/api/data_referensi/get_template_lab/${id_client.value}`,
     )
-    console.log(response.data)
     templateList.value = response.data.response || []
     // loadingTemplate.value = false
   } catch (error) {
     console.error('Error fetching data:', error)
-    showError(error.message)
-    loadingTemplate.value = false
   } finally {
     loadingTemplate.value = false
   }
@@ -696,6 +926,7 @@ const CheckStatusOtorisasi = async () => {
 }
 
 const handleSelectItem = (item) => {
+  console.log(item)
   selectedBarcode.value = item.BARCODE
   selectedItems.value = item
   LoadHasilPemeriksaan(item)

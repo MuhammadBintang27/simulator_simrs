@@ -1168,8 +1168,6 @@ const TerbitkanSEP = async (data) => {
       wich_url = `${url}/index.php/api/bpjs_api/terbitsepDariRujukan`
     }
 
-   
-
     const response = await axios.post(wich_url, param)
     console.log(response.data)
     if (response.data.metadata.code == 200) {
