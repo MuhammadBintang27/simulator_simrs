@@ -292,8 +292,7 @@ const openEditDialog = (report) => {
 
 const handleCreate = async (formData) => {
   try {
-    console.log('📋 MY REPORTS VIEW - Received formData:', formData)
-    console.log('📋 MY REPORTS VIEW - FormData type:', formData instanceof FormData ? 'FormData' : typeof formData)
+    
     
     loading.value = true
     await store.createReport(formData)
@@ -306,7 +305,7 @@ const handleCreate = async (formData) => {
     })
     await loadData()
   } catch (error) {
-    console.error('❌ MY REPORTS VIEW - Create report failed:', error)
+    // Error handled in catch block
     toast.add({
       severity: 'error',
       summary: 'Error',

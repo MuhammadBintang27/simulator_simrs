@@ -336,8 +336,6 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
       const url = `${baseUrl}/get_reports_stats?${queryParams.toString()}`
       const response = await axios.get(url, config)
       
-      console.log('🔍 API RESPONSE - get_reports_stats:', response.data)
-      
       reportsStats.value = response.data.response || {
         total_reports: 0,
         tickets_today: 0,
@@ -378,9 +376,6 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
     loading.value = true
     error.value = null
     try {
-      console.log('🚀 CREATE REPORT - Received formData:', formData)
-      console.log('🚀 CREATE REPORT - FormData type:', formData instanceof FormData ? 'FormData' : typeof formData)
-
       // ✅ Safety check
       if (!formData) {
         throw new Error('FormData is required')
@@ -439,21 +434,7 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
       const requestConfig = { ...config }
       requestConfig.headers['Content-Type'] = 'multipart/form-data'
       
-      console.log('🚀 CREATE REPORT - Sending to backend:')
-      const payloadObj = {}
-      for (let [key, value] of payload.entries()) {
-        if (value instanceof File) {
-          payloadObj[key] = `File(${value.name}, ${value.size} bytes, ${value.type})`
-        } else {
-          payloadObj[key] = value
-        }
-      }
-      console.log(payloadObj)
-      
       const response = await axios.post(`${baseUrl}/create_report`, payload, requestConfig)
-      
-      console.log('✅ CREATE REPORT - Backend response:', response)
-      console.log('✅ CREATE REPORT - Response data:', response.data)
       
       // Check if backend returned an error in metadata even with 200 status
       if (response.data?.metadata?.code && response.data.metadata.code !== '200') {
@@ -463,13 +444,7 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
       await fetchReports() // Refresh list
       return response.data.response
     } catch (err) {
-      // Simple error handling
-      console.error('❌ CREATE REPORT - Error occurred:')
-      console.error('❌ Error message:', err.message)
-      console.error('❌ Error response:', err.response)
-      console.error('❌ Error response data:', err.response?.data)
-      console.error('❌ Error response status:', err.response?.status)
-      
+      // Error handling
       const errorData = err.response?.data
       let errorMessage = err.message
       
@@ -908,12 +883,7 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
       
       url += `?${queryParams.toString()}`
       
-      
       const response = await axios.get(url, config)
-      
-
-      
-      console.log('🔍 API RESPONSE - my_tasks:', response.data)
       
       myTasks.value = response.data.response || []
 
@@ -925,8 +895,6 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
       
       return myTasks.value
     } catch (err) {
-      console.error('❌ [Store] fetchMyTasks error:', err)
-      console.error('❌ [Store] Error response:', err.response?.data)
       error.value = err.response?.data?.metadata?.message || err.message
       throw err
     } finally {

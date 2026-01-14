@@ -629,10 +629,6 @@ const handleAssignToDepartment = async () => {
 const handleCreate = async (data) => {
   const tempLoading = ref(true)
   try {
-    
-    console.log('📋 LAPORAN LIST VIEW - Received data:', data)
-    console.log('📋 LAPORAN LIST VIEW - Data type:', data instanceof FormData ? 'FormData' : typeof data)
-    
     // Handle both formats: FormData object or {formData, photos} object
     let formData, photos = []
     
@@ -651,9 +647,6 @@ const handleCreate = async (data) => {
     // Step 1: Create report (photos are included in FormData)
     const newReport = await store.createReport(formData)
     const reportId = newReport?.report_id || newReport?.id
-
-    console.log('📋 LAPORAN LIST VIEW - Created report:', newReport)
-    console.log('📋 LAPORAN LIST VIEW - Report ID:', reportId)
 
     showCreateDialog.value = false
     toast.add({
