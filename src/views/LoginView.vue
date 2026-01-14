@@ -51,6 +51,7 @@ import { useConfigStore } from '@/stores/config'
 import { useAuthStore } from '@/stores/config'
 import { usePenugasanLayananStore } from '@/stores/penugasanLayanan'
 import axios from 'axios'
+import { storeToRefs } from 'pinia'
 
 // PrimeVue Components
 import Toast from 'primevue/toast'
@@ -72,7 +73,6 @@ const formData = reactive({
 })
 
 const profile_rs = async (id_client) => {
-  loading.value = true
   try {
     const url = configStore.simrs
 
@@ -92,13 +92,15 @@ const profile_rs = async (id_client) => {
     localStorage.setItem('satu_sehat_struktur_org', response.data.satu_sehat_struktur_org)
 
     localStorage.setItem('use_tte_bsre', response.data.use_tte_bsre)
+
+    return response.data
   } catch (error) {
     // console.error('Auth error:', error)
+    return null
   }
 }
 
 const profile_apol = async (id_client) => {
-  loading.value = true
   try {
     const url = configStore.simrs
 
@@ -110,8 +112,11 @@ const profile_apol = async (id_client) => {
     localStorage.setItem('apol_consid', response.data.consid)
     localStorage.setItem('apol_scret_key', response.data.scret_key)
     localStorage.setItem('apol_user_key', response.data.user_key)
+
+    return response.data
   } catch (error) {
     // console.error('Auth error:', error)
+    return null
   }
 }
 
@@ -135,18 +140,30 @@ const handleSubmit = async () => {
 
       const userData = response.data.response
 
-      // Save basic data first
+      // 1. Save basic data to localStorage dan authStore FIRST
       localStorage.setItem('loggedIn', 'true')
       localStorage.setItem('id_client', userData.ID_CLIENT)
       localStorage.setItem('user_name', userData.NAMA_USER)
       localStorage.setItem('user_id', formData.name)
       localStorage.setItem('id_lokasi', userData.ID_LOKASI)
 
-      // Get job_code and bidang_id from userData
+      // 2. Set minimal user data to authStore first (so id_client is available)
+      authStore.setIdClient(
+        userData.ID_CLIENT,
+        userData.NAMA_USER,
+        formData.name,
+        userData.NAMA_RS || 'RS', // fallback jika tidak ada di login
+        userData.ALAMAT || '',
+        userData.LINK_LOGO || '',
+        userData.ID_LOKASI,
+        userData.use_tte_bsre
+      )
+
+      // 3. Get job_code and bidang_id from userData
       const jobCode = userData.KDJABATAN || userData.kdjabatan || null
       const bidangId = userData.ID_LOKASI_INV || null
 
-      // Fetch reference data if available
+      // 4. Fetch reference data if available (with id_client now available)
       let jabatanData = null
       let lokasiData = null
 
@@ -158,7 +175,7 @@ const handleSubmit = async () => {
         lokasiData = await penugasanStore.fetchLokasiById(bidangId)
       }
 
-      // Prepare user object for authStore
+      // 5. Build complete user object
       const userObject = {
         user_id: userData.NIP || formData.name,
         user_name: userData.NAMA_USER,
@@ -174,18 +191,25 @@ const handleSubmit = async () => {
         group_user: userData.GROUP_USER,
       }
 
-      // Save to authStore with new setUserData action
+      // 6. Update authStore with complete user data
       authStore.setUserData(userObject)
 
-      profile_rs(userData.ID_CLIENT)
+      // 7. Wait for all profile data to be fetched
+      const [rsProfile] = await Promise.all([
+        profile_rs(userData.ID_CLIENT),
+        profile_apol(userData.ID_CLIENT),
+      ])
 
-      profile_apol(userData.ID_CLIENT)
+      // 8. Update NAMA_RS in authStore if fetch succeeded
+      if (rsProfile?.NAMA_RS) {
+        authStore.company = rsProfile.NAMA_RS
+        localStorage.setItem('NAMA_RS', rsProfile.NAMA_RS)
+      }
 
+      // 8. Finally redirect after everything is ready
       setTimeout(() => {
         router.push('/dashboard/home')
       }, 800)
-
-      // Store user data
     } else {
       throw new Error(response.data.metadata?.message || 'Authentication failed')
     }

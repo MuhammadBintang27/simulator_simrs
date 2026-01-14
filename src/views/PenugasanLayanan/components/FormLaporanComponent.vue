@@ -273,14 +273,6 @@ const handleSubmit = async () => {
       formData.append('photos[]', file) // Backend expects photos[] array
     })
     
-    console.log('📝 FORM SUBMIT - FormData contents:')
-    for (let [key, value] of formData.entries()) {
-      if (value instanceof File) {
-        console.log(`${key}: File(${value.name}, ${value.size} bytes, ${value.type})`)
-      } else {
-        console.log(`${key}: ${value}`)
-      }
-    }
     
     // Emit FormData object instead of plain object
     emit('submit', formData)

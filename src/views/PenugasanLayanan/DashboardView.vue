@@ -266,6 +266,7 @@ const heroStats = computed(() => [
   { label: 'Total Laporan', value: reportsStats.value.total_reports || 0 },
   { label: 'Tiket Hari Ini', value: reportsStats.value.tickets_today || 0 },
   { label: 'Tiket Minggu Ini', value: reportsStats.value.tickets_this_week || 0 },
+  { label: 'Tiket Bulan Ini', value: reportsStats.value.tickets_this_month || 0 },
   { label: 'Belum Direview', value: reportsStats.value.tickets_unreviewed || 0 }
 ])
 
@@ -847,7 +848,7 @@ onMounted(() => {
 
 .hero-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 0.75rem;
   margin-bottom: 1.5rem;
   position: relative;

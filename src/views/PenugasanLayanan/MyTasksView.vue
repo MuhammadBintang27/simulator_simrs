@@ -391,22 +391,20 @@ const tabCounts = computed(() => {
 
 // Current Tab Tasks - langsung dari API, tidak perlu filter client-side
 const filteredTasks = computed(() => {
-  console.log('🎯 [filteredTasks] Computing filtered tasks...')
-  console.log('📝 myTasks.value:', myTasks.value)
-  console.log('🔢 myTasks.value.length:', myTasks.value.length)
+  
   return myTasks.value
 })
 
 // Watch filters dan trigger reload API
 watch(() => filters.value, () => {
-  console.log('🔍 [MyTasksView] Filters changed:', filters.value)
+  
   currentPage.value = 1
   loadData()
 }, { deep: true })
 
 // Watch activeTab dan trigger reload dengan status filter
 watch(activeTab, () => {
-  console.log('📑 [MyTasksView] Active tab changed:', activeTab.value)
+  
   currentPage.value = 1
   loadData()
 })
@@ -428,13 +426,7 @@ const loadData = async () => {
     const userId = authStore.user_id
     const clientId = authStore.id_client
     
-    console.log('🔄 [MyTasksView] Loading data...')
-    console.log('👤 User ID:', userId)
-    console.log('🏢 Client ID:', clientId)
-    console.log('👔 Is Kabid:', isKabid.value)
-    console.log('📄 Current Page:', currentPage.value)
-    console.log('📊 Page Size:', pageSize.value)
-    console.log('🎯 Active Tab:', activeTab.value)
+    
     
     // Build stats params berdasarkan role
     const statsParams = {
@@ -446,7 +438,7 @@ const loadData = async () => {
       statsParams.assigned_staff_id = userId
     }
     
-    console.log('📋 Stats Params:', statsParams)
+    
     
     // Build filter params untuk API
     const apiParams = {
@@ -498,7 +490,7 @@ const loadData = async () => {
       // activeTab 0 = semua, tidak kirim filter status
     }
     
-    console.log('🚀 API Params:', apiParams)
+    
     
     // Parallel fetch: stats + tasks paginated dengan filter
     const promises = [
@@ -516,17 +508,7 @@ const loadData = async () => {
     }
     
     await Promise.all(promises)
-    
-    console.log('✅ [MyTasksView] Data loaded successfully')
-    console.log('📊 Reports Stats FULL:', JSON.stringify(reportsStats.value, null, 2))
-    console.log('📊 Reports Stats - Total Reports:', reportsStats.value.total_reports)
-    console.log('📊 Reports Stats - Statuses:', reportsStats.value.statuses)
-    console.log('📊 Reports Stats - Categories:', reportsStats.value.categories)
-    console.log('📝 My Tasks:', myTasks.value)
-    console.log('📄 Pagination:', pagination.value)
-    console.log('🔢 Total Tasks:', myTasks.value.length)
   } catch (error) {
-    console.error('❌ [MyTasksView] Error loading data:', error)
     toast.add({
       severity: 'error',
       summary: 'Error',

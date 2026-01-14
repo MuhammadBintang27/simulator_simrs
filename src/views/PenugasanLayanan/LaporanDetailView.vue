@@ -406,7 +406,7 @@ const loadData = async () => {
     // Use status_history from report detail instead of separate work_progress call
     progressHistory.value = report.value?.status_history || []
   } catch (error) {
-    console.error('loadData error:', error)
+    // Error handled in catch block
     toast.add({
       severity: 'error',
       summary: 'Error',
