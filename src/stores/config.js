@@ -48,12 +48,15 @@ export const useAuthStore = defineStore('auth', {
     LINK_LOGO: localStorage.getItem('LINK_LOGO') || null,
     id_lokasi: localStorage.getItem('id_lokasi') || null,
     use_tte_bsre: localStorage.getItem('use_tte_bsre') || null,
+    // NEW: Add user object and job_code
+    user: null,
+    job_code: localStorage.getItem('job_code') || null,
+    bidang_id: localStorage.getItem('bidang_id') || null,
   }),
 
   actions: {
     setIdClient(id, name, user_id, company, ALAMAT, LINK_LOGO, id_lokasi, use_tte_bsre) {
       this.id_client = id
-
       this.user_name = name
       this.user_id = user_id
       this.company = company
@@ -71,6 +74,23 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem('id_lokasi', id_lokasi)
       localStorage.setItem('use_tte_bsre', use_tte_bsre)
     },
+    
+    // NEW: Set user data with job_code
+    setUserData(userData) {
+      
+      this.user = userData
+      this.job_code = userData?.job_code || userData?.kode_jabatan || null
+      this.bidang_id = userData?.bidang_id || userData?.LOKASI || null
+      
+      if (this.job_code) {
+        localStorage.setItem('job_code', this.job_code)
+      }
+      if (this.bidang_id) {
+        localStorage.setItem('bidang_id', this.bidang_id)
+      }
+      
+    },
+    
     clearAuthData() {
       this.id_client = null
       this.user_name = null
@@ -80,6 +100,9 @@ export const useAuthStore = defineStore('auth', {
       this.LINK_LOGO = null
       this.id_lokasi = null
       this.use_tte_bsre = 0
+      this.user = null
+      this.job_code = null
+      this.bidang_id = null
 
       localStorage.removeItem('id_client')
       localStorage.removeItem('user_name')
@@ -90,6 +113,8 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('loggedIn')
       localStorage.removeItem('id_lokasi')
       localStorage.removeItem('use_tte_bsre')
+      localStorage.removeItem('job_code')
+      localStorage.removeItem('bidang_id')
     },
   },
 })
