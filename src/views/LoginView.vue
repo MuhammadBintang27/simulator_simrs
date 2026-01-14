@@ -48,6 +48,8 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { useConfigStore } from '@/stores/config'
+import { useAuthStore } from '@/stores/config'
+import { usePenugasanLayananStore } from '@/stores/penugasanLayanan'
 import axios from 'axios'
 
 // PrimeVue Components
@@ -57,6 +59,8 @@ const logoUrl = 'https://ws-simrs.link/logo/sehat.png'
 const router = useRouter()
 const toast = useToast()
 const configStore = useConfigStore()
+const authStore = useAuthStore()
+const penugasanStore = usePenugasanLayananStore()
 
 // State
 const showPassword = ref(false)
@@ -131,12 +135,47 @@ const handleSubmit = async () => {
 
       const userData = response.data.response
 
+      // Save basic data first
       localStorage.setItem('loggedIn', 'true')
       localStorage.setItem('id_client', userData.ID_CLIENT)
       localStorage.setItem('user_name', userData.NAMA_USER)
       localStorage.setItem('user_id', formData.name)
-
       localStorage.setItem('id_lokasi', userData.ID_LOKASI)
+
+      // Get job_code and bidang_id from userData
+      const jobCode = userData.KDJABATAN || userData.kdjabatan || null
+      const bidangId = userData.ID_LOKASI_INV || null
+
+      // Fetch reference data if available
+      let jabatanData = null
+      let lokasiData = null
+
+      if (jobCode) {
+        jabatanData = await penugasanStore.fetchJabatanById(jobCode)
+      }
+
+      if (bidangId) {
+        lokasiData = await penugasanStore.fetchLokasiById(bidangId)
+      }
+
+      // Prepare user object for authStore
+      const userObject = {
+        user_id: userData.NIP || formData.name,
+        user_name: userData.NAMA_USER,
+        job_code: jobCode,
+        job_title: jabatanData?.NAMA_JABATAN || userData.JABATAN || 'Unknown',
+        bidang_id: bidangId,
+        bidang_name: lokasiData?.LOKASI || userData.LOK_CAPTION || 'Unknown',
+        department: userData.DEPARTEMEN,
+        nik: userData.NIK,
+        nip: userData.NIP,
+        id_client: userData.ID_CLIENT,
+        id_lokasi: userData.ID_LOKASI,
+        group_user: userData.GROUP_USER,
+      }
+
+      // Save to authStore with new setUserData action
+      authStore.setUserData(userObject)
 
       profile_rs(userData.ID_CLIENT)
 

@@ -71,6 +71,15 @@ const ReturKedepoView = () => import('@/views/Persediaan/Retur/ReturKedepoView.v
 
 const DashboardCostControl = () => import('@/views/Monitoring/DashboardCostControl.vue')
 
+// Penugasan Layanan
+const PenugasanLayananDashboard = () =>
+  import('@/views/PenugasanLayanan/DashboardView.vue')
+const LaporanListView = () => import('@/views/PenugasanLayanan/LaporanListView.vue')
+const LaporanDetailView = () => import('@/views/PenugasanLayanan/LaporanDetailView.vue')
+const MyTasksView = () => import('@/views/PenugasanLayanan/MyTasksView.vue')
+const MyReportsView = () => import('@/views/PenugasanLayanan/MyReportsView.vue')
+const StaffTaskDetailView = () => import('@/views/PenugasanLayanan/StaffTaskDetailView.vue')
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -301,6 +310,45 @@ const router = createRouter({
           meta: { redirectPath: true },
           component: DashboardCostControl,
         },
+
+        // Penugasan Layanan Routes
+        {
+          path: 'penugasan-layanan',
+          name: 'PenugasanLayananDashboard',
+          meta: { requiresAuth: true },
+          component: PenugasanLayananDashboard,
+        },
+        {
+          path: 'penugasan-layanan/laporan',
+          name: 'LaporanListView',
+          meta: { requiresAuth: true },
+          component: LaporanListView,
+        },
+        {
+          path: 'penugasan-layanan/laporan/:id',
+          name: 'LaporanDetailView',
+          meta: { requiresAuth: true },
+          component: LaporanDetailView,
+        },
+        {
+          path: 'penugasan-layanan/tugas-saya',
+          name: 'MyTasksView',
+          meta: { requiresAuth: true },
+          component: MyTasksView,
+        },
+        {
+          path: 'penugasan-layanan/tugas-saya/:reportId/:staffAssignmentId',
+          name: 'StaffTaskDetailView',
+          meta: { requiresAuth: true },
+          component: StaffTaskDetailView,
+        },
+        {
+          path: 'penugasan-layanan/laporan-saya',
+          name: 'MyReportsView',
+          meta: { requiresAuth: true },
+          component: MyReportsView,
+        },
+
         {
           path: 'login',
           name: 'login',
