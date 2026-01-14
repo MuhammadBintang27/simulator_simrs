@@ -25,6 +25,7 @@
         <strong style="color: red">{{ config.getMode }}</strong>
         <b>Version</b> 3.2.0
       </div>
+
       <strong>Copyright &copy; 2014-2021 <a href="https://adminlte.io">POINTMEDIC</a>.</strong>
       All rights reserved.
     </footer>

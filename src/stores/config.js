@@ -52,6 +52,7 @@ export const useAuthStore = defineStore('auth', {
     user: null,
     job_code: localStorage.getItem('job_code') || null,
     bidang_id: localStorage.getItem('bidang_id') || null,
+    url_lis: 'http://naganraya.kliniscare.com/restapi/simrs/',
   }),
 
   actions: {

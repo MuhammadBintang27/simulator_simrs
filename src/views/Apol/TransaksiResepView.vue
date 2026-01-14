@@ -499,7 +499,7 @@ const SimpanResep = async () => {
     const payLoad = {
       REFASALSJP: sepResponse.response.noSep,
       TGLSJP: formatDateForAPI(new Date()),
-      POLIRSP: sepResponse.response.poli,
+      POLIRSP: sepResponse.response,
       KDJNSOBAT: JenisObatSelected.value.code,
       IDUSERSJP: user_id.value,
       TGLRSP: formatDateForAPI(tanggalResep.value),
@@ -511,7 +511,6 @@ const SimpanResep = async () => {
       iterasi: ObatIterasiSelected.value.code,
       id_client: id_client.value,
     }
-
     const url = configStore.apiBaseUrl
     const response = await axios.post(`${url}/index.php/api/bpjs_api/simpanResep`, payLoad)
 
@@ -548,8 +547,6 @@ const SimpanObat = async (data) => {
     }
     const url = configStore.apiBaseUrl
     const response = await axios.post(`${url}/index.php/api/bpjs_api/simpan_obat_apol`, payLoad)
-
-    console.log(response.data)
 
     if (response.data.metaData.code == '200') {
       showSuccess()
@@ -595,8 +592,6 @@ const searchItemObat = async (event) => {
     loadingObat.value = true
     const url = configStore.apiBaseUrl
     const response = await axios.post(`${url}/index.php/api/bpjs_api/obat`, payload)
-
-    console.log(response.data)
 
     if (response.data?.response && Array.isArray(response.data.response.list)) {
       availableObat.value = response.data.response.list

@@ -61,6 +61,8 @@ const ProsesLabView = () => import('@/views/Laboratorium/ProsesLabView.vue')
 
 const PrintOutlabView = () => import('@/views/Laboratorium/PrintOutlabView.vue')
 
+const PrintPengantarView = () => import('@/views/Laboratorium/PrintPengantarView.vue')
+
 const ReturPersediaanView = () => import('@/views/Persediaan/Retur/ReturPersediaanView.vue')
 
 const ReturListReturView = () => import('@/views/Persediaan/Retur/ReturListReturView.vue')
@@ -112,7 +114,11 @@ const router = createRouter({
       name: 'PrintOutlabView',
       component: PrintOutlabView,
     },
-
+    {
+      path: '/laboratorium/print-pengantar/:noreceipt',
+      name: 'PrintPengantarView',
+      component: PrintPengantarView,
+    },
     {
       path: '/keuangan/print-bill/:norm/:noreg',
       name: 'KasilPrintBill',

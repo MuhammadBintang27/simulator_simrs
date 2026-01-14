@@ -103,6 +103,17 @@
               :disabled="loading"
             />
           </div>
+          <div class="col-md-2 ml-0">
+            <br />
+            <Button
+              class="w-100 mt-2 round-button2"
+              @click="get_cost_monitoring"
+              label="Cost Monitoring"
+              icon="fas fa-search"
+              :loading="loading"
+              :disabled="loading"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -486,6 +497,18 @@
           </Column>
 
           <Column
+            v-if="isColumnVisible('OBATAN')"
+            field="OBATAN"
+            header="OBAT-OBATAN"
+            style="min-width: 7rem"
+            sortable
+          >
+            <template #body="{ data }">
+              <strong>{{ formatCurrency(data.OBATAN) }}</strong>
+            </template>
+          </Column>
+
+          <Column
             v-if="isColumnVisible('DISETUJUI')"
             field="DISETUJUI"
             header="KLAIM DISETUJUI"
@@ -673,6 +696,7 @@ const visibleColumns = ref([
   'MASUKPOLY',
   'KELUARPOLY_NULL',
   'IS_AKTIF_SEP',
+  'OBATAN',
 ])
 
 const allColumns = ref([
@@ -690,6 +714,7 @@ const allColumns = ref([
   { field: 'CODE', header: 'Code' },
   { field: 'KETERANGAN', header: 'Keterangan' },
   { field: 'TARIFCBG', header: 'Klaim Diajukan' },
+  { field: 'OBATAN', header: 'Obatan' },
   { field: 'DISETUJUI', header: 'Klaim Disetujui' },
   { field: 'SELISIH', header: 'Selisih' },
   { field: 'PERSENTASE_SELISIH', header: '% Selisih' },
@@ -915,6 +940,7 @@ const clearFilters = () => {
     NAMADOKTER: { value: null, matchMode: FilterMatchMode.IN },
     KETERANGAN: { value: null, matchMode: FilterMatchMode.IN },
     SUDAHFINALCLAIM: { value: null, matchMode: FilterMatchMode.IN },
+    OBAT_OBATAN: { value: null, matchMode: FilterMatchMode.IN },
     NOSEP: { value: null, matchMode: FilterMatchMode.IN },
     TARIFCBG: { value: null, matchMode: FilterMatchMode.IN },
     IS_AKTIF_SEP: { value: null, matchMode: FilterMatchMode.IN },
@@ -1020,7 +1046,7 @@ const syncDataBPJS = async () => {
     loadingSync.value = true
     const url = configStore.apiBaseUrl
     const response = await axios.post(`${url}/index.php/api/bpjs_api/klaim_monitoring`, payload)
-    console.log(response.data)
+
     loadingSync.value = false
     fetchData()
   } catch (error) {
@@ -1101,6 +1127,59 @@ const fetchData = async () => {
       medicalData.value = response.data.response
       updateFilterOptions()
       showSuccess(`Data berhasil dimuat: ${medicalData.value.length} records`)
+    } else {
+      medicalData.value = []
+      showWarning('Tidak ada data ditemukan')
+    }
+
+    fact.value = [...response.data.response]
+    loading.value = false
+  } catch (error) {
+    console.error('Error fetching data:', error)
+    showError('Gagal mengambil data: ' + error.message)
+    loading.value = false
+  }
+}
+
+const list_const_monitoring = ref([])
+
+const get_cost_monitoring = async () => {
+  try {
+    const payload = {
+      id_client: id_client.value,
+      startdate: formatDateOnlyForAPI(startDate.value),
+      enddate: formatDateOnlyForAPI(endDate.value),
+      mode: 1,
+      jenisrawat: jenisRawatSelected.value.caption,
+    }
+
+    loading.value = true
+    const url = configStore.apiBaseUrl
+    const response = await axios.post(
+      `${url}/index.php/api/transaksi_pasien/cost_pasien_monitoring/`,
+      payload,
+    )
+
+    console.log(response.data)
+    if (response.data.metadata.code == 200) {
+      //medicalData.value = []
+      list_const_monitoring.value = response.data.response
+      // Assign ke medicalData
+
+      const costMap = new Map()
+
+      list_const_monitoring.value.forEach((cost) => {
+        costMap.set(cost.NOREGISTER, cost.OBATAN)
+      })
+
+      // Assign ke medicalData
+      medicalData.value.forEach((element) => {
+        if (costMap.has(element.NOPENDAFTARAN)) {
+          element.OBATAN = costMap.get(element.NOPENDAFTARAN)
+        }
+      })
+      //updateFilterOptions()
+      showSuccess(`Data berhasil dimuat: ${list_const_monitoring.value.length} records`)
     } else {
       medicalData.value = []
       showWarning('Tidak ada data ditemukan')
