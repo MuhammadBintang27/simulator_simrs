@@ -48,6 +48,7 @@ export const useAuthStore = defineStore('auth', {
     LINK_LOGO: localStorage.getItem('LINK_LOGO') || null,
     id_lokasi: localStorage.getItem('id_lokasi') || null,
     use_tte_bsre: localStorage.getItem('use_tte_bsre') || null,
+    url_lis: 'http://naganraya.kliniscare.com/restapi/simrs/',
   }),
 
   actions: {

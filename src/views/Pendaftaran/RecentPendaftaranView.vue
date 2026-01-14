@@ -520,7 +520,7 @@ const fetchData = async (mode) => {
       norm: searchKeyword.value,
     }
 
-    loading.value = true  
+    loading.value = true
     const url = configStore.apiBaseUrl
     const response = await axios.post(
       `${url}/index.php/api/transaksi_pasien/history_versi4`,
