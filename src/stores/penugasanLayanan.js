@@ -33,31 +33,36 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
 
   // Mapping kode ke permissions/akses
   const ROLE_PERMISSIONS = {
-    1: { // DIREKTUR
+    1: {
+      // DIREKTUR
       canAssignToBidang: true,
       canAssignToStaff: true,
       canViewAllReports: true,
       canApprove: true,
     },
-    2: { // WAKIL DIREKTUR (sama dengan Direktur)
+    2: {
+      // WAKIL DIREKTUR (sama dengan Direktur)
       canAssignToBidang: true,
       canAssignToStaff: true,
       canViewAllReports: true,
       canApprove: true,
     },
-    3: { // KEPALA BIDANG
+    3: {
+      // KEPALA BIDANG
       canAssignToBidang: true,
       canAssignToStaff: true,
       canViewAllReports: false,
       canApprove: false,
     },
-    4: { // KEPALA SEKSI (sama dengan Staff)
+    4: {
+      // KEPALA SEKSI (sama dengan Staff)
       canAssignToBidang: false,
       canAssignToStaff: false,
       canViewAllReports: false,
       canApprove: false,
     },
-    5: { // STAFF (sama dengan Kepala Seksi)
+    5: {
+      // STAFF (sama dengan Kepala Seksi)
       canAssignToBidang: false,
       canAssignToStaff: false,
       canViewAllReports: false,
@@ -80,15 +85,15 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
   const loading = ref(false)
   const error = ref(null)
   const statusHistory = ref([])
-  
+
   // Pagination State
   const pagination = ref({
     page: 1,
     limit: 10,
     total: 0,
-    total_pages: 0
+    total_pages: 0,
   })
-  
+
   // Stats State (untuk header/dashboard)
   const reportsStats = ref({
     total_reports: 0,
@@ -97,7 +102,7 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
     tickets_this_month: 0,
     tickets_unreviewed: 0,
     categories: [],
-    statuses: []
+    statuses: [],
   })
 
   // Getters
@@ -227,11 +232,11 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
   const getAxiosConfig = () => {
     const token = localStorage.getItem('token')
     const apiKey = localStorage.getItem('apiKey')
-    
+
     // Return simple object without any circular references
     return {
       headers: {
-        'Authorization': token ? `Bearer ${token}` : '',
+        Authorization: token ? `Bearer ${token}` : '',
         'X-API-KEY': apiKey || '',
         'Content-Type': 'application/json',
       },
@@ -280,14 +285,14 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
     error.value = null
     try {
       const config = getAxiosConfig()
-      
+
       // Build payload dengan filter params
       const payload = {
         id_client: id_client.value || localStorage.getItem('id_client') || 1,
         page: filters.page || 1,
-        limit: filters.limit || 10
+        limit: filters.limit || 10,
       }
-      
+
       // Add filter params jika ada
       if (filters.priority) payload.priority = filters.priority
       if (filters.date_from) payload.date_from = filters.date_from
@@ -295,15 +300,15 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
       if (filters.problem_category) payload.problem_category = filters.problem_category
       if (filters.status) payload.status = filters.status
       if (filters.search) payload.search = filters.search
-      
+
       const response = await axios.post(`${baseUrl}/get_reports`, payload, config)
       reports.value = response.data.response || []
-      
+
       // Simpan pagination info
       if (response.data.pagination) {
         pagination.value = response.data.pagination
       }
-      
+
       return reports.value
     } catch (err) {
       error.value = err.response?.data?.metadata?.message || err.message
@@ -326,16 +331,16 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
     try {
       const config = getAxiosConfig()
       const clientId = id_client.value || localStorage.getItem('id_client') || 1
-      
+
       // Build query string
       const queryParams = new URLSearchParams({
         id_client: clientId,
-        ...params
+        ...params,
       })
-      
+
       const url = `${baseUrl}/get_reports_stats?${queryParams.toString()}`
       const response = await axios.get(url, config)
-      
+
       reportsStats.value = response.data.response || {
         total_reports: 0,
         tickets_today: 0,
@@ -343,9 +348,9 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
         tickets_this_month: 0,
         tickets_unreviewed: 0,
         categories: [],
-        statuses: []
+        statuses: [],
       }
-      
+
       return reportsStats.value
     } catch (err) {
       error.value = err.response?.data?.metadata?.message || err.message
@@ -385,11 +390,11 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
       let payload
       if (formData instanceof FormData) {
         payload = formData
-        
+
         // Add required fields yang mungkin belum ada
         const userId = user_id.value || localStorage.getItem('user_id')
         const clientId = id_client.value || localStorage.getItem('id_client') || 1
-        
+
         if (!payload.has('reporter_user_id')) {
           payload.append('reporter_user_id', userId)
         }
@@ -424,34 +429,39 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
 
         // Old format - photos as JSON string (deprecated)
         // Hanya jika formData adalah plain object dengan property photos
-        if (typeof formData === 'object' && !formData instanceof FormData && formData.photos && formData.photos.length > 0) {
+        if (
+          typeof formData === 'object' &&
+          (!formData) instanceof FormData &&
+          formData.photos &&
+          formData.photos.length > 0
+        ) {
           payload.append('photos', JSON.stringify(formData.photos))
         }
       }
-      
+
       // ✅ Multipart/form-data config
       const config = getAxiosConfig()
       const requestConfig = { ...config }
       requestConfig.headers['Content-Type'] = 'multipart/form-data'
-      
+
       const response = await axios.post(`${baseUrl}/create_report`, payload, requestConfig)
-      
+
       // Check if backend returned an error in metadata even with 200 status
       if (response.data?.metadata?.code && response.data.metadata.code !== '200') {
         throw new Error(response.data.metadata.message || 'Backend error')
       }
-      
+
       await fetchReports() // Refresh list
       return response.data.response
     } catch (err) {
       // Error handling
       const errorData = err.response?.data
       let errorMessage = err.message
-      
+
       if (errorData?.metadata?.message) {
         errorMessage = errorData.metadata.message
       }
-      
+
       error.value = errorMessage
       throw new Error(errorMessage)
     } finally {
@@ -499,7 +509,7 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
       const config = getAxiosConfig()
       const assignedBy = user_id.value || localStorage.getItem('user_id')
       const clientId = id_client.value || localStorage.getItem('id_client') || 1
-      
+
       // Updated payload to match API docs - now includes priority
       // assigned_by: Required - user_id yang melakukan assign (DIREKTUR/WADIR/KABID)
       // Backend akan validasi:
@@ -508,35 +518,36 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
       const payload = {
         report_id: reportId,
         bidang_id: bidangId,
-        assigned_by: assignedBy,        // Required
+        assigned_by: assignedBy, // Required
         assignment_notes: notes,
-        priority: priority,              // NEW: Priority set by Direktur/Wadir/Kabid
-        id_client: clientId              // Required
+        priority: priority, // NEW: Priority set by Direktur/Wadir/Kabid
+        id_client: clientId, // Required
       }
-      
-      const response = await axios.post(
-        `${baseUrl}/assign_to_department`,
-        payload,
-        config,
-      )
-      
+
+      const response = await axios.post(`${baseUrl}/assign_to_department`, payload, config)
+
       // Validasi: Cek apakah response adalah HTML error (bukan JSON)
-      if (typeof response.data === 'string' && (response.data.includes('<!DOCTYPE') || response.data.includes('<html'))) {
-        throw new Error('Backend error: Server mengembalikan halaman error HTML. Cek console untuk detail.')
+      if (
+        typeof response.data === 'string' &&
+        (response.data.includes('<!DOCTYPE') || response.data.includes('<html'))
+      ) {
+        throw new Error(
+          'Backend error: Server mengembalikan halaman error HTML. Cek console untuk detail.',
+        )
       }
-      
+
       // Validasi: Cek apakah response berisi error dari backend
       if (typeof response.data === 'string' && response.data.includes('Exception')) {
         const match = response.data.match(/Message: ([^<]+)/)
         const errorMsg = match ? match[1] : 'Unknown backend error'
         throw new Error(`Backend SQL Error: ${errorMsg}`)
       }
-      
+
       // Validasi: Cek apakah response format JSON yang benar
       if (!response.data || typeof response.data !== 'object') {
         throw new Error('Response tidak valid dari server')
       }
-      
+
       await fetchReports() // Refresh
       return response.data.response
     } catch (err) {
@@ -552,11 +563,7 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
     error.value = null
     try {
       const config = getAxiosConfig()
-      const response = await axios.post(
-        `${baseUrl}/batch_assign`,
-        { assignments },
-        config,
-      )
+      const response = await axios.post(`${baseUrl}/batch_assign`, { assignments }, config)
       await fetchReports() // Refresh
       return response.data.response
     } catch (err) {
@@ -573,11 +580,7 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
     error.value = null
     try {
       const config = getAxiosConfig()
-      const response = await axios.post(
-        `${baseUrl}/accept_assignment/${assignmentId}`,
-        {},
-        config,
-      )
+      const response = await axios.post(`${baseUrl}/accept_assignment/${assignmentId}`, {}, config)
       await fetchMyTasks() // Refresh
       return response.data.response
     } catch (err) {
@@ -595,21 +598,17 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
       const config = getAxiosConfig()
       const assignedByKabid = user_id.value || localStorage.getItem('user_id')
       const clientId = id_client.value || localStorage.getItem('id_client') || 1
-      
+
       // Updated payload to match API docs
       const payload = {
-        report_id: reportId,              // Changed from department_assignment_id
+        report_id: reportId, // Changed from department_assignment_id
         assigned_by_kabid: assignedByKabid, // Required
-        staff_list: staffList,             // Renamed from staff_assignments
-        id_client: clientId                // Required
+        staff_list: staffList, // Renamed from staff_assignments
+        id_client: clientId, // Required
       }
-      
-      const response = await axios.post(
-        `${baseUrl}/assign_to_staff`,
-        payload,
-        config,
-      )
-      
+
+      const response = await axios.post(`${baseUrl}/assign_to_staff`, payload, config)
+
       await fetchMyTasks() // Refresh
       return response.data.response
     } catch (err) {
@@ -652,10 +651,11 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
       const config = getAxiosConfig()
       const updatedBy = user_id.value || localStorage.getItem('user_id')
       const clientId = id_client.value || localStorage.getItem('id_client') || 1
-      
+
       // Support both JSON and FormData (with file upload)
-      let payload, requestConfig = { ...config }
-      
+      let payload,
+        requestConfig = { ...config }
+
       if (progressData.photo && progressData.photo instanceof File) {
         // Use FormData for file upload
         payload = new FormData()
@@ -680,13 +680,13 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
           work_percentage: progressData.percentage || 0,
           hours_spent: progressData.hoursSpent || 0,
           updated_by: updatedBy,
-          id_client: clientId
+          id_client: clientId,
         }
         if (progressData.materialsNeeded) {
           payload.materials_needed = progressData.materialsNeeded
         }
       }
-      
+
       const response = await axios.post(`${baseUrl}/update_progress`, payload, requestConfig)
       await fetchMyTasks() // Refresh
       return response.data.response
@@ -723,7 +723,7 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
     try {
       const updatedBy = user_id.value || localStorage.getItem('user_id')
       const clientId = id_client.value || localStorage.getItem('id_client') || 1
-      
+
       // Always use FormData for consistency
       const formData = new FormData()
       formData.append('report_id', reportId)
@@ -731,7 +731,7 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
       formData.append('notes', notes || '')
       formData.append('updated_by', updatedBy)
       formData.append('id_client', clientId)
-      
+
       // Add file if provided - MUST be actual File object
       if (photoFile) {
         if (Array.isArray(photoFile)) {
@@ -746,16 +746,12 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
           formData.append('completion_photos[]', photoFile)
         }
       }
-      
-      const response = await axios.post(
-        `${baseUrl}/update_task_status`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }
-      )
+
+      const response = await axios.post(`${baseUrl}/update_task_status`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
       await fetchMyTasks() // Refresh
       return response.data.response
     } catch (err) {
@@ -785,22 +781,18 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
     error.value = null
     try {
       const config = getAxiosConfig()
-      
+
       const payload = {
         report_id: reportId,
         new_status: 'deferred',
         action_type: 'deferral',
         notes: notes,
         updated_by: updatedBy,
-        id_client: clientId
+        id_client: clientId,
       }
-      
-      const response = await axios.post(
-        `${baseUrl}/update_task_status`,
-        payload,
-        config
-      )
-      
+
+      const response = await axios.post(`${baseUrl}/update_task_status`, payload, config)
+
       await fetchMyTasks() // Refresh
       return response.data.response
     } catch (err) {
@@ -816,21 +808,17 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
     error.value = null
     try {
       const config = getAxiosConfig()
-      
+
       const payload = {
         report_id: reportId,
         resumed_by: resumedBy,
         action_type: 'status_change',
         notes: notes,
-        id_client: clientId
+        id_client: clientId,
       }
-      
-      const response = await axios.post(
-        `${baseUrl}/resume_deferred_task`,
-        payload,
-        config
-      )
-      
+
+      const response = await axios.post(`${baseUrl}/resume_deferred_task`, payload, config)
+
       await fetchMyTasks() // Refresh
       return response.data.response
     } catch (err) {
@@ -847,52 +835,49 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
     error.value = null
     try {
       const config = getAxiosConfig()
-      
+
       const userId = user_id.value || localStorage.getItem('user_id') || ''
       const clientId = id_client.value || localStorage.getItem('id_client') || 1
-      
-      
-      
+
       if (!userId) {
         myTasks.value = []
         pagination.value = { page: 1, limit: 10, total: 0, total_pages: 0 }
         return []
       }
-      
+
       // Build URL with pagination and filter query params
       const page = params.page || 1
       const limit = params.limit || 10
       const status = params.status || ''
-      
+
       let url = `${baseUrl}/my_tasks/${userId}/${clientId}`
       if (status) {
         url += `/${status}`
       }
-      
+
       // Build query params
       const queryParams = new URLSearchParams({
         page: page.toString(),
-        limit: limit.toString()
+        limit: limit.toString(),
       })
-      
+
       // Add filter params jika ada
       if (params.priority) queryParams.append('priority', params.priority)
       if (params.date_from) queryParams.append('date_from', params.date_from)
       if (params.date_to) queryParams.append('date_to', params.date_to)
       if (params.problem_category) queryParams.append('problem_category', params.problem_category)
-      
+
       url += `?${queryParams.toString()}`
-      
+
       const response = await axios.get(url, config)
-      
+
       myTasks.value = response.data.response || []
 
-      
       // Simpan pagination info
       if (response.data.pagination) {
         pagination.value = response.data.pagination
       }
-      
+
       return myTasks.value
     } catch (err) {
       error.value = err.response?.data?.metadata?.message || err.message
@@ -907,56 +892,56 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
     error.value = null
     try {
       const config = getAxiosConfig()
-      
+
       const userId = user_id.value || localStorage.getItem('user_id') || ''
       const clientId = id_client.value || localStorage.getItem('id_client') || 1
-      
+
       if (!userId) {
         myReports.value = []
         pagination.value = { page: 1, limit: 10, total: 0, total_pages: 0 }
         return []
       }
-      
+
       // Build URL with pagination and filter query params
       const page = params.page || 1
       const limit = params.limit || 10
       const status = params.status || ''
-      
+
       let url = `${baseUrl}/my_reports/${userId}/${clientId}`
       if (status) {
         url += `/${status}`
       }
-      
+
       // Build query params
       const queryParams = new URLSearchParams({
         page: page.toString(),
-        limit: limit.toString()
+        limit: limit.toString(),
       })
-      
+
       // Add filter params jika ada
       if (params.priority) queryParams.append('priority', params.priority)
       if (params.date_from) queryParams.append('date_from', params.date_from)
       if (params.date_to) queryParams.append('date_to', params.date_to)
       if (params.problem_category) queryParams.append('problem_category', params.problem_category)
-      
+
       url += `?${queryParams.toString()}`
-      
+
       const response = await axios.get(url, config)
-      
+
       // Check if response is HTML (error) instead of JSON
       if (typeof response.data === 'string') {
         myReports.value = []
         pagination.value = { page: 1, limit: 10, total: 0, total_pages: 0 }
         return []
       }
-      
+
       myReports.value = response.data.response || []
-      
+
       // Simpan pagination info
       if (response.data.pagination) {
         pagination.value = response.data.pagination
       }
-      
+
       return myReports.value
     } catch (err) {
       error.value = err.response?.data?.metadata?.message || err.message
@@ -1031,21 +1016,21 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
       const clientId = id_client.value || localStorage.getItem('id_client') || 1
       const url = `${baseUrl}/status_history/${reportId}/${clientId}`
       const response = await axios.get(url, config)
-      
+
       // Backend sudah mengembalikan data dengan action_type dan changed_by_name yang benar
       // Hanya perlu menambahkan field alias untuk comment
-      const transformedHistory = (response.data.response || []).map(item => {
+      const transformedHistory = (response.data.response || []).map((item) => {
         if (item.action_type === 'comment') {
           return {
             ...item,
             comment_text: item.notes || '',
             commented_by_name: item.changed_by_name,
-            commented_at: item.changed_at
+            commented_at: item.changed_at,
           }
         }
         return item
       })
-      
+
       statusHistory.value = transformedHistory
       return statusHistory.value
     } catch (err) {
@@ -1063,38 +1048,37 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
       const config = getAxiosConfig()
       const commentedBy = user_id.value || localStorage.getItem('user_id')
       const clientId = id_client.value || localStorage.getItem('id_client') || 1
-      
+
       const payload = {
         report_id: reportId,
         comment_text: commentText,
         commented_by: commentedBy,
-        id_client: clientId
+        id_client: clientId,
       }
-      
-      const response = await axios.post(
-        `${baseUrl}/add_comment`,
-        payload,
-        config,
-      )
-      
+
+      const response = await axios.post(`${baseUrl}/add_comment`, payload, config)
+
       // Validasi response
-      if (typeof response.data === 'string' && (response.data.includes('<!DOCTYPE') || response.data.includes('<html'))) {
+      if (
+        typeof response.data === 'string' &&
+        (response.data.includes('<!DOCTYPE') || response.data.includes('<html'))
+      ) {
         throw new Error('Backend error: Server mengembalikan halaman error HTML.')
       }
-      
+
       if (typeof response.data === 'string' && response.data.includes('Exception')) {
         const match = response.data.match(/Message: ([^<]+)/)
         const errorMsg = match ? match[1] : 'Unknown backend error'
         throw new Error(`Backend Error: ${errorMsg}`)
       }
-      
+
       if (!response.data || typeof response.data !== 'object') {
         throw new Error('Response tidak valid dari server')
       }
-      
+
       // Refresh status history after adding comment
       await fetchStatusHistory(reportId)
-      
+
       return response.data.response
     } catch (err) {
       error.value = err.response?.data?.metadata?.message || err.message
@@ -1111,15 +1095,15 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
     try {
       const config = getAxiosConfig()
       const clientId = id_client.value || localStorage.getItem('id_client') || 1
-      
+
       let url = `${baseUrl}/dashboard_stats/${clientId}`
-      
+
       // Add query parameters if provided
       const params = []
       if (userId) params.push(`user_id=${userId}`)
       if (role) params.push(`role=${role}`)
       if (params.length > 0) url += `?${params.join('&')}`
-      
+
       const response = await axios.get(url, config)
       return response.data.response || {}
     } catch (err) {
@@ -1138,10 +1122,10 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
    */
   const fetchJabatanById = async (jobCode) => {
     if (!jobCode) return null
-    
+
     try {
       const response = await axios.get(`${baseUrl}/jabatan/${jobCode}`)
-      
+
       if (response.data?.metadata?.code === '200') {
         return response.data.response // Returns { KDJABATAN, NAMA_JABATAN }
       }
@@ -1158,10 +1142,10 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
    */
   const fetchLokasiById = async (lokasiId) => {
     if (!lokasiId) return null
-    
+
     try {
       const response = await axios.get(`${baseUrl}/lokasi/${lokasiId}/${id_client.value}`)
-      
+
       if (response.data?.metadata?.code === '200') {
         return response.data.response // Returns { ID, LOKASI, JENIS_LOKASI, IS_DEPO, IS_HQ, IDCLIENT }
       }
@@ -1177,21 +1161,17 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
     error.value = null
     try {
       const config = getAxiosConfig()
-      
+
       const payload = {
         report_id: reportId,
         new_status: 'deferred',
         notes: notes,
         updated_by: updatedBy,
-        id_client: clientId
+        id_client: clientId,
       }
-      
-      const response = await axios.post(
-        `${baseUrl}/update_task_status`,
-        payload,
-        config
-      )
-      
+
+      const response = await axios.post(`${baseUrl}/update_task_status`, payload, config)
+
       await fetchMyTasks() // Refresh
       return response.data.response
     } catch (err) {
@@ -1208,20 +1188,16 @@ export const usePenugasanLayananStore = defineStore('penugasanLayanan', () => {
     error.value = null
     try {
       const config = getAxiosConfig()
-      
+
       const payload = {
         report_id: reportId,
         resumed_by: resumedBy,
         notes: notes,
-        id_client: clientId
+        id_client: clientId,
       }
-      
-      const response = await axios.post(
-        `${baseUrl}/resume_deferred_task`,
-        payload,
-        config
-      )
-      
+
+      const response = await axios.post(`${baseUrl}/resume_deferred_task`, payload, config)
+
       await fetchMyTasks() // Refresh
       return response.data.response
     } catch (err) {

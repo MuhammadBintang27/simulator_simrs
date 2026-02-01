@@ -15,7 +15,6 @@
             v-model="searchKeyword"
             placeholder="Cari nama, NIK, No MR..."
             @keyup.enter="onSearch"
-            class="w-64"
           />
           <Button label="Cari" icon="pi pi-search" :loading="loading" text @click="onSearch" />
         </div>
@@ -342,12 +341,14 @@ import { useConfigStore } from '@/stores/config'
 import axios from 'axios'
 import { useAuthStore } from '@/stores/config'
 import { storeToRefs } from 'pinia'
-import { useRouter } from 'vue-router'
+
 import { useToast } from 'primevue/usetoast'
 
 const configStore = useConfigStore()
 const authStore = useAuthStore()
 const { id_client, user_id } = storeToRefs(authStore)
+
+import { useRouter } from 'vue-router'
 const router = useRouter()
 const toast = useToast()
 

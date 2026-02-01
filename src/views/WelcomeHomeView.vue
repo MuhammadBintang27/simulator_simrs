@@ -227,6 +227,17 @@ const LoadMenu = async () => {
 }
 
 onMounted(() => {
+  const hasRefreshed = sessionStorage.getItem('page_refreshed')
+
+  if (!hasRefreshed) {
+    sessionStorage.setItem('page_refreshed', 'true')
+
+    setTimeout(() => {
+      window.location.reload()
+    }, 3000) // 3 detik
+
+    return
+  }
   LoadMenu()
 })
 </script>

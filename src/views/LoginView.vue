@@ -92,6 +92,7 @@ const profile_rs = async (id_client) => {
     localStorage.setItem('satu_sehat_struktur_org', response.data.satu_sehat_struktur_org)
 
     localStorage.setItem('use_tte_bsre', response.data.use_tte_bsre)
+    localStorage.setItem('disable_jika_sediaan_nol', response.data.disable_jika_sediaan_nol)
 
     return response.data
   } catch (error) {
@@ -156,7 +157,7 @@ const handleSubmit = async () => {
         userData.ALAMAT || '',
         userData.LINK_LOGO || '',
         userData.ID_LOKASI,
-        userData.use_tte_bsre
+        userData.use_tte_bsre,
       )
 
       // 3. Get job_code and bidang_id from userData
@@ -204,6 +205,8 @@ const handleSubmit = async () => {
       if (rsProfile?.NAMA_RS) {
         authStore.company = rsProfile.NAMA_RS
         localStorage.setItem('NAMA_RS', rsProfile.NAMA_RS)
+
+        authStore.LINK_LOGO = rsProfile.LINK_LOGO
       }
 
       // 8. Finally redirect after everything is ready

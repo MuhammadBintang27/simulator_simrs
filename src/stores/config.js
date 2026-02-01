@@ -48,6 +48,7 @@ export const useAuthStore = defineStore('auth', {
     LINK_LOGO: localStorage.getItem('LINK_LOGO') || null,
     id_lokasi: localStorage.getItem('id_lokasi') || null,
     use_tte_bsre: localStorage.getItem('use_tte_bsre') || null,
+    disable_jika_sediaan_nol: localStorage.getItem('disable_jika_sediaan_nol') || null,
     // NEW: Add user object and job_code
     user: null,
     job_code: localStorage.getItem('job_code') || null,
@@ -56,7 +57,17 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   actions: {
-    setIdClient(id, name, user_id, company, ALAMAT, LINK_LOGO, id_lokasi, use_tte_bsre) {
+    setIdClient(
+      id,
+      name,
+      user_id,
+      company,
+      ALAMAT,
+      LINK_LOGO,
+      id_lokasi,
+      use_tte_bsre,
+      disable_jika_sediaan_nol,
+    ) {
       this.id_client = id
       this.user_name = name
       this.user_id = user_id
@@ -64,7 +75,8 @@ export const useAuthStore = defineStore('auth', {
       this.ALAMAT = ALAMAT
       this.LINK_LOGO = LINK_LOGO
       this.id_lokasi = id_lokasi
-      this.use_tte_bsre = use_tte_bsre
+      ;(this.use_tte_bsre = use_tte_bsre),
+        (this.disable_jika_sediaan_nol = disable_jika_sediaan_nol)
 
       localStorage.setItem('id_client', id)
       localStorage.setItem('user_name', name)
@@ -74,24 +86,23 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem('LINK_LOGO', LINK_LOGO)
       localStorage.setItem('id_lokasi', id_lokasi)
       localStorage.setItem('use_tte_bsre', use_tte_bsre)
+      localStorage.setItem('disable_jika_sediaan_nol', disable_jika_sediaan_nol)
     },
-    
+
     // NEW: Set user data with job_code
     setUserData(userData) {
-      
       this.user = userData
       this.job_code = userData?.job_code || userData?.kode_jabatan || null
       this.bidang_id = userData?.bidang_id || userData?.LOKASI || null
-      
+
       if (this.job_code) {
         localStorage.setItem('job_code', this.job_code)
       }
       if (this.bidang_id) {
         localStorage.setItem('bidang_id', this.bidang_id)
       }
-      
     },
-    
+
     clearAuthData() {
       this.id_client = null
       this.user_name = null

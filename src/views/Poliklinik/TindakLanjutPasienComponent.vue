@@ -256,7 +256,6 @@
       >
         <Column field="NOMR" header="NOMR" sortable />
         <Column field="NAMA" header="Nama" sortable />
-
         <Column field="USIA" header="Usia" style="width: 5rem" />
         <Column field="NAMADOKTER" header="Dokter" sortable />
         <Column field="KODE_DIAGNOSA" header="Diagnosa" :style="{ minWidth: '20rem' }" />

@@ -367,6 +367,7 @@
               <Button
                 label="Cetak"
                 @click="cetakSPRI(spri)"
+                :loading="loadingPrint"
                 icon="pi pi-print"
                 class="p-button-sm flex-button"
               />
@@ -376,12 +377,6 @@
                 @click="hapus_SPRI(spri?.SPRI)"
                 class="p-button-sm flex-button"
                 title="Hapus"
-              />
-              <Button
-                severity="info"
-                icon="pi pi-pencil"
-                class="p-button-sm flex-button"
-                title="Edit"
               />
             </div>
           </div>
@@ -449,7 +444,9 @@
               <td>
                 <Button
                   label="Cetak"
+                  class="round-button2"
                   @click="cetakSPRI(spri)"
+                  :loading="loadingPrint"
                   icon="pi pi-print"
                   style="padding: 0.25rem"
                 />
@@ -463,13 +460,6 @@
                     @click="hapus_SPRI(spri?.SPRI)"
                     style="padding: 0.25rem"
                     title="Hapus SPRI"
-                  />
-                  <Button
-                    severity="info"
-                    class="round-button2"
-                    icon="pi pi-pencil"
-                    style="padding: 0.25rem"
-                    title="Edit SPRI"
                   />
                 </div>
               </td>
@@ -751,7 +741,7 @@ import StepPanel from 'primevue/steppanel'
 // Setup
 const configStore = useConfigStore()
 const authStore = useAuthStore()
-const { id_client, user_id } = storeToRefs(authStore)
+const { id_client, user_id, company } = storeToRefs(authStore)
 const route = useRoute()
 const toast = useToast()
 
@@ -834,6 +824,40 @@ const formattedTglMasuk = computed({
 })
 
 const NoSPRI = ref()
+
+const loadingPrint = ref(false)
+const cetakSPRI = async (data) => {
+  // Implementation for printing SPRI
+
+  try {
+    loadingPrint.value = true
+
+    const formData = {
+      NO_KARTU: data.NO_KARTU,
+      NAMA: data.NAMA,
+      TGLLAHIR: data.TGLLAHIR,
+      USIA: data.USIA,
+      JENISKELAMIN: data.JENISKELAMIN,
+      diagnosa: '-',
+      TANGGAL: data.TANGGAL,
+      NORM: data.NORM,
+      SPRI: data.SPRI,
+      NAMADOKTER: data.NAMADOKTER,
+      NAMA_RS: company.value,
+      id_client: id_client.value,
+    }
+
+    const url = configStore.laravel
+    const response = await axios.post(`${url}/generateSPRI`, formData)
+    loadingPrint.value = false
+    window.open(response.data, '_blank')
+  } catch (error) {
+    console.error('Error submitting form:', error)
+    showError(error.response?.data?.message || 'An error occurred while submitting the rujukan')
+  } finally {
+    loadingPrint.value = false
+  }
+}
 
 const showListSPRI = ref(false)
 
@@ -1272,7 +1296,7 @@ const doterbitkanSPRI = async () => {
         nokartu: formData.value.NOJAMINAN,
         KDDOKTER: dokterSelected.value.KDDOKTER,
         KODE_DOKTER_BPJS: dokterSelected.value.KODE_DOKTER_BPJS,
-        KodePoliBPJS: dokterSelected.value.KDPOLY_BPJS,
+        KodePoliBPJS: dokterSelected.value.SUB_SP,
         tglRencanaKontrol: formatDateOnlyForAPI(TanggalSEP.value),
         nomr: formData.value.NOMR,
       },
@@ -1456,6 +1480,7 @@ const submitForm = async () => {
 
     const response = await axios.post(`${url}/index.php/api/Bpjs_api/createSEP`, payload)
 
+    console.log(response.data)
     if (response.data.metadata.code == '200') {
       showSuccess(response.data.metadata.message)
 

@@ -13,7 +13,7 @@
         :globalFilterFields="['problem_title', 'location', 'report_no']"
       >
         <!-- Nomor -->
-        <Column 
+        <!-- <Column 
           field="report_no" 
           header="No. Laporan" 
           :sortable="true" 
@@ -24,15 +24,10 @@
               {{ slotProps.data.report_no || `#${slotProps.data.report_id}` }}
             </div>
           </template>
-        </Column>
+        </Column> -->
 
         <!-- Judul -->
-        <Column 
-          field="problem_title" 
-          header="Judul" 
-          :sortable="true" 
-          style="width: 350px"
-        >
+        <Column field="problem_title" header="Judul" :sortable="true" style="width: 350px">
           <template #body="slotProps">
             <div class="title-text">
               <div class="title-main">{{ slotProps.data.problem_title }}</div>
@@ -44,12 +39,7 @@
         </Column>
 
         <!-- Lokasi -->
-        <Column 
-          field="location" 
-          header="Lokasi" 
-          :sortable="true" 
-          style="width: 180px"
-        >
+        <Column field="location" header="Lokasi" :sortable="true" style="width: 180px">
           <template #body="slotProps">
             <div class="location-cell">
               <i class="pi pi-map-marker"></i>
@@ -59,48 +49,44 @@
         </Column>
 
         <!-- Tanggal -->
-        <Column 
-          field="report_date" 
-          header="Tanggal" 
-          :sortable="true" 
-          style="width: 130px"
-        >
+        <Column field="report_date" header="Tanggal" :sortable="true" style="width: 130px">
           <template #body="slotProps">
             <div class="date-cell">
               <div class="date-content">
                 <div class="date-absolute">{{ formatDate(slotProps.data.report_date) }}</div>
-                <div class="date-relative">{{ formatRelativeDate(slotProps.data.report_date) }}</div>
+                <div class="date-relative">
+                  {{ formatRelativeDate(slotProps.data.report_date) }}
+                </div>
               </div>
             </div>
           </template>
         </Column>
 
         <!-- Status -->
-        <Column 
-          field="status" 
-          header="Status" 
-          :sortable="true" 
-          style="width: 160px"
-        >
+        <Column field="status" header="Status" :sortable="true" style="width: 160px">
           <template #body="slotProps">
-            <StatusBadge :status="slotProps.data.status" :department-name="slotProps.data.bidang_name || 'Bidang'" :assigned-staff-names="slotProps.data.assigned_staff_names" />
+            <StatusBadge
+              :status="slotProps.data.status"
+              :department-name="slotProps.data.bidang_name || 'Bidang'"
+              :assigned-staff-names="slotProps.data.assigned_staff_names"
+            />
           </template>
         </Column>
 
         <!-- Actions -->
-        <Column 
-          header="Aksi" 
-          :sortable="false" 
+        <Column
+          header="Aksi"
+          :sortable="false"
           style="width: 150px"
           :frozen="true"
           alignFrozen="right"
         >
           <template #body="slotProps">
-            <div 
+            <div
               class="action-buttons"
               :class="{
                 'single-button': !hasSecondaryButton(slotProps.data),
-                'double-buttons': hasSecondaryButton(slotProps.data)
+                'double-buttons': hasSecondaryButton(slotProps.data),
               }"
             >
               <!-- Detail Button - Always show -->
@@ -111,7 +97,7 @@
                 @click="$emit('view-detail', slotProps.data)"
                 v-tooltip.top="'Lihat Detail'"
               />
-              
+
               <!-- Edit Button - Conditional -->
               <Button
                 v-if="showEdit && slotProps.data.status === 'submitted'"
@@ -121,7 +107,7 @@
                 @click="$emit('edit', slotProps.data)"
                 v-tooltip.top="'Edit Laporan'"
               />
-              
+
               <!-- Assign to Department Button - Conditional -->
               <Button
                 v-if="showAssignToDept && canAssign(slotProps.data)"
@@ -131,7 +117,7 @@
                 @click="$emit('assign-dept', slotProps.data)"
                 v-tooltip.top="'Tugaskan ke Bidang'"
               />
-              
+
               <!-- Assign to Staff Button - Conditional -->
               <Button
                 v-if="showAssignToStaff && canAssignStaff(slotProps.data)"
@@ -141,7 +127,7 @@
                 @click="$emit('assign-staff', slotProps.data)"
                 v-tooltip.top="'Tugaskan ke Staff'"
               />
-              
+
               <!-- Completion Button - Conditional -->
               <Button
                 v-if="showCompletion && canComplete(slotProps.data)"
@@ -172,40 +158,40 @@ const props = defineProps({
   reports: {
     type: Array,
     required: true,
-    default: () => []
+    default: () => [],
   },
   enablePagination: {
     type: Boolean,
-    default: true
+    default: true,
   },
   showEdit: {
     type: Boolean,
-    default: false
+    default: false,
   },
   showAssignToDept: {
     type: Boolean,
-    default: false
+    default: false,
   },
   showAssignToStaff: {
     type: Boolean,
-    default: false
+    default: false,
   },
   canAssign: {
     type: Function,
-    default: () => false
+    default: () => false,
   },
   canAssignStaff: {
     type: Function,
-    default: () => false
+    default: () => false,
   },
   showCompletion: {
     type: Boolean,
-    default: false
+    default: false,
   },
   canComplete: {
     type: Function,
-    default: () => false
-  }
+    default: () => false,
+  },
 })
 
 defineEmits(['view-detail', 'edit', 'assign-dept', 'assign-staff', 'complete'])
@@ -233,7 +219,7 @@ const hasSecondaryButton = (data) => {
   const hasEdit = props.showEdit && data.status === 'submitted'
   const hasAssignDept = props.showAssignToDept && props.canAssign(data)
   const hasAssignStaff = props.showAssignToStaff && props.canAssignStaff(data)
-  
+
   return hasEdit || hasAssignDept || hasAssignStaff
 }
 </script>
@@ -437,12 +423,12 @@ const hasSecondaryButton = (data) => {
   .action-buttons {
     gap: 0.375rem;
   }
-  
+
   .action-buttons :deep(.p-button) {
     width: 32px;
     height: 32px;
   }
-  
+
   .action-buttons :deep(.p-button .p-button-icon) {
     font-size: 0.8rem;
   }

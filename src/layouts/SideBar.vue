@@ -148,9 +148,8 @@ import axios from 'axios'
 const configStore = useConfigStore() // ✅ Define configStore properly
 
 const authStore = useAuthStore()
-const { id_client, user_id } = storeToRefs(authStore)
+const { id_client, user_id, LINK_LOGO } = storeToRefs(authStore)
 const router = useRouter()
-const { LINK_LOGO } = storeToRefs(authStore)
 
 const searchQuery = ref('')
 const showSearchResults = ref(false)

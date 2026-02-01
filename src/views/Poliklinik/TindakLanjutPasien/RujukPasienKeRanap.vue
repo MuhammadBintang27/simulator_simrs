@@ -1,4 +1,5 @@
 <template>
+  <loading_overlay :is-loading="loading" message="Memuat data...." />
   <div class="card elevation-0">
     <div class="card-body">
       <div class="row">
@@ -294,7 +295,6 @@
             label="Rujuk Ke Rawat Inap"
             icon="pi pi-save"
             class="p-button p-button-success"
-            :loading="loading"
             @click="submitForm"
           />
           <!-- <Button
@@ -308,8 +308,14 @@
             severity="warn"
             icon="pi pi-save"
             class="p-button p-button-success ml-2"
-            :loading="loading"
             @click="callChildFetch"
+          />
+          <Button
+            label="Cetak SEP"
+            severity="info"
+            icon="pi pi-print"
+            class="p-button p-button-success ml-2"
+            @click="CetakSEP"
           />
         </div>
       </div>
@@ -439,10 +445,15 @@
     header="Riwayat Perintah Rawat Inap"
     :class="{ 'mobile-dialog': isMobile }"
   >
+    <Button
+      label="Data server BPJS"
+      icon="pi pi-list"
+      class="p-button p-button-sm copy-btn round-button2"
+    />
     <!-- Mobile Card View -->
     <div v-if="isMobile" class="mobile-view">
       <div v-if="isLoadingSPRI" class="text-center py-4">
-        <i class="pi pi-spin pi-spinner mr-2"></i>
+        <i class="pi pi-spin pi-spinner mr-0"></i>
         Memuat data SPRI...
       </div>
 
@@ -508,12 +519,12 @@
               class="p-button-sm flex-button"
               title="Hapus"
             />
-            <Button
+            <!-- <Button
               severity="info"
               icon="pi pi-pencil"
               class="p-button-sm flex-button"
               title="Edit"
-            />
+            /> -->
           </div>
         </div>
       </div>
@@ -595,13 +606,13 @@
                   style="padding: 0.25rem"
                   title="Hapus SPRI"
                 />
-                <Button
+                <!-- <Button
                   severity="info"
                   class="round-button2"
                   icon="pi pi-pencil"
                   style="padding: 0.25rem"
                   title="Edit SPRI"
-                />
+                /> -->
               </div>
             </td>
           </tr>
@@ -935,13 +946,14 @@ const doterbitkanSPRI = async () => {
         nokartu: route.query.noka,
         KDDOKTER: dokterSelected.value.KDDOKTER,
         KODE_DOKTER_BPJS: dokterSelected.value.KODE_DOKTER_BPJS,
-        KodePoliBPJS: dokterSelected.value.KDPOLY_BPJS,
+        KodePoliBPJS: dokterSelected.value.SUB_SP,
         tglRencanaKontrol: formatDateOnlyForAPI(TanggalRawat.value),
         nomr: route.query.nomr,
       },
       user_id: user_id.value,
       id_client: id_client.value,
     }
+ 
 
     const url = configStore.apiBaseUrl
     const response = await axios.post(`${url}/index.php/api/transaksi_pasien/terbitkan_SPRI`, param)
@@ -998,6 +1010,7 @@ const copySPRI = async (spriNumber, index) => {
     await navigator.clipboard.writeText(spriNumber)
     copiedSPRIIndex.value = index
     showSuccess(`SPRI ${spriNumber} berhasil disalin`)
+    showListSPRI.value = false
 
     setTimeout(() => {
       copiedSPRIIndex.value = null
@@ -1127,12 +1140,14 @@ const hapusSEP = async () => {
 
 const noSEP = ref(null)
 
+const tempNOSEP = ref('')
+const tempNOREG = ref('')
+
 const submitForm = async () => {
   if (!validateForm()) return
 
   try {
     loading.value = true
-
     const url = configStore.apiBaseUrl
 
     const payload = {
@@ -1174,11 +1189,19 @@ const submitForm = async () => {
 
     const response = await axios.post(`${url}/index.php/api/Bpjs_api/createSEP`, payload)
 
-    console.log(response.data)
-    if (response.data.metadata.code == '200') {
+    if (response.data.metadata.code == 200) {
       showSuccess(response.data.metadata.message)
 
-      PrintSEP(response.data.sep, response.data.metadata.noregiter)
+      if (carabayarSelected.value.KODE == 5) {
+        tempNOSEP.value = response.data.data_trans.data_trans.sep
+        tempNOREG.value = response.data.data_trans.data_trans.no_register
+
+        PrintSEP(
+          response.data.data_trans.data_trans.sep,
+          response.data.data_trans.data_trans.no_register,
+        )
+        //PrintSEP('0020R0010126V002881', '112601387738')
+      }
     } else {
       showInfo(response.data.metadata.message)
     }
@@ -1191,7 +1214,12 @@ const submitForm = async () => {
   }
 }
 
+const CetakSEP = async () => {
+  PrintSEP(tempNOSEP.value, tempNOREG.value)
+}
+
 const PrintSEP = async (nosep, noregister) => {
+  loading.value = true
   const payLoad = {
     data: {
       NOPENDAFTARAN: noregister,
@@ -1202,7 +1230,7 @@ const PrintSEP = async (nosep, noregister) => {
 
   const url = configStore.laravel
   const response = await axios.post(`${url}/get_data_sep_api`, payLoad)
-
+  loading.value = false
   window.open(response.data, '_blank')
 }
 

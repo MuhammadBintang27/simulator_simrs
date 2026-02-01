@@ -305,7 +305,6 @@ const getdetail_sales = async (no_receipt) => {
 
     const url = configStore.apiApotikUrl
     const response = await axios.post(`${url}/index.php/api/sales/billv2`, param)
-    console.log(response.data)
     detils_obat.value = response.data.response
     if (response.data.response) {
       detils_obat.value = response.data.response || []

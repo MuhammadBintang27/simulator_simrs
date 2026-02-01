@@ -108,24 +108,24 @@ import Button from 'primevue/button'
 const props = defineProps({
   filters: {
     type: Object,
-    required: true
+    required: true,
   },
   filteredCount: {
     type: Number,
-    required: true
+    required: true,
   },
   totalCount: {
     type: Number,
-    required: true
+    required: true,
   },
   loading: {
     type: Boolean,
-    default: false
+    default: false,
   },
   searchPlaceholder: {
     type: String,
-    default: 'Cari judul laporan...'
-  }
+    default: 'Cari judul laporan...',
+  },
 })
 
 const emit = defineEmits(['update:filters', 'refresh', 'reset'])
@@ -136,14 +136,14 @@ const categoryOptions = [
   { label: 'Obat-obatan/BMHP', value: 'Obat-obatan/BMHP' },
   { label: 'Alat Kesehatan', value: 'Alat Kesehatan' },
   { label: 'Bangunan', value: 'Bangunan' },
-  { label: 'Kebersihan', value: 'Kebersihan' }
+  { label: 'Kebersihan', value: 'Kebersihan' },
 ]
 
 const priorityOptions = [
   { label: 'Mendesak', value: 'urgent' },
   { label: 'Tinggi', value: 'high' },
   { label: 'Sedang', value: 'medium' },
-  { label: 'Rendah', value: 'low' }
+  { label: 'Rendah', value: 'low' },
 ]
 
 const statusOptions = [

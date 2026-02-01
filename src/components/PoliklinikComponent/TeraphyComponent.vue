@@ -54,29 +54,29 @@
           </div>
         </template>
 
-        <Column field="GROUPING" header="Grouping" :sortable="true" style="min-width: 200px">
+        <!-- <Column field="GROUPING" header="Grouping" :sortable="true" style="min-width: 200px">
           <template #body="slotProps">
             <div class="flex align-items-center gap-2">
               <Tag :value="slotProps.data.GROUPING" class="text-xs" />
             </div>
           </template>
-        </Column>
+        </Column> -->
 
-        <Column field="CAPTION" header="Nama Obat" :sortable="true" style="min-width: 200px">
+        <Column field="CAPTION" header="NAMA ITEM" :sortable="true" style="min-width: 200px">
           <template #body="slotProps">
-            <div class="flex align-items-center gap-2">
+            <div class="flex align-items-right gap-2">
               <span class="font-semibold">
                 {{ slotProps.data.CAPTION }}
-                <span v-if="slotProps.data.QUANTITY" class="ml-2">
-                  <Tag severity="warn" :value="slotProps.data.QUANTITY"></Tag>
-                  <small>sediaan</small>
-                </span>
               </span>
             </div>
+
+            <span v-if="slotProps.data.BATCH_NUMBER" class="badge bg-primary">
+              BTCH{{ slotProps.data.BATCH_NUMBER }}</span
+            >
           </template>
         </Column>
 
-        <Column field="KATEGORI" header="Kategori" :sortable="true" style="min-width: 150px">
+        <Column field="KATEGORI" header="KATEGORI" :sortable="true" style="min-width: 150px">
           <template #body="slotProps">
             <span class="badge badge-success">{{ slotProps.data.KATEGORI }}</span>
           </template>
@@ -84,7 +84,7 @@
 
         <Column
           field="HARGAJUAL"
-          header="Harga Jual"
+          header="HARGA JUAL"
           :sortable="true"
           dataType="numeric"
           style="min-width: 120px"
@@ -95,12 +95,26 @@
             </div>
           </template>
         </Column>
+        <Column
+          field="QUNATITY"
+          header="SEDIAAN"
+          :sortable="true"
+          dataType="numeric"
+          style="min-width: 120px"
+        >
+          <template #body="slotProps">
+            <div class="text-right font-semibold text-green-600">
+              {{ slotProps.data.QUNATITY }}
+            </div>
+          </template>
+        </Column>
 
-        <Column header="Aksi" :exportable="false" style="min-width: 120px">
+        <Column header="AKSI" :exportable="false" style="min-width: 120px">
           <template #body="slotProps">
             <div class="flex gap-1">
               <Button
                 icon="pi pi-plus"
+                :disabled="disable_jika_sediaan_nol == 1 && slotProps.data.QUNATITY <= 0"
                 class="p-button-rounded p-button-success round-button2 p-button-sm"
                 @click="addItem(slotProps.data, 1)"
               />
@@ -174,6 +188,30 @@
       <!-- Main Content -->
       <div class="col-md-10">
         <Panel>
+          <template #header>
+            <div class="header-container" v-if="biayaPelayanan.PLAFON_OBAT > 0">
+              <!-- Left Side - Total -->
+              <div class="total-section">
+                <span class="label">TOTAL TERAPI</span>
+                <span
+                  class="amount"
+                  :class="{ exceeded: totalAmount > biayaPelayanan.PLAFON_OBAT }"
+                >
+                  {{ formatCurrency(totalAmount) }}
+                </span>
+              </div>
+
+              <!-- Right Side - Status -->
+              <div class="status-section" v-if="totalAmount > biayaPelayanan.PLAFON_OBAT">
+                <Tag severity="danger" class="status-tag danger-tag">
+                  <i class="pi pi-exclamation-circle mr-2"></i>
+                  Plafon Terlampaui
+                  <br />
+                  <small>Max: {{ formatCurrency(biayaPelayanan.PLAFON_OBAT) }}</small>
+                </Tag>
+              </div>
+            </div>
+          </template>
           <div class="mb-2 flex justify-end">
             <Button
               class="p-button-success round-button2"
@@ -209,9 +247,9 @@
             :showGridlines="true"
             striped-rows
           >
-            <template #header>
+            <!-- <template #header>
               <div class="flex justify-content-between align-items-center"></div>
-            </template>
+            </template> -->
 
             <template #empty>
               <div class="text-center p-4">
@@ -229,6 +267,7 @@
 
             <Column field="BARCODE" header="BARCODE" style="min-width: 10px"></Column>
             <Column field="NAMA" header="NAMA"></Column>
+
             <Column field="JENIS_R" header="JENIS_R">
               <template #body="slotProps">
                 {{ slotProps.data.JENIS_R }}
@@ -241,6 +280,9 @@
                   v-model="slotProps.data.QTY"
                   v-if="slotProps.data.JENIS_R == 'R/'"
                   style="width: 5em"
+                  min="0"
+                  @update:modelValue="(val) => (slotProps.data.QTY = Math.max(0, Number(val || 0)))"
+                  @keydown="(e) => e.key === '-' && e.preventDefault()"
                 />
               </template>
             </Column>
@@ -271,6 +313,12 @@
                   class="p-button-text round-button2"
                   @click.stop.prevent="confirmRemoveItemObat(slotProps.index)"
                 />
+              </template>
+            </Column>
+
+            <Column field="HARGA" header="AMOUNT" style="text-align: right">
+              <template #body="slotProps">
+                {{ formatCurrency(slotProps.data.HARGA * slotProps.data.QTY) }}
               </template>
             </Column>
           </DataTable>
@@ -535,7 +583,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import HIstoryTeraphy from '@/components/PoliklinikComponent/HIstoryTeraphy.vue'
 
 import ScrollPanel from 'primevue/scrollpanel'
@@ -559,7 +607,7 @@ const TitleRacikan = ref('')
 import { useAuthStore } from '@/stores/config'
 const authStore = useAuthStore()
 import { storeToRefs } from 'pinia'
-const { id_client, user_id, id_lokasi } = storeToRefs(authStore)
+const { id_client, user_id, id_lokasi, disable_jika_sediaan_nol } = storeToRefs(authStore)
 
 const selectedObatObatan = ref([])
 const itemResepRacikan = ref([])
@@ -590,6 +638,71 @@ const currentObatIndex = ref(null)
 // Handle quantity input properly
 const handleQuantityInput = () => {
   jumlQtyResepRacikan.value = parseInt(jumlQtyResepRacikan.value || 0)
+}
+
+const biayaPelayanan = ref({
+  POLIRUANG: '',
+  KDPOLY: '',
+  OBATAN: 0,
+  BMHP: 0,
+  LABORATORIUM: 0,
+  TENAGA_AHLI: 0,
+  KEPERAWATAN: 0,
+  RADIOLOGI: 0,
+  PLAFON_OBAT: 0,
+})
+
+// Fixed computed property
+const totalAmount = computed(() => {
+  // total dari item obat
+  const totalObat = Array.isArray(selectedObatObatan.value)
+    ? selectedObatObatan.value.reduce((total, item) => {
+        const qty = parseFloat(item.QTY) || 0
+        const harga = parseFloat(item.HARGA) || 0
+        return total + qty * harga
+      }, 0)
+    : 0
+
+  // total dari billing
+  const biayaObatan = parseFloat(biayaPelayanan.value.OBATAN) || 0
+
+  return totalObat + biayaObatan
+})
+
+const calculatePercentage = () => {
+  if (!biayaPelayanan.value.PLAFON_OBAT || biayaPelayanan.value.PLAFON_OBAT === 0) {
+    return 0
+  }
+  const percentage = (totalAmount.value / biayaPelayanan.value.PLAFON_OBAT) * 100
+  return Math.round(percentage)
+}
+
+const total_amount_obat = async () => {
+  try {
+    const param = {
+      mode: 1,
+      no_transaksi: route.query.noreg,
+      id_client: id_client.value,
+    }
+
+    const url = configStore.apiBaseUrl
+    const response = await axios.post(
+      `${url}/index.php/api/transaksi_pasien/get_data_billing_perpasien`,
+      param,
+    )
+
+    // Update biayaPelayanan instead of totalAmount
+    if (response.data) {
+      biayaPelayanan.value = {
+        ...biayaPelayanan.value,
+        OBATAN: parseFloat(response.data.OBATAN) || 0,
+        PLAFON_OBAT: parseFloat(response.data.PLAFON_OBAT) || 0,
+      }
+    }
+  } catch (error) {
+    console.error(error)
+    showError('Gagal memuat data billing')
+  }
 }
 
 const obat_kronisBPJS = async () => {
@@ -805,6 +918,7 @@ const get_riwayat = async () => {
 
     if (response.data?.response) {
       riwayat_obat.value = response.data.response.filter((x) => x.OBAT_OBATAN == 1)
+      total_amount_obat()
     } else {
       riwayat_obat.value = []
     }
@@ -986,6 +1100,8 @@ const getDataHistori = async (data) => {
     const plain = data._rawValue || data.value || data
     datafromCopyResep.value = plain
 
+    console.log('datafromCopyResep', datafromCopyResep.value)
+
     if (Array.isArray(datafromCopyResep.value)) {
       datafromCopyResep.value.forEach((item) => {
         const setItem = {
@@ -993,7 +1109,7 @@ const getDataHistori = async (data) => {
           NAMA: item.NAMABARANG,
           SATUAN: item.SATUAN,
           MEREK: item.SATUAN,
-          HARGA: 0,
+          HARGA: parseFloat(item.HARGA),
           POTONGSTOCK: item.POTONGSTOCK || 0,
           QTY_RACIK: 0,
           JENIS_R: 'R/',
@@ -1137,6 +1253,138 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.panel-total-therapy {
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 20px;
+  padding: 8px 0;
+  flex-wrap: nowrap;
+}
+
+.total-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.amount {
+  font-size: 18px;
+  font-weight: 700;
+  color: #10b981;
+  transition: color 0.3s ease;
+}
+
+.amount.exceeded {
+  color: #dc2626;
+}
+
+.status-section {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-left: auto;
+}
+
+.status-tag {
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.status-tag small {
+  font-size: 11px;
+  opacity: 0.9;
+  display: block;
+  margin-top: 2px;
+}
+
+.danger-tag {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.success-tag {
+  background-color: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.mr-2 {
+  margin-right: 6px;
+}
+
+.ml-1 {
+  margin-left: 6px;
+}
+
+.mb-2 {
+  margin-bottom: 12px;
+}
+
+.flex {
+  display: flex;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+.round-button2 {
+  border-radius: 6px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .header-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .status-section {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .status-tag {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .amount {
+    font-size: 20px;
+  }
+}
+
+:deep(.p-datatable .p-datatable-tbody > tr > td) {
+  padding: 0.1rem 0.5rem;
+}
+
+:deep(.p-datatable .p-datatable-thead > tr > th) {
+  padding: 0.5rem 1rem;
+}
+
 .patient-detail-dialog {
   border-radius: 8px;
 }

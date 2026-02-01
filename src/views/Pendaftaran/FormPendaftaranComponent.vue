@@ -1007,7 +1007,7 @@ const doterbitkanSPRI = async () => {
         nokartu: props.os.noKartu,
         KDDOKTER: dokterSelected.value.KDDOKTER,
         KODE_DOKTER_BPJS: dokterSelected.value.KODE_DOKTER_BPJS,
-        KodePoliBPJS: dokterSelected.value.KDPOLY_BPJS,
+        KodePoliBPJS: dokterSelected.value.SUB_SP,
         tglRencanaKontrol: formatDateOnlyForAPI(TanggalRawat.value),
         nomr: norm.value,
       },

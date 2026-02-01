@@ -252,14 +252,14 @@
             <Button
               icon="pi pi-times"
               severity="danger"
-              class="p-button-sm p-button-rounded"
+              class="p-button-sm round-button2"
               :title="isMobile ? 'Batalkan' : ''"
               @click="confirmRemoveRujukan(slotProps.data)"
             />
             <Button
               icon="pi pi-print"
-              class="p-button-sm p-button-rounded"
-              :loading="loadingPrint"
+              class="p-button-sm round-button2"
+              :loading="slotProps.data.loadingPrint"
               :title="isMobile ? 'Cetak' : ''"
               @click="cetakRujukan(slotProps.data)"
             />
@@ -401,8 +401,7 @@ const isFormValid = computed(() => {
     tanggalRencanaKunjungan.value &&
     tipe_rujukan.value !== null &&
     diagnoseSelected.value &&
-    faskesSelected.value &&
-    SpesialistikSelected.value
+    faskesSelected.value
   )
 })
 
@@ -530,7 +529,14 @@ const listRujukan = async () => {
         `${url}/index.php/api/transaksi_pasien/getdatarujukanv1`,
         payload,
       )
-      datalistRujukan.value = response.data || []
+
+      if (response.data && response.data.length > 0) {
+        datalistRujukan.value = response.data.map((item) => ({
+          ...item,
+          loadingPrint: false,
+        }))
+      }
+
       showListRujukan.value = true
       loadingRujukan.value = false
     } catch (error) {
@@ -633,7 +639,7 @@ const onFaskesChange = () => {
   listSpesialis.value = []
 
   // Load specialists for selected faskes
-  if (faskesSelected.value) {
+  if (faskesSelected.value && jenisRawat.value.value == '2') {
     getSpesialistik()
   }
 }
@@ -660,10 +666,10 @@ const getSpesialistik = async () => {
 
     if (response.data && response.data.response && response.data.response.list) {
       listSpesialis.value = response.data.response.list
-      console.log('Specialists loaded:', listSpesialis.value)
+      // console.log('Specialists loaded:', listSpesialis.value)
     } else {
       listSpesialis.value = []
-      showWarning('No specialists available for selected facility')
+      showWarning('Tidak ada spesialis tersedia untuk fasilitas kesehatan yang dipilih')
     }
   } catch (error) {
     console.error('Error getting specialists:', error)
@@ -680,11 +686,9 @@ const getProgressBarClass = (percentage) => {
   return 'low-utilization'
 }
 
-const loadingPrint = ref(false)
-
 const cetakRujukan = async (data) => {
   try {
-    loadingPrint.value = true
+    data.loadingPrint = true
 
     const formData = {
       no_rujukan: data.NORUJUKAN,
@@ -695,13 +699,14 @@ const cetakRujukan = async (data) => {
 
     const url = configStore.laravel
     const response = await axios.post(`${url}/setRujukan`, formData)
-    loadingPrint.value = false
+    data.loadingPrint = false
     window.open(response.data, '_blank')
   } catch (error) {
     console.error('Error submitting form:', error)
     showError(error.response?.data?.message || 'An error occurred while submitting the rujukan')
+    data.loadingPrint = false
   } finally {
-    loadingPrint.value = false
+    data.loadingPrint = false
   }
 }
 
@@ -724,8 +729,8 @@ const submitForm = async () => {
       tipeRujukan: tipe_rujukan.value,
       diagnose: diagnoseSelected.value.icd_code,
       poliRujukan: {
-        kodeSpesialis: SpesialistikSelected.value.kodeSpesialis,
-        namaSpesialis: SpesialistikSelected.value.namaSpesialis,
+        kodeSpesialis: jenisRawat.value == 2 ? SpesialistikSelected.value.kodeSpesialis : null,
+        namaSpesialis: jenisRawat.value == 2 ? SpesialistikSelected.value.namaSpesialis : null,
       },
       id_client: id_client.value,
       user: user_id.value,
@@ -740,14 +745,23 @@ const submitForm = async () => {
     const response = await axios.post(`${url}/index.php/api/Bpjs_api/createRujukan`, formData)
     console.log('Form submission response:', response.data)
 
-    if (response.data.code == 200) {
+    if (response.data.metadata.code == 200) {
       showSuccess('Rujukan submitted successfully')
+
+      const formData = {
+        NORUJUKAN: response.data.metadata.rujukan.noRujukan,
+        mod: 'history1',
+        NOKARTU: response.data.metadata.rujukan.peserta.noKartu,
+        id_client: id_client.value,
+      }
+
+      cetakRujukan(formData)
       resetForm()
     } else {
       showError(response.data?.metadata.message || 'Failed to submit rujukan')
     }
   } catch (error) {
-    console.error('Error submitting form:', error)
+    // console.error('Error submitting form:', error)
     showError(error.response?.data?.message || 'An error occurred while submitting the rujukan')
   } finally {
     loading.value = false

@@ -121,24 +121,31 @@
     >
       <!-- Icon Header with Gradient -->
       <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-4">
           <div class="d-flex align-items-center">
             <div class="bg-light p-3 rounded-circle mr-3">
               <i class="fas fa-handshake text-primary fa-lg"></i>
             </div>
-            <h6 class="mb-0 font-weight-bold">PENCARIAN DATA PASIEN</h6>
           </div>
         </div>
 
         <div class="col-md-6 d-flex align-items-center">
           <!-- <label class="mb-0 me-2">No. RM</label> -->
           <div class="d-flex align-items-center w-100">
-            <InputText
-              v-model="norm"
-              class="w-100 me-2"
-              @keydown.enter="cariByRM"
-              placeholder="Cari... RM"
-            />
+            <div class="d-flex align-items-center mr-2">
+              <InputText
+                v-model="norm"
+                class="flex-grow-1 me-2"
+                @keydown.enter="cariByRM"
+                placeholder="Cari... RM"
+              />
+              <Button
+                label=""
+                icon="pi pi-search"
+                @click="cariByRM"
+                class="p-button-success p-button-sm"
+              />
+            </div>
             <Button
               label="Tambah"
               icon="pi pi-user-plus"

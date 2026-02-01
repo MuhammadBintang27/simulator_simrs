@@ -833,7 +833,6 @@ const SimpanItemObat = async () => {
       id_client: id_client.value,
       JENISRESEP: activeTab.value == '0' ? 'NONRACIK' : 'RACIK',
     }
-    console.log('input obat', payLoad)
 
     const url = configStore.apiBaseUrl
     const response = await axios.post(`${url}/index.php/api/bpjs_api/simpan_obat_apol`, payLoad)

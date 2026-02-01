@@ -10,7 +10,10 @@
         </div>
         <div class="hero-text">
           <h1 class="hero-title">Dashboard Penugasan Layanan</h1>
-          <p class="hero-description">Sistem manajemen tugas dan laporan keluhan dengan workflow approval bertingkat. Pantau status laporan, kelola penugasan, dan monitoring progress pekerjaan secara real-time.</p>
+          <p class="hero-description">
+            Sistem manajemen tugas dan laporan keluhan dengan workflow approval bertingkat. Pantau
+            status laporan, kelola penugasan, dan monitoring progress pekerjaan secara real-time.
+          </p>
         </div>
       </div>
 
@@ -47,7 +50,7 @@
           v-tooltip.top="'Refresh Data'"
         />
       </div>
-      
+
       <!-- Stats Grid -->
       <div class="hero-stats">
         <div v-for="stat in heroStats" :key="stat.label" class="stat-card">
@@ -55,7 +58,7 @@
           <div class="stat-label">{{ stat.label }}</div>
         </div>
       </div>
-      
+
       <!-- Mini Charts -->
       <div class="hero-charts">
         <div class="chart-row">
@@ -88,7 +91,10 @@
           <div class="col-md-3" @click="goTo('/penugasan-layanan/laporan')">
             <div class="menu-card">
               <div class="menu-icon bg-primary bg-opacity-10">
-                <i class="pi pi-file-lines" style="color: #1e90ff; font-size: 1.75rem; font-weight: 700;"></i>
+                <i
+                  class="pi pi-file-lines"
+                  style="color: #1e90ff; font-size: 1.75rem; font-weight: 700"
+                ></i>
               </div>
               <div class="menu-content">
                 <h5 class="menu-title">Semua Laporan</h5>
@@ -103,7 +109,10 @@
           <div class="col-md-3" @click="goTo('/penugasan-layanan/tugas-saya')">
             <div class="menu-card">
               <div class="menu-icon bg-info bg-opacity-10">
-                <i class="pi pi-briefcase" style="color: #00bcd4; font-size: 1.75rem; font-weight: 700;"></i>
+                <i
+                  class="pi pi-briefcase"
+                  style="color: #00bcd4; font-size: 1.75rem; font-weight: 700"
+                ></i>
               </div>
               <div class="menu-content">
                 <h5 class="menu-title">Tugas Saya</h5>
@@ -118,7 +127,10 @@
           <div class="col-md-3" @click="goTo('/penugasan-layanan/laporan-saya')">
             <div class="menu-card">
               <div class="menu-icon bg-success bg-opacity-10">
-                <i class="pi pi-file" style="color: #00c853; font-size: 1.75rem; font-weight: 700;"></i>
+                <i
+                  class="pi pi-file"
+                  style="color: #00c853; font-size: 1.75rem; font-weight: 700"
+                ></i>
               </div>
               <div class="menu-content">
                 <h5 class="menu-title">Laporan Saya</h5>
@@ -133,7 +145,10 @@
           <div class="col-md-3" @click="showCreateDialog = true">
             <div class="menu-card">
               <div class="menu-icon bg-warning bg-opacity-10">
-                <i class="pi pi-plus" style="color: #ff9800; font-size: 1.75rem; font-weight: 700;"></i>
+                <i
+                  class="pi pi-plus"
+                  style="color: #ff9800; font-size: 1.75rem; font-weight: 700"
+                ></i>
               </div>
               <div class="menu-content">
                 <h5 class="menu-title">Buat Laporan</h5>
@@ -183,7 +198,10 @@
           </Column>
           <Column header="Status" style="min-width: 180px">
             <template #body="slotProps">
-              <StatusBadge :status="slotProps.data.status" :department-name="slotProps.data.bidang_name || 'Bidang'" />
+              <StatusBadge
+                :status="slotProps.data.status"
+                :department-name="slotProps.data.bidang_name || 'Bidang'"
+              />
             </template>
           </Column>
           <Column field="report_date" header="Tanggal" style="min-width: 120px">
@@ -258,7 +276,7 @@ const categoryOptions = [
   { label: 'Obat-obatan/BMHP', value: 'Obat-obatan/BMHP' },
   { label: 'Alat Kesehatan', value: 'alat kesehatan' },
   { label: 'Bangunan', value: 'bangunan' },
-  { label: 'Kebersihan', value: 'kebersihan' }
+  { label: 'Kebersihan', value: 'kebersihan' },
 ]
 
 // Hero stats dari API stats endpoint (tanpa pagination)
@@ -267,14 +285,14 @@ const heroStats = computed(() => [
   { label: 'Tiket Hari Ini', value: reportsStats.value.tickets_today || 0 },
   { label: 'Tiket Minggu Ini', value: reportsStats.value.tickets_this_week || 0 },
   { label: 'Tiket Bulan Ini', value: reportsStats.value.tickets_this_month || 0 },
-  { label: 'Belum Direview', value: reportsStats.value.tickets_unreviewed || 0 }
+  { label: 'Belum Direview', value: reportsStats.value.tickets_unreviewed || 0 },
 ])
 
 // Keep existing computed for charts (menggunakan data lokal untuk detail bulan)
 const ticketsToday = computed(() => {
   const today = format(new Date(), 'yyyy-MM-dd')
-  return store.reports.filter(r => 
-    r.report_date && format(parseISO(r.report_date), 'yyyy-MM-dd') === today
+  return store.reports.filter(
+    (r) => r.report_date && format(parseISO(r.report_date), 'yyyy-MM-dd') === today,
   ).length
 })
 
@@ -283,8 +301,8 @@ const ticketsThisWeek = computed(() => {
   const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()))
   const endOfWeek = new Date(startOfWeek)
   endOfWeek.setDate(startOfWeek.getDate() + 6)
-  
-  return store.reports.filter(r => {
+
+  return store.reports.filter((r) => {
     if (!r.report_date) return false
     const reportDate = parseISO(r.report_date)
     return reportDate >= startOfWeek && reportDate <= endOfWeek
@@ -295,8 +313,8 @@ const ticketsThisMonth = computed(() => {
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-  
-  return store.reports.filter(r => {
+
+  return store.reports.filter((r) => {
     if (!r.report_date) return false
     const reportDate = parseISO(r.report_date)
     return reportDate >= startOfMonth && reportDate <= endOfMonth
@@ -304,12 +322,12 @@ const ticketsThisMonth = computed(() => {
 })
 
 const ticketsUnreviewed = computed(() => {
-  return store.reports.filter(r => r.status === 'pending' || r.status === 'submitted').length
+  return store.reports.filter((r) => r.status === 'pending' || r.status === 'submitted').length
 })
 
 const categoryCounts = computed(() => {
   const counts = {}
-  store.reports.forEach(r => {
+  store.reports.forEach((r) => {
     const category = r.problem_category || 'Lainnya'
     counts[category] = (counts[category] || 0) + 1
   })
@@ -317,31 +335,44 @@ const categoryCounts = computed(() => {
 })
 
 const monthlyChartData = computed(() => {
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des']
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'Mei',
+    'Jun',
+    'Jul',
+    'Ags',
+    'Sep',
+    'Okt',
+    'Nov',
+    'Des',
+  ]
   const incoming = []
   const completed = []
-  
+
   for (let i = 0; i < 12; i++) {
     const startOfMonth = new Date(2026, i, 1)
     const endOfMonth = new Date(2026, i + 1, 0)
-    
-    const incomingCount = store.reports.filter(r => {
+
+    const incomingCount = store.reports.filter((r) => {
       if (!r.report_date) return false
       const reportDate = parseISO(r.report_date)
       return reportDate >= startOfMonth && reportDate <= endOfMonth
     }).length
-    
-    const completedCount = store.reports.filter(r => {
+
+    const completedCount = store.reports.filter((r) => {
       if (r.status !== 'completed') return false
       // Jika ada completed_at, gunakan itu, jika tidak gunakan report_date sebagai fallback
       const completedDate = r.completed_at ? parseISO(r.completed_at) : parseISO(r.report_date)
       return completedDate >= startOfMonth && completedDate <= endOfMonth
     }).length
-    
+
     incoming.push(incomingCount)
     completed.push(completedCount)
   }
-  
+
   return {
     labels: months,
     datasets: [
@@ -350,105 +381,85 @@ const monthlyChartData = computed(() => {
         data: incoming,
         backgroundColor: '#42A5F5',
         borderColor: '#42A5F5',
-        borderWidth: 1
+        borderWidth: 1,
       },
       {
         label: 'Tiket Selesai',
         data: completed,
         backgroundColor: '#66BB6A',
         borderColor: '#66BB6A',
-        borderWidth: 1
-      }
-    ]
+        borderWidth: 1,
+      },
+    ],
   }
 })
 
 const statusChartData = computed(() => {
   // Status yang harus selalu ditampilkan
   const requiredStatuses = [
-    'Diajukan',        // submitted
+    'Diajukan', // submitted
     'Ditugaskan ke Bidang', // assigned_to_dept
-    'Sedang Dikerjakan',    // assigned_to_staff
-    'Ditunda',         // deferred
-    'Selesai'          // completed
+    'Sedang Dikerjakan', // assigned_to_staff
+    'Ditunda', // deferred
+    'Selesai', // completed
   ]
-  
+
   // Mapping dari raw status ke display status
   const statusMapping = {
     submitted: 'Diajukan',
-    reviewed: 'Direview', 
+    reviewed: 'Direview',
     assigned_to_dept: 'Ditugaskan ke Bidang',
     assigned_to_staff: 'Sedang Dikerjakan',
     completed: 'Selesai',
     deferred: 'Ditunda',
-    rejected: 'Ditolak'
+    rejected: 'Ditolak',
   }
-  
+
   // Hitung jumlah untuk setiap status
   const statusCounts = {}
-  requiredStatuses.forEach(status => {
+  requiredStatuses.forEach((status) => {
     statusCounts[status] = 0
   })
-  
-  store.reports.forEach(r => {
+
+  store.reports.forEach((r) => {
     const rawStatus = r.status || 'unknown'
     const displayStatus = statusMapping[rawStatus] || rawStatus
     if (requiredStatuses.includes(displayStatus)) {
       statusCounts[displayStatus] = (statusCounts[displayStatus] || 0) + 1
     }
   })
-  
+
   return {
     labels: requiredStatuses,
     datasets: [
       {
-        data: requiredStatuses.map(status => statusCounts[status] || 0),
+        data: requiredStatuses.map((status) => statusCounts[status] || 0),
         backgroundColor: [
           '#FF6384', // Diajukan
           '#36A2EB', // Ditugaskan ke Bidang
           '#FFCE56', // Sedang Dikerjakan
           '#4BC0C0', // Ditunda
-          '#9966FF'  // Selesai
+          '#9966FF', // Selesai
         ],
-        hoverBackgroundColor: [
-          '#FF6384',
-          '#36A2EB',
-          '#FFCE56',
-          '#4BC0C0',
-          '#9966FF'
-        ]
-      }
-    ]
+        hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
+      },
+    ],
   }
 })
 
 const categoryChartData = computed(() => {
-  const categories = categoryOptions.map(opt => opt.value)
-  const data = categories.map(cat => categoryCounts.value[cat] || 0)
-  
+  const categories = categoryOptions.map((opt) => opt.value)
+  const data = categories.map((cat) => categoryCounts.value[cat] || 0)
+
   return {
-    labels: categoryOptions.map(opt => opt.label),
+    labels: categoryOptions.map((opt) => opt.label),
     datasets: [
       {
         data: data,
-        backgroundColor: [
-          '#FF6384',
-          '#36A2EB', 
-          '#FFCE56',
-          '#4BC0C0',
-          '#9966FF',
-          '#FF9F40'
-        ],
-        hoverBackgroundColor: [
-          '#FF6384',
-          '#36A2EB',
-          '#FFCE56', 
-          '#4BC0C0',
-          '#9966FF',
-          '#FF9F40'
-        ]
-      }
-    ]
+        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'],
+        hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'],
+      },
+    ],
   }
 })
 
@@ -460,11 +471,11 @@ const monthlyChartOptions = {
       position: 'top',
       labels: {
         font: {
-          size: 12
+          size: 12,
         },
         boxWidth: 12,
-        padding: 8
-      }
+        padding: 8,
+      },
     },
     title: {
       display: false,
@@ -474,26 +485,26 @@ const monthlyChartOptions = {
     x: {
       ticks: {
         font: {
-          size: 11
+          size: 11,
         },
-        maxRotation: 45
-      }
+        maxRotation: 45,
+      },
     },
     y: {
       beginAtZero: true,
       ticks: {
         stepSize: 1,
         font: {
-          size: 11
-        }
-      }
-    }
+          size: 11,
+        },
+      },
+    },
   },
   elements: {
     bar: {
       borderRadius: 2,
-    }
-  }
+    },
+  },
 }
 
 const statusChartOptions = {
@@ -505,16 +516,16 @@ const statusChartOptions = {
       align: 'center',
       labels: {
         font: {
-          size: 12
+          size: 12,
         },
         boxWidth: 12,
-        padding: 8
-      }
+        padding: 8,
+      },
     },
     title: {
       display: false,
     },
-  }
+  },
 }
 
 const categoryChartOptions = {
@@ -526,16 +537,16 @@ const categoryChartOptions = {
       align: 'center',
       labels: {
         font: {
-          size: 12
+          size: 12,
         },
         boxWidth: 12,
-        padding: 8
-      }
+        padding: 8,
+      },
     },
     title: {
       display: false,
     },
-  }
+  },
 }
 
 const stats = computed(() => ({
@@ -545,7 +556,8 @@ const stats = computed(() => ({
   completedToday: store.reports.filter(
     (r) =>
       r.status === 'completed' &&
-      format(parseISO(r.completed_at || r.report_date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd'),
+      format(parseISO(r.completed_at || r.report_date), 'yyyy-MM-dd') ===
+        format(new Date(), 'yyyy-MM-dd'),
   ).length,
 }))
 
@@ -605,20 +617,20 @@ const loadData = async () => {
     // Format dates for API call
     const formattedDateFrom = dateFrom.value ? format(dateFrom.value, 'yyyy-MM-dd') : null
     const formattedDateTo = dateTo.value ? format(dateTo.value, 'yyyy-MM-dd') : null
-    
+
     // Parallel fetch: stats untuk header + recent reports dengan pagination dan date filter
     await Promise.all([
-      store.fetchReportsStats({ 
+      store.fetchReportsStats({
         date_from: formattedDateFrom,
-        date_to: formattedDateTo
+        date_to: formattedDateTo,
       }), // Stats dengan date filter
-      store.fetchReports({ 
-        page: currentPage.value, 
+      store.fetchReports({
+        page: currentPage.value,
         limit: pageSize.value,
         date_from: formattedDateFrom,
-        date_to: formattedDateTo
+        date_to: formattedDateTo,
       }), // Data dengan pagination dan date filter
-      store.fetchEnums()
+      store.fetchEnums(),
     ])
   } catch (error) {
     toast.add({
@@ -749,7 +761,7 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: 
+  background:
     radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
     radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
   pointer-events: none;

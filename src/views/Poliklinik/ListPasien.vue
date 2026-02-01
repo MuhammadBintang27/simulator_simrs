@@ -537,11 +537,6 @@
               />
             </div>
           </div>
-          <Message
-            ><small
-              >Perhatian Data ini adalah data pasien Mobil JKN yang belum terbit SEP</small
-            ></Message
-          >
         </div>
       </div>
       <ProgressBar mode="indeterminate" style="height: 3px" v-if="loaddataMjkn"></ProgressBar>
@@ -1113,7 +1108,6 @@ const notif_obat2an_penunjang_v2 = async () => {
       `${url}/index.php/api/transaksi_pasien/notif_obat2an_penunjang_v2`,
       parameter,
     )
-    console.log(response.data.response)
     if (response.data.response.length > 0) {
       listNotifObat2an.value = response.data.response
     }
@@ -1405,12 +1399,6 @@ const fetchData = async (mode) => {
     }))
 
     loading.value = false
-    // toast.add({
-    //   severity: 'success',
-    //   // summary: 'Berhasil',
-    //   detail: `Berhasil memuat ${listpasienStore.value.length} data pasien`,
-    //   life: 3000,
-    // })
   } catch (error) {
     console.error('Error fetching data:', error)
     toast.add({

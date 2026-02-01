@@ -884,7 +884,7 @@ const handleSave = async () => {
       form.value = {
         rm: response.data.no_rm,
       }
-      showSuccess('Suksess')
+      showSuccess(response.data)
 
       if (props.mode == 2) {
         setTimeout(() => {
