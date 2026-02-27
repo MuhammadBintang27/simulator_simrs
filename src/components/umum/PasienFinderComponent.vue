@@ -49,7 +49,7 @@
               label="Cari Transaksi"
               icon="pi pi-search"
               class="w-100"
-              @click="cariTransaksi(13)"
+              @click="cariTransaksi(14)"
               :loading="loading"
             />
           </div>

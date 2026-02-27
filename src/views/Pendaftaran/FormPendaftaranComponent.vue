@@ -700,6 +700,9 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  norm: {
+    type: String,
+  },
 })
 
 import RecentPendaftaranView from '@/views/Pendaftaran/RecentPendaftaranView.vue'

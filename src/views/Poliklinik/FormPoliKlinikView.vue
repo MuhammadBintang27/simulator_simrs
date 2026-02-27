@@ -323,7 +323,6 @@
                           </template>
                           <div class="detail-item">
                             <label>Subjek</label>
-
                             <MultiSelect
                               v-model="selectedKeluhan"
                               optionLabel="caption"
@@ -740,7 +739,6 @@ const getListAlergi = async () => {
     const response = await axios.get(`${url}/index.php/api/satusehat/get_list_alergi/`) // ✅ Cleaner syntax
 
     alargiList.value = [...response.data]
-    console.log('load data alergi', alargiList.value)
     loading.value = false
   } catch (error) {
     console.error('Error fetching data:', error)
@@ -805,7 +803,6 @@ const simpan_data_alergi = async () => {
       payload,
     ) // ✅ Cleaner syntax
 
-    console.log(response.data)
     if (response.data.code == 200) {
       toast.add({
         severity: 'success',
@@ -986,6 +983,7 @@ const SimpaSoap = async () => {
       ...soap,
       kesadaran: getSelectedLevel.value?.display || '',
       kesadaran_code: selectedLevel.value || '',
+      subject_snomad: selectedKeluhan.value,
     }
 
     const url = configStore.apiBaseUrl
@@ -993,6 +991,8 @@ const SimpaSoap = async () => {
       `${url}/index.php/api/transaksi_pasien/save_asesmenkeperawatan`,
       soapData,
     )
+
+    console.log(response.data)
 
     if (response.data == 200) {
       toast.add({
@@ -1090,8 +1090,6 @@ const get_riwayat_lengkap_pasien = async () => {
     const response = await axios.get(
       `${url}/index.php/api/transaksi_pasien/get_riwayat_lengkap_pasien/${id_client.value}/${route.query.nomr}`,
     )
-
-    console.log(response.data)
 
     if (response.data.metadata.code == 200) {
       riwayat.value = response.data.response

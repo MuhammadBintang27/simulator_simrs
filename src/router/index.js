@@ -83,6 +83,8 @@ const ImunisasiView = () => import('@/views/Imunisasi/ImunisasiView.vue')
 
 const EntriImunisasiView = () => import('@/views/Imunisasi/EntriImunisasiView.vue')
 
+const MonitoringRMEBPJS = () => import('@/views/Rme/MonitoringRMEBPJS.vue')
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -364,9 +366,10 @@ const router = createRouter({
           component: EntriImunisasiView,
         },
         {
-          path: 'login',
-          name: 'login',
-          component: LoginView,
+          path: 'monitoring/rme-bpjs',
+          name: 'MonitoringRMEBPJS',
+          meta: { requiresAuth: true },
+          component: MonitoringRMEBPJS,
         },
       ],
     },

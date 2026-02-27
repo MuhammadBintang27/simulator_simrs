@@ -880,6 +880,8 @@ const handleSave = async () => {
     )
     loading.value = false
 
+    console.log(response.data)
+
     if (response.data.code == 200) {
       form.value = {
         rm: response.data.no_rm,

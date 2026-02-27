@@ -392,7 +392,6 @@ const handleAddProcedure = async () => {
     showError('This procedure has already been added')
     return
   }
-
   await addProcedure()
 }
 
@@ -468,7 +467,6 @@ const addProcedure = async () => {
 
     if (response.data?.metadata?.code == 200) {
       showSuccess('Procedure added successfully!')
-
       // Reset form
       selectedProcedure.value = null
       procedureDescription.value = '-'
@@ -577,7 +575,6 @@ const signProcedure = async (index) => {
 
   try {
     // Simulate API call for removal
-
     // Simulate signing process
 
     receipt_no.value = procedure.no_receipt
