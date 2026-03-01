@@ -85,6 +85,8 @@ const EntriImunisasiView = () => import('@/views/Imunisasi/EntriImunisasiView.vu
 
 const MonitoringRMEBPJS = () => import('@/views/Rme/MonitoringRMEBPJS.vue')
 
+const MasterAssetView = () => import('@/views/Asset/MasterAssetView.vue')
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -370,6 +372,12 @@ const router = createRouter({
           name: 'MonitoringRMEBPJS',
           meta: { requiresAuth: true },
           component: MonitoringRMEBPJS,
+        },
+        {
+          path: 'asset/master-asset',
+          name: 'MasterAssetView',
+          meta: { requiresAuth: true },
+          component: MasterAssetView,
         },
       ],
     },
