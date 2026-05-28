@@ -1,327 +1,305 @@
-<template>
+﻿<template>
   <loading_overlay :is-loading="loading" message="Memuat data...." />
-  <div class="card elevation-0">
-    <div class="card-body">
-      <div class="row">
-        <div class="col-md-6">
-          <div class="form-group">
-            <label>Tanggal Jam Masuk RS</label><br />
-            <DatePicker
-              id="tanggal_pulang"
-              v-model="TanggalRawat"
-              dateFormat="dd M yy"
-              placeholder="Pilih tanggal"
-              showIcon
-              showTime
-              hourFormat="24"
-              iconDisplay="input"
-              style="width: 100%"
-            />
-          </div>
-          <div class="form-group" v-if="carabayarSelected?.KODE == 5">
-            <label>Tanggal SEP</label><br />
-            <DatePicker
-              id="tanggal_pulang"
-              v-model="TanggalSEP"
-              dateFormat="dd M yy"
-              placeholder="Pilih tanggal"
-              showIcon
-              iconDisplay="input"
-              style="width: 100%"
-            />
-          </div>
 
-          <div class="form-group">
-            <label>Cara Bayar</label><br />
-
-            <Select
-              v-model="carabayarSelected"
-              :options="listcaraBayar"
-              optionLabel="NAMA"
-              placeholder="Pilih Cara Bayar"
-              class="w-100"
-              filter
-              showClear
-            />
-          </div>
-
-          <div class="form-group">
-            <label>Pilih DPJP</label><br />
-            <Select
-              v-model="dokterSelected"
-              :options="list_dokter"
-              optionLabel="NAMADOKTER"
-              placeholder="Pilih DPJP"
-              class="w-100"
-              filter
-              showClear
-            />
-          </div>
-
-          <!-- <div class="form-group">
-            <label>Spesialisasi</label><br />
-            {{ listPoliKlinik }}
-            <Select
-              v-model="poliKlinikSelected"
-              :options="listPoliKlinik"
-              optionLabel="NAMA"
-              placeholder="Spesialis"
-              class="w-100"
-              filter
-              showClear
-            />
-          </div> -->
-
-          <div class="form-group">
-            <label>Pilih Diagnosa Pasien</label><br />
-            <Select
-              v-model="diagnoseSelected"
-              :options="listDiagnose"
-              optionLabel="dx"
-              :filter="true"
-              :showClear="false"
-              @filter="searchDiagnose"
-              placeholder="Search diagnose..."
-              appendTo="body"
-              style="width: 100%; height: 35px"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>No Kartu BPJS</label><br />
-            <InputText v-model="NoBPJS" style="width: 100%; height: 35px" />
-          </div>
+  <div class="rrn-wrap">
+    <!-- ── Section 1: Identitas & Waktu ── -->
+    <Panel class="rrn-section">
+      <template #header>
+        <div class="rrn-section-head">
+          <i class="pi pi-calendar-clock"></i>
+          <span>Identitas & Waktu Masuk</span>
         </div>
+      </template>
+      <div class="rrn-grid-2">
+        <div class="rrn-field">
+          <label class="rrn-label">Tanggal & Jam Masuk RS <span class="req">*</span></label>
+          <DatePicker
+            v-model="TanggalRawat"
+            dateFormat="dd M yy"
+            placeholder="Pilih tanggal"
+            showIcon
+            showTime
+            hourFormat="24"
+            iconDisplay="input"
+            class="w-100"
+          />
+        </div>
+        <div class="rrn-field" v-if="carabayarSelected?.KODE == 5">
+          <label class="rrn-label">Tanggal SEP <span class="req">*</span></label>
+          <DatePicker
+            v-model="TanggalSEP"
+            dateFormat="dd M yy"
+            placeholder="Pilih tanggal SEP"
+            showIcon
+            iconDisplay="input"
+            class="w-100"
+          />
+        </div>
+        <div class="rrn-field">
+          <label class="rrn-label">No. Kartu BPJS</label>
+          <InputText v-model="NoBPJS" class="w-100" placeholder="No kartu BPJS..." />
+        </div>
+      </div>
+    </Panel>
 
-        <div class="col-md-6">
-          <div class="form-group" v-if="carabayarSelected?.KODE == 5">
-            <label>SPRI (Surat Perintah Rawat Inap)</label><br />
-            <div class="input-group">
-              <InputText v-model="NoSPRI" style="width: 70%" />
-              <Button
-                label="SPRI"
-                severity="success"
-                text
-                @click="callFOrmListSPRI()"
-                icon="pi pi-history"
-                style="height: 35px"
-                class="p-button p-button-secondary round-button2 mt-0"
-              />
-            </div>
-          </div>
+    <!-- ── Section 2: Pelayanan Medis ── -->
+    <Panel class="rrn-section">
+      <template #header>
+        <div class="rrn-section-head">
+          <i class="pi pi-heart"></i>
+          <span>Pelayanan Medis</span>
+        </div>
+      </template>
+      <div class="rrn-grid-2">
+        <div class="rrn-field">
+          <label class="rrn-label">Cara Bayar <span class="req">*</span></label>
+          <Select
+            v-model="carabayarSelected"
+            :options="listcaraBayar"
+            optionLabel="NAMA"
+            placeholder="Pilih Cara Bayar"
+            class="w-100"
+            filter
+            showClear
+          />
+        </div>
+        <div class="rrn-field">
+          <label class="rrn-label">DPJP <span class="req">*</span></label>
+          <Select
+            v-model="dokterSelected"
+            :options="list_dokter"
+            optionLabel="NAMADOKTER"
+            placeholder="Pilih DPJP"
+            class="w-100"
+            filter
+            showClear
+          />
+        </div>
+        <div class="rrn-field rrn-field-full">
+          <label class="rrn-label">Diagnosa Pasien <span class="req">*</span></label>
+          <Select
+            v-model="diagnoseSelected"
+            :options="listDiagnose"
+            optionLabel="dx"
+            :filter="true"
+            :showClear="false"
+            @filter="searchDiagnose"
+            placeholder="Ketik untuk mencari diagnosa ICD..."
+            appendTo="body"
+            class="w-100"
+          />
+        </div>
+      </div>
+    </Panel>
 
-          <div class="form-group">
-            <label>
-              Ruang Rawat Inap
-              <small>update terakhir pada: {{ formatDateTimeForAPI(last_update_ruangan) }}</small>
-            </label>
-            <div class="input-group">
-              <Select
-                v-model="ruanganSelected"
-                :options="listRuangan"
-                optionLabel="NAMA"
-                :filter="true"
-                :showClear="true"
-                :loading="load_ruangan"
-                placeholder="Pilih Ruang Rawat Inap"
-                appendTo="body"
-                style="width: 80%; height: 35px"
-              >
-                <template #option="slotProps">
-                  <div class="flex flex-col gap-1 py-2">
-                    <div class="font-semibold text-sm text-gray-900 dark:text-gray-100">
-                      {{ slotProps.option?.NAMA }}
-                      <span class="ml-1"><small>Tersedia</small></span>
-                      <Tag
-                        severity="success"
-                        :value="slotProps.option?.TERSEDIA"
-                        :class="`text-xs ml-2 px-2 py-1 rounded-full ml-1${slotProps.option?.COLOR}`"
-                        style="font-size: 10px; font-weight: 500"
-                      />
-                      <small class="ml-2">dari</small>
-                      <Tag
-                        severity="success"
-                        :value="slotProps.option?.JUMLAH_TT"
-                        :class="`text-xs px-2 py-1 rounded-full ml-1`"
-                        style="font-size: 10px; font-weight: 500"
-                      />
-                      <!-- <small class="ml-1"> {{ slotProps.option.LAST_UPDATE_KELUAR }}</small> -->
-                    </div>
-                  </div>
-                </template>
-              </Select>
-              <Button
-                small
-                class="text"
-                @click="getRuangan"
-                style="height: 35px"
-                :loading="load_ruangan"
-                text
-                icon="pi pi-refresh"
-              />
-            </div>
-          </div>
+    <!-- ── Section 3: Penempatan ── -->
+    <Panel class="rrn-section">
+      <template #header>
+        <div class="rrn-section-head">
+          <i class="pi pi-building"></i>
+          <span>Penempatan Rawat Inap</span>
+        </div>
+      </template>
 
-          <div class="form-group">
-            <div style="display: flex; align-items: center; margin-top: 3rem; margin-bottom: 25px">
-              <Checkbox v-model="pasienkatarak" :binary="true" id="pasienkatarak" />
-              <label
-                for="pasienkatarak"
-                style="margin-left: 8px; margin-bottom: 0em; cursor: pointer"
-              >
-                Pasien Katarak
-              </label>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="font-bold">Naik Kelas Rawat <span class="text-danger">*</span></label>
-
-            <Select
-              v-model="selectedKelas"
-              :options="klsRawatNaik"
-              optionLabel="caption"
-              placeholder="Pilih Kelas Rawat"
-              class="w-100"
-            />
-          </div>
-
-          <!-- Traffic Accident -->
-          <div class="form-group">
-            <label class="font-bold">Pasien KLL? <span class="text-danger">*</span></label>
-            <Select
-              v-model="lakaLantasSelected"
-              :options="lakaLantasOptions"
-              optionLabel="caption"
-              placeholder="Pilih status KLL"
-              class="w-100"
-            />
-          </div>
-
-          <!-- Traffic Accident Details (conditional) -->
-          <div v-if="lakaLantasSelected.code > 0" class="kll-details">
-            <div class="form-group">
-              <label class="font-bold">Tanggal KLL <span class="text-danger">*</span></label>
-              <DatePicker
-                v-model="tanggalKLL"
-                :showIcon="true"
-                view="date"
-                dateFormat="dd/mm/yy"
-                :yearNavigator="true"
-                yearRange="2000:2030"
-                placeholder="Pilih Tanggal KLL"
-                class="w-100"
-              />
-            </div>
-
-            <div class="form-group">
-              <label class="font-bold"
-                >Provinsi Lokasi KLL <span class="text-danger">*</span></label
-              >
-              <Select
-                v-model="provinsiKLL"
-                :options="provinsiOptions"
-                optionLabel="nama"
-                :filter="true"
-                :showClear="true"
-                @change="GeKabupaten_bpjs"
-                placeholder="Pilih Provinsi"
-                class="w-100"
-              />
-            </div>
-
-            <div class="form-group">
-              <label class="font-bold">Kabupaten/Kota <span class="text-danger">*</span></label>
-
-              <Select
-                v-model="kabupatenKLL"
-                :options="kabupatenOptions"
-                optionLabel="nama"
-                :filter="true"
-                :showClear="true"
-                :disabled="!provinsiKLL"
-                @change="GetKecamatan_bpjs"
-                placeholder="Pilih Kabupaten/Kota"
-                :loading="loading_load_kab"
-                class="w-100"
-              />
-            </div>
-
-            <div class="form-group">
-              <label class="font-bold">Kecamatan <span class="text-danger">*</span></label>
-
-              <Select
-                v-model="kecamatanKLL"
-                :options="kecamatanOptions"
-                optionLabel="nama"
-                :filter="true"
-                :showClear="true"
-                :disabled="!kabupatenKLL"
-                :loading="loading_load_kec"
-                placeholder="Pilih Kecamatan"
-                class="w-100"
-              />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Catatan</label><br />
-            <Textarea v-model="Catatan" style="width: 100%" rows="3" />
-          </div>
-
-          <!-- <div class="form-group">
-            <label>NOSEP</label><br />
-            <div class="input-group">
-              <InputText v-model="nomor_sep" style="width: 70%" />
-              <Button
-                label="SPRI"
-                severity="success"
-                text
-                @click="callFOrmListSPRI()"
-                icon="pi pi-history"
-                style="height: 35px"
-                class="p-button p-button-secondary round-button2 mt-0"
-              />
-            </div>
-          </div> -->
+      <div class="rrn-field">
+        <label class="rrn-label">
+          Ruang Rawat Inap <span class="req">*</span>
+          <span class="rrn-label-meta">
+            <i class="pi pi-clock"></i>
+            Diperbarui: {{ formatDateTimeForAPI(last_update_ruangan) }}
+          </span>
+        </label>
+        <div class="d-flex gap-2">
+          <Select
+            v-model="ruanganSelected"
+            :options="listRuangan"
+            optionLabel="NAMA"
+            :filter="true"
+            :showClear="true"
+            :loading="load_ruangan"
+            placeholder="Pilih Ruang Rawat Inap"
+            appendTo="body"
+            class="flex-grow-1"
+          >
+            <template #option="slotProps">
+              <div class="ruang-option">
+                <span class="ruang-name">{{ slotProps.option?.NAMA }}</span>
+                <div class="ruang-meta">
+                  <Tag
+                    :severity="slotProps.option?.TERSEDIA > 0 ? 'success' : 'danger'"
+                    :value="`${slotProps.option?.TERSEDIA} tersedia`"
+                    style="font-size: 10px"
+                  />
+                  <span class="ruang-total">dari {{ slotProps.option?.JUMLAH_TT }} TT</span>
+                </div>
+              </div>
+            </template>
+          </Select>
+          <Button
+            icon="pi pi-refresh"
+            text
+            severity="secondary"
+            :loading="load_ruangan"
+            @click="getRuangan"
+            v-tooltip.top="'Perbarui daftar ruangan'"
+          />
         </div>
       </div>
 
-      <hr />
-
-      <div class="flex justify-content-between align-items-center mt-3">
-        <div class="flex gap-2">
+      <div class="rrn-field mt-3" v-if="carabayarSelected?.KODE == 5">
+        <label class="rrn-label">No. SPRI (Surat Perintah Rawat Inap)</label>
+        <div class="d-flex gap-2">
+          <InputText v-model="NoSPRI" class="flex-grow-1" placeholder="Nomor SPRI..." />
           <Button
-            label="Rujuk Ke Rawat Inap"
-            icon="pi pi-save"
-            class="p-button p-button-success"
-            @click="submitForm"
-          />
-          <!-- <Button
-            label="Reset"
-            icon="pi pi-refresh"
-            class="p-button p-button-secondary ml-2"
-            @click="hapusSEP"
-          /> -->
-          <Button
-            label="Riwayat Pendaftaran"
-            severity="warn"
-            icon="pi pi-save"
-            class="p-button p-button-success ml-2"
-            @click="callChildFetch"
-          />
-          <Button
-            label="Cetak SEP"
-            severity="info"
-            icon="pi pi-print"
-            class="p-button p-button-success ml-2"
-            @click="CetakSEP"
+            label="Riwayat SPRI"
+            severity="success"
+            outlined
+            icon="pi pi-history"
+            @click="callFOrmListSPRI()"
           />
         </div>
+      </div>
+    </Panel>
+
+    <!-- ── Section 4: Informasi Tambahan ── -->
+    <Panel class="rrn-section">
+      <template #header>
+        <div class="rrn-section-head">
+          <i class="pi pi-list"></i>
+          <span>Informasi Tambahan</span>
+        </div>
+      </template>
+      <div class="rrn-grid-2">
+        <div class="rrn-field">
+          <label class="rrn-label">Naik Kelas Rawat</label>
+          <Select
+            v-model="selectedKelas"
+            :options="klsRawatNaik"
+            optionLabel="caption"
+            placeholder="Pilih Kelas (opsional)"
+            class="w-100"
+            showClear
+          />
+        </div>
+        <div class="rrn-field">
+          <label class="rrn-label">Status KLL</label>
+          <Select
+            v-model="lakaLantasSelected"
+            :options="lakaLantasOptions"
+            optionLabel="caption"
+            placeholder="Pilih status KLL"
+            class="w-100"
+          />
+        </div>
+        <div class="rrn-field rrn-field-full">
+          <label class="rrn-label">Catatan</label>
+          <Textarea v-model="Catatan" class="w-100" rows="3" placeholder="Catatan tambahan..." />
+        </div>
+        <div class="rrn-field rrn-field-full">
+          <div class="rrn-checkbox-row">
+            <Checkbox v-model="pasienkatarak" :binary="true" inputId="pasienkatarak" />
+            <label for="pasienkatarak" class="rrn-checkbox-label">Pasien Katarak</label>
+          </div>
+        </div>
+      </div>
+    </Panel>
+
+    <!-- ── Section KLL (conditional) ── -->
+    <Panel class="rrn-section rrn-section-kll" v-if="lakaLantasSelected.code > 0">
+      <template #header>
+        <div class="rrn-section-head rrn-section-head-warn">
+          <i class="pi pi-exclamation-triangle"></i>
+          <span>Detail Kecelakaan Lalu Lintas (KLL)</span>
+        </div>
+      </template>
+      <div class="rrn-grid-2">
+        <div class="rrn-field">
+          <label class="rrn-label">Tanggal KLL <span class="req">*</span></label>
+          <DatePicker
+            v-model="tanggalKLL"
+            showIcon
+            dateFormat="dd/mm/yy"
+            placeholder="Pilih Tanggal KLL"
+            class="w-100"
+          />
+        </div>
+        <div class="rrn-field">
+          <label class="rrn-label">Provinsi Lokasi KLL <span class="req">*</span></label>
+          <Select
+            v-model="provinsiKLL"
+            :options="provinsiOptions"
+            optionLabel="nama"
+            filter
+            showClear
+            @change="GeKabupaten_bpjs"
+            placeholder="Pilih Provinsi"
+            class="w-100"
+          />
+        </div>
+        <div class="rrn-field">
+          <label class="rrn-label">Kabupaten / Kota <span class="req">*</span></label>
+          <Select
+            v-model="kabupatenKLL"
+            :options="kabupatenOptions"
+            optionLabel="nama"
+            filter
+            showClear
+            :disabled="!provinsiKLL"
+            @change="GetKecamatan_bpjs"
+            placeholder="Pilih Kabupaten/Kota"
+            :loading="loading_load_kab"
+            class="w-100"
+          />
+        </div>
+        <div class="rrn-field">
+          <label class="rrn-label">Kecamatan <span class="req">*</span></label>
+          <Select
+            v-model="kecamatanKLL"
+            :options="kecamatanOptions"
+            optionLabel="nama"
+            filter
+            showClear
+            :disabled="!kabupatenKLL"
+            :loading="loading_load_kec"
+            placeholder="Pilih Kecamatan"
+            class="w-100"
+          />
+        </div>
+      </div>
+    </Panel>
+
+    <!-- ── Action Bar ── -->
+    <div class="rrn-action-bar">
+      <div class="rrn-action-left">
+        <Button
+          label="Riwayat Pendaftaran"
+          icon="pi pi-history"
+          severity="secondary"
+          outlined
+          @click="callChildFetch"
+        />
+        <Button label="Cetak SEP" icon="pi pi-print" severity="info" outlined @click="CetakSEP" />
+        <Button
+          label="Histori BPJS"
+          icon="pi pi-clock"
+          severity="warn"
+          outlined
+          @click="riwayatBpjsRef.open()"
+        />
+      </div>
+      <div class="rrn-action-right">
+        <Button
+          label="Rujuk ke Rawat Inap"
+          icon="pi pi-arrow-right"
+          severity="success"
+          :loading="loading"
+          @click="submitForm"
+        />
       </div>
     </div>
   </div>
-  <RecentPendaftaranView ref="childRef"></RecentPendaftaranView>
+
+  <RecentPendaftaranView ref="childRef" />
 
   <!-- <Dialog
     v-model:visible="showListSPRI"
@@ -637,8 +615,18 @@
         class="p-button p-button-secondary flex-button"
         :class="{ 'w-full': isMobile }"
       />
+
+      <Button
+        label="Riwayat SPRI BPJS (Server BPJS)"
+        icon="pi pi-history"
+        severity="info"
+        @click="spriDialogRef.open()"
+      />
     </div>
   </Dialog>
+
+  <SPRIDialog ref="spriDialogRef" :noKartu="NoBPJS" />
+  <RiwayatBPJSDialog ref="riwayatBpjsRef" :noKartu="NoBPJS" />
 </template>
 
 <script setup>
@@ -667,6 +655,12 @@ const { id_client, user_id, company } = storeToRefs(authStore)
 const toast = useToast()
 
 import RecentPendaftaranView from '@/views/Pendaftaran/RecentPendaftaranView.vue'
+
+import SPRIDialog from '@/views/Pendaftaran/SpriDataBPJSComponent.vue'
+import RiwayatBPJSDialog from '@/views/Pendaftaran/RiwayatBPJSComponent.vue'
+const riwayatBpjsRef = ref(null)
+const spriDialogRef = ref(null)
+
 
 const lakaLantasSelected = ref({
   caption: '0 - Bukan Kecelakaan lalu lintas [BKLL]',
@@ -723,10 +717,6 @@ const lakaLantasOptions = ref([
 ])
 
 const selectedKelas = ref(null)
-
-const klsRawatHak = ref({
-  kode: '',
-})
 
 const isMobile = ref(false)
 
@@ -953,7 +943,6 @@ const doterbitkanSPRI = async () => {
       user_id: user_id.value,
       id_client: id_client.value,
     }
- 
 
     const url = configStore.apiBaseUrl
     const response = await axios.post(`${url}/index.php/api/transaksi_pasien/terbitkan_SPRI`, param)
@@ -1138,8 +1127,6 @@ const hapusSEP = async () => {
   showInfo(response.data.metaData.message)
 }
 
-const noSEP = ref(null)
-
 const tempNOSEP = ref('')
 const tempNOREG = ref('')
 
@@ -1225,6 +1212,7 @@ const PrintSEP = async (nosep, noregister) => {
       NOPENDAFTARAN: noregister,
       NOSEP: nosep,
       id_client: id_client.value,
+      NORM: route.query.nomr,
     },
   }
 
@@ -1389,6 +1377,106 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.rrn-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rrn-section {
+  border-radius: 8px;
+}
+.rrn-section-kll {
+  border-color: #fde68a;
+}
+.rrn-section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 13px;
+}
+.rrn-section-head-warn {
+  color: #b45309;
+}
+.rrn-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.rrn-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.rrn-field-full {
+  grid-column: 1 / -1;
+}
+.rrn-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6c757d;
+}
+.req {
+  color: #dc3545;
+}
+.rrn-label-meta {
+  font-size: 10px;
+  color: #adb5bd;
+}
+.rrn-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  width: fit-content;
+}
+.rrn-checkbox-label {
+  font-size: 13px;
+  cursor: pointer;
+  margin: 0;
+  font-weight: 500;
+}
+.ruang-option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 2px 0;
+}
+.ruang-name {
+  font-size: 13px;
+  font-weight: 500;
+}
+.ruang-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ruang-total {
+  font-size: 11px;
+  color: #6c757d;
+}
+.rrn-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.rrn-action-left {
+  display: flex;
+  gap: 8px;
+}
+.rrn-action-right {
+  display: flex;
+  gap: 8px;
+}
 .kll-details {
   background-color: #f8f9fa;
   border: 1px solid #dee2e6;

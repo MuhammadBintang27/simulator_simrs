@@ -198,6 +198,7 @@ const detailsBill = async () => {
   try {
     const res = await axios.post(`${url}/index.php/api/laporan/history_berobat_pasien/${paramURL}`)
 
+    console.log(res.data)
     if (res.data && res.data.length > 0) {
       datarincianMedis.value = res.data[0]
       datarincianMedis.value.PASIEN = res.data[0].PASIEN[0]

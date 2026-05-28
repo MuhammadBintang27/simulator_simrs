@@ -205,6 +205,14 @@
           @click="listRujukan()"
         >
         </Button>
+        <Button
+          class="round-button2"
+          severity="info"
+          icon="pi pi-cloud-download"
+          label="RUJUKAN SERVER BPJS"
+          @click="showRujukanServerBPJS = true"
+        >
+        </Button>
       </div>
     </div>
   </div>
@@ -268,6 +276,8 @@
       </Column>
     </DataTable>
   </Dialog>
+
+  <RujukanServerBPJS v-model:visible="showRujukanServerBPJS" :datapasien="datapasien" />
 
   <Dialog
     v-model:visible="showConfirmDelete"
@@ -358,7 +368,10 @@ const Catatan = ref('-')
 
 import { RouterLink, useRoute } from 'vue-router'
 import { type } from 'jquery'
+import RujukanServerBPJS from '@/components/PoliklinikComponent/RujukanServerBPJS.vue'
 const route = useRoute()
+
+const showRujukanServerBPJS = ref(false)
 
 // Props
 const props = defineProps({
@@ -652,7 +665,7 @@ const getSpesialistik = async () => {
 
   const payload = {
     kode_rs: faskesSelected.value.kode,
-    tanggal_rujuk: formatDateOnlyForAPI(tanggalRujuk.value),
+    tanggal_rujuk: formatDateOnlyForAPI(tanggalRencanaKunjungan.value),
     id_client: id_client.value,
   }
 
@@ -664,6 +677,7 @@ const getSpesialistik = async () => {
       payload,
     )
 
+    console.log('Get specialists response:', response.data)
     if (response.data && response.data.response && response.data.response.list) {
       listSpesialis.value = response.data.response.list
       // console.log('Specialists loaded:', listSpesialis.value)

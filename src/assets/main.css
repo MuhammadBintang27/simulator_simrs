@@ -33,3 +33,25 @@ a,
     padding: 0 2rem;
   }
 }
+
+/* ── Global Print: sembunyikan layout AdminLTE, hanya konten halaman yang tercetak ── */
+@media print {
+  .main-sidebar,
+  .main-header,
+  .content-header,
+  .breadcrumb,
+  .main-footer {
+    display: none !important;
+  }
+
+  .content-wrapper {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  body,
+  .wrapper {
+    overflow: visible !important;
+  }
+}

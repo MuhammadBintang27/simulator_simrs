@@ -27,8 +27,8 @@
               <td>{{ fact?.NOMR }}</td>
             </tr>
             <tr>
-              <th>Usia</th>
-              <td>{{ fact?.USIA }}</td>
+              <th>Tgl Lahir / Usia</th>
+              <td>{{ fact?.TGLLAHIR }} / ({{ fact?.USIA }})</td>
             </tr>
             <tr>
               <th>Alamat</th>
@@ -65,6 +65,15 @@
     <!-- HASIL PEMERIKSAAN LABORATORIUM -->
     <!-- HASIL PEMERIKSAAN LABORATORIUM -->
     <div class="mt-4">
+      <div class="row">
+        <div class="col-md-4">
+          <h6 class="fw-bold">KLINIS</h6>
+          <p style="min-height: 4em; border: 1px solid #ddd; padding: 0.5rem; border-radius: 4px">
+            {{ fact?.KLINIS }}
+          </p>
+        </div>
+        <div class="col-md-4"></div>
+      </div>
       <h6 class="fw-bold">Daftar Permintaan Pemeriksaan</h6>
 
       <table class="table table-bordered table-sm table-orange table-striped table-compact">

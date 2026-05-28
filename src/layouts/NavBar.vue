@@ -3,9 +3,9 @@
     <!-- Left navbar links -->
     <ul class="navbar-nav">
       <li class="nav-item">
-        <a class="nav-link" data-widget="pushmenu" href="#" role="button"
-          ><i class="fas fa-bars"></i
-        ></a>
+        <a class="nav-link" href="#" role="button" @click.prevent="toggleSidebar">
+          <i class="fas fa-bars"></i>
+        </a>
       </li>
       <li class="nav-item d-none d-sm-inline-block">
         <a href="#" class="nav-link"
@@ -89,15 +89,20 @@
 </template>
 <script setup>
 import { onMounted } from 'vue'
-import { useAuthStore, useConfigStore } from '@/stores/config' // Adjust path based on your project structure
+import { useAuthStore, useConfigStore } from '@/stores/config'
 import { storeToRefs } from 'pinia'
 const authStore = useAuthStore()
-const { id_client, user_name, company } = storeToRefs(authStore) // Makes it reactive
+const configStore = useConfigStore()
+const { user_name, company } = storeToRefs(authStore)
+
+const toggleSidebar = () => {
+  configStore.toggleSidebar()
+}
 
 const logout = () => {
   localStorage.removeItem('token')
   localStorage.removeItem('token_expires_at')
   authStore.clearAuthData()
-  window.location.href = '/login' // Redirect to login
+  window.location.href = '/login'
 }
 </script>

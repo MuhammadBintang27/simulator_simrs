@@ -88,184 +88,339 @@
       </div>
     </div>
 
-    <div class="card elevation-0">
-      <div class="card-header">
-        <Button label="Semua Data" severity="warn" @click="fetchDataWithStatus(null)">
-          <template #icon>
-            <i class="fa-solid fa-list"></i>
-          </template>
-        </Button>
-
-        <Button label="Selesai" severity="success" @click="fetchDataWithStatus('C')">
-          <template #icon>
-            <i class="fa-solid fa-check"></i>
-          </template>
-        </Button>
-
-        <Button label="Refresh" severity="info" @click="fetchData(1)">
-          <template #icon>
-            <i class="fa-solid fa-rotate"></i>
-          </template>
-        </Button>
+    <!-- Table Section -->
+    <div class="tabs-section">
+      <div class="table-header">
+        <h3 class="table-title">
+          <i class="pi pi-list"></i>
+          Daftar Permintaan Lab ({{ filteredData.length }})
+        </h3>
+        <div class="table-actions">
+          <Button
+            label="Semua"
+            icon="pi pi-list"
+            severity="warn"
+            outlined
+            size="small"
+            @click="fetchDataWithStatus(null)"
+          />
+          <Button
+            label="Selesai"
+            icon="pi pi-check"
+            severity="success"
+            outlined
+            size="small"
+            @click="fetchDataWithStatus('C')"
+          />
+          <Button
+            label="Refresh"
+            icon="pi pi-refresh"
+            severity="secondary"
+            outlined
+            size="small"
+            :loading="loading"
+            @click="fetchData(1)"
+          />
+        </div>
       </div>
 
-      <div class="card-body">
-        <DataTable
-          :value="filteredData"
-          striped-rows
-          showGridlines
-          paginator
-          rowHover
-          responsiveLayout="scroll"
-          scrollable
-          scrollHeight="70vh"
-          :rows="25"
-          :rowsPerPageOptions="[5, 10, 20, 25, 50, 100]"
-          tableStyle="min-width: 50rem"
-        >
-          <!-- TRANS -->
-          <Column field="TRANS" header="TRANS" style="max-width: 11em"></Column>
+      <DataTable
+        :value="filteredData"
+        striped-rows
+        paginator
+        rowHover
+        responsiveLayout="scroll"
+        scrollable
+        scrollHeight="65vh"
+        :rows="25"
+        :rowsPerPageOptions="[10, 25, 50, 100]"
+        size="small"
+        class="elegant-datatable"
+        tableStyle="min-width: 60rem"
+        currentPageReportTemplate="{first}-{last} dari {totalRecords}"
+        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport"
+      >
+        <!-- Status -->
+        <Column field="STATUS_PROGRESS" header="Status" style="width: 80px" frozen>
+          <template #body="{ data }">
+            <Tag
+              :severity="getStatusColorClass(data.STATUS_PROGRESS)"
+              :value="
+                data.STATUS_PROGRESS === 'C'
+                  ? 'Selesai'
+                  : data.STATUS_PROGRESS === 'P'
+                    ? 'Proses'
+                    : 'Baru'
+              "
+              style="font-size: 0.68rem; padding: 2px 7px"
+            />
+          </template>
+        </Column>
 
-          <!-- STATUS -->
-          <Column field="STATUS_PROGRESS" header="STTS" style="text-align: center; max-width: 5em">
-            <template #body="{ data }">
-              <Tag :severity="getStatusColorClass(data.STATUS_PROGRESS)" role="status">
-                {{ data.STATUS_PROGRESS }}
-              </Tag>
-            </template>
-          </Column>
+        <!-- Tanggal -->
+        <Column field="TANGGAL" header="Tanggal" style="width: 90px" sortable>
+          <template #body="{ data }">
+            <span class="col-date">{{ formatDateTimeForAPI_V2(data.TANGGAL) }}</span>
+          </template>
+        </Column>
 
-          <!-- WAKTU -->
-          <Column field="TANGGAL" header="WAKTU">
-            <template #body="{ data }">
-              {{ formatDateTimeForAPI_V2(data.TANGGAL) }}
-            </template>
-          </Column>
+        <!-- No. Trans -->
+        <Column field="TRANS" header="No. Trans" style="width: 130px" sortable>
+          <template #body="{ data }">
+            <span class="col-trans">{{ data.TRANS }}</span>
+          </template>
+        </Column>
 
-          <!-- NOMR -->
-          <Column field="NOMR" header="NOMR" sortable></Column>
+        <!-- Pasien -->
+        <Column field="NAMA" header="Informasi Pasien" style="min-width: 180px" sortable>
+          <template #body="{ data }">
+            <div class="patient-info">
+              <div class="patient-header">
+                <div class="patient-details">
+                  <strong class="patient-name">
+                    {{ data.NAMA }}
+                    <i
+                      :class="data.JENISKELAMIN === 'P' ? 'fa fa-venus' : 'fa fa-mars'"
+                      :style="{
+                        fontSize: '13px',
+                        color: data.JENISKELAMIN === 'P' ? 'violet' : 'steelblue',
+                      }"
+                    ></i>
+                  </strong>
+                  <div class="patient-extra">{{ data.NOMR }}</div>
+                </div>
+              </div>
+            </div>
+          </template>
+        </Column>
 
-          <!-- NAMA -->
-          <Column field="NAMA" header="NAMA" style="max-width: 14em" sortable></Column>
+        <!-- DPJP + Poli -->
+        <Column field="DPJP" header="DPJP / Unit" style="min-width: 160px" sortable>
+          <template #body="{ data }">
+            <div class="address-info dpjp-block">
+              <i class="pi pi-users" style="color: darkturquoise; margin-right: 8px"></i>
+              <div>
+                <span class="dpjp-nama">{{ data.DPJP }}</span>
+                <span class="dpjp-poli">{{ data.POLI_RUANG }}</span>
+              </div>
+            </div>
+          </template>
+        </Column>
 
-          <!-- ALAMAT -->
-          <Column field="ALAMAT" header="ALAMAT" sortable></Column>
+        <!-- Klinis -->
+        <Column field="KLINIS" header="Klinis" style="min-width: 130px" sortable>
+          <template #body="{ data }">
+            <span class="col-klinis" :title="data.KLINIS">{{ data.KLINIS }}</span>
+          </template>
+        </Column>
 
-          <!-- DPJP -->
-          <Column field="DPJP" header="DPJP" sortable></Column>
-          <Column field="POLI_RUANG" header="POLI/RUANG" sortable></Column>
+        <!-- Jenis Rawat + Cara Bayar -->
+        <Column field="JENISRAWAT" header="Rawat / CB" style="width: 120px">
+          <template #body="{ data }">
+            <div class="mr-badge rawat-block">
+              <i class="pi pi-id-card" style="margin-right: 6px"></i>
+              <div>
+                <span class="rawat-jenis">{{ data.JENISRAWAT }}</span>
+                <span class="rawat-cb">{{ data.CARABAYAR }}</span>
+              </div>
+            </div>
+          </template>
+        </Column>
 
-          <!-- JENIS RAWAT -->
-          <Column field="JENISRAWAT" header="JENISRAWAT" sortable></Column>
+        <!-- Timeline Waktu -->
+        <Column header="Waktu Proses" style="width: 145px">
+          <template #body="{ data }">
+            <div class="col-timeline">
+              <div v-if="data.MASUK" class="timeline-row">
+                <i class="pi pi-sign-in timeline-icon icon-masuk"></i>
+                <span>{{ data.MASUK }}</span>
+              </div>
+              <div v-if="data.PROSES" class="timeline-row">
+                <i class="pi pi-cog timeline-icon icon-proses"></i>
+                <span>{{ data.PROSES }}</span>
+              </div>
+              <div v-if="data.SELESAI" class="timeline-row">
+                <i class="pi pi-check-circle timeline-icon icon-selesai"></i>
+                <span>{{ data.SELESAI }}</span>
+              </div>
+            </div>
+          </template>
+        </Column>
 
-          <!-- CARA BAYAR -->
-          <Column field="CARABAYAR" header="CB" style="max-width: 5em" sortable></Column>
+        <!-- Aksi -->
+        <Column header="Aksi" style="width: 160px; text-align: center" frozen alignFrozen="right">
+          <template #body="{ data }">
+            <div class="action-buttons">
+              <Button
+                icon="pi pi-vial"
+                label="Spesimen"
+                :severity="data.STTS_SPESIMEN === 'A' ? 'success' : 'secondary'"
+                :outlined="data.STTS_SPESIMEN !== 'A'"
+                size="small"
+                class="specimen-action-button p-button-sm"
+                v-tooltip.top="data.STTS_SPESIMEN === 'A' ? 'Spesimen Terisi' : 'Input Spesimen'"
+                @click="CallSpesimenForm(data)"
+              />
+              <Button
+                icon="pi pi-arrow-right"
+                severity="info"
+                size="small"
+                outlined
+                class="process-action-button p-button-sm"
+                v-tooltip.top="'Proses Hasil Lab'"
+                @click="prosesHasilLab(data)"
+              />
+            </div>
+          </template>
+        </Column>
+      </DataTable>
 
-          <!-- MASUK -->
-          <Column field="MASUK" header="MASUK" sortable></Column>
-
-          <!-- PROSES -->
-          <Column field="PROSES" header="PROSES" sortable></Column>
-
-          <!-- SELESAI -->
-          <Column field="SELESAI" header="SELESAI" sortable></Column>
-
-          <!-- AKSI -->
-          <Column header="AKSI" style="min-width: 8em; text-align: center">
-            <template #body="{ data }">
-              <span v-if="data.STTS_SPESIMEN == 'A'">
-                <i class="fas fa-check-circle fa-1x" style="color: cornflowerblue"></i>
-              </span>
-              <span v-else>
-                <i class="fas fa-minus-circle fa-1x" style="color: gray"></i>
-              </span>
-
-              <button class="btn btn-xs btn-default" @click="CallSpesimenForm(data)">
-                Spesimen
-              </button>
-            </template>
-          </Column>
-          <Column header="AKSI" style="text-align: center">
-            <template #body="{ data }">
-              <button class="btn btn-sm btn-default" @click="prosesHasilLab(data)">
-                <i class="fa-solid fa-search"></i>
-              </button>
-            </template>
-          </Column>
-        </DataTable>
+      <!-- Empty State -->
+      <div v-if="!loading && filteredData.length === 0" class="empty-state">
+        <i class="pi pi-inbox empty-icon"></i>
+        <h3 class="empty-title">Tidak Ada Data Permintaan Lab</h3>
+        <p class="empty-description">
+          Belum ada data permintaan pemeriksaan lab yang sesuai dengan filter yang dipilih. Coba
+          ubah kriteria pencarian atau refresh data.
+        </p>
       </div>
     </div>
   </div>
 
+  <!-- ===== SPESIMEN DIALOG ===== -->
   <Dialog
     v-model:visible="showSpesimen"
-    :style="{ width: '700px' }"
+    :style="{ width: '620px' }"
     :modal="true"
+    :draggable="false"
     :closable="false"
   >
-    <Panel class="container-fluid">
-      <template #header> <h5>Spesimen Pasien</h5> </template>
-      <!-- Jenis Spesimen -->
-      <div class="form-group row mb-2">
-        <label class="col-md-3 col-form-label">Jenis Spesimen</label>
-        <div class="col-md-9">
-          <MultiSelect
-            :maxSelectedLabels="3"
-            style="width: 100%"
-            v-model="spesimen.type"
-            :options="spesimenTypeList"
-            @change="get_by_kategori"
-            placeholder="Pilih jenis spesimen"
-            optionLabel="label"
-            class="w-full"
-            filter
-          />
+    <template #header>
+      <div class="spesimen-dialog-header">
+        <div class="spesimen-dialog-icon">
+          <i class="fas fa-vial"></i>
         </div>
-      </div>
-      <!-- Metode Pengambilan -->
-      <div class="form-group row mb-2">
-        <label class="col-md-3 col-form-label">Metode</label>
-        <div class="col-md-9">
-          <MultiSelect
-            :maxSelectedLabels="3"
-            v-model="spesimen.collectionMethod"
-            :options="metodeList"
-            placeholder="Pilih metode"
-            class="w-full"
-            :loading="loadingMethod"
-            optionLabel="display_id"
-            style="width: 100%"
-          />
-        </div>
-      </div>
-      <!-- Waktu Diterima -->
-      <div class="form-group row mb-2">
-        <label class="col-md-3 col-form-label">Waktu Diterima</label>
-        <div class="col-md-9">
-          <DatePicker v-model="spesimen.receivedTime" showTime hourFormat="24" class="w-full" />
-        </div>
-      </div>
-
-      <!-- Waktu Diterima -->
-      <div class="form-group row mb-2">
-        <label class="col-md-3 col-form-label">Item Pemeriksaan</label>
-        <div class="col-md-9">
-          <span v-for="(item, index) in itemPemeriksaan" :key="index">
-            <small><Tag :value="item.NAMABARANG" class="ml-1 mt-1"></Tag></small>
+        <div class="spesimen-dialog-title">
+          <span class="dialog-title-main">Input Spesimen Pasien</span>
+          <span v-if="tempRowdata" class="dialog-title-sub">
+            {{ tempRowdata?.NAMA }} &mdash; {{ tempRowdata?.NOMR }}
           </span>
         </div>
       </div>
-    </Panel>
+    </template>
 
-    <div class="flex justify-content-end gap-2 mt-3">
-      <Button
-        label="Batal"
-        icon="pi pi-times"
-        class="p-button-secondary"
-        @click="showSpesimen = false"
-      />
-      <Button label="Simpan" icon="pi pi-save" class="p-button-success" @click="simpanSpesimen" />
+    <div class="spesimen-form">
+      <!-- Patient Info Strip -->
+      <div v-if="tempRowdata" class="patient-info-strip mb-3">
+        <div class="pi-item">
+          <span class="pi-label">No. Trans</span>
+          <span class="pi-value mono">{{ tempRowdata.TRANS }}</span>
+        </div>
+        <div class="pi-item">
+          <span class="pi-label">Unit / Poli</span>
+          <span class="pi-value">{{ tempRowdata.POLI_RUANG }}</span>
+        </div>
+        <div class="pi-item">
+          <span class="pi-label">DPJP</span>
+          <span class="pi-value">{{ tempRowdata.DPJP }}</span>
+        </div>
+        <div class="pi-item">
+          <span class="pi-label">Klinis</span>
+          <span class="pi-value">{{ tempRowdata.KLINIS || '-' }}</span>
+        </div>
+      </div>
+
+      <!-- Item Pemeriksaan -->
+      <div class="spesimen-field-group mb-3">
+        <label class="spesimen-label"> <i class="pi pi-list me-1"></i>Item Pemeriksaan </label>
+        <div class="item-tags-wrap">
+          <Tag
+            v-for="(item, index) in itemPemeriksaan"
+            :key="index"
+            :value="item.NAMABARANG"
+            severity="secondary"
+            class="item-tag"
+          />
+          <span v-if="!itemPemeriksaan.length" class="no-items">Tidak ada item</span>
+        </div>
+      </div>
+
+      <Divider />
+
+      <!-- Jenis Spesimen -->
+      <div class="spesimen-field-group mb-3">
+        <label class="spesimen-label required">
+          <i class="pi pi-tag me-1"></i>Jenis Spesimen
+        </label>
+        <MultiSelect
+          v-model="spesimen.type"
+          :options="spesimenTypeList"
+          @change="get_by_kategori"
+          placeholder="Pilih jenis spesimen..."
+          optionLabel="label"
+          :maxSelectedLabels="4"
+          filter
+          filterPlaceholder="Cari spesimen..."
+          class="w-100"
+        />
+      </div>
+
+      <!-- Metode Pengambilan -->
+      <div class="spesimen-field-group mb-3">
+        <label class="spesimen-label required">
+          <i class="pi pi-cog me-1"></i>Metode Pengambilan
+        </label>
+        <MultiSelect
+          v-model="spesimen.collectionMethod"
+          :options="metodeList"
+          placeholder="Pilih metode pengambilan..."
+          optionLabel="display_id"
+          :maxSelectedLabels="4"
+          :loading="loadingMethod"
+          class="w-100"
+        />
+        <small v-if="loadingMethod" class="loading-hint">
+          <i class="pi pi-spin pi-spinner me-1"></i>Memuat metode...
+        </small>
+        <small v-else-if="!metodeList.length && spesimen.type?.length" class="hint-text">
+          Pilih jenis spesimen terlebih dahulu untuk memuat metode
+        </small>
+      </div>
+
+      <!-- Waktu Diterima -->
+      <div class="spesimen-field-group">
+        <label class="spesimen-label required">
+          <i class="pi pi-clock me-1"></i>Waktu Diterima Spesimen
+        </label>
+        <DatePicker
+          v-model="spesimen.receivedTime"
+          showTime
+          hourFormat="24"
+          showIcon
+          class="w-100"
+          placeholder="Pilih tanggal & waktu..."
+        />
+      </div>
     </div>
+
+    <template #footer>
+      <div class="spesimen-footer">
+        <Button
+          label="Batal"
+          icon="pi pi-times"
+          severity="secondary"
+          outlined
+          @click="showSpesimen = false"
+        />
+        <Button
+          label="Simpan Spesimen"
+          icon="pi pi-save"
+          severity="success"
+          :loading="loading"
+          @click="simpanSpesimen"
+        />
+      </div>
+    </template>
   </Dialog>
 
   <Toast />
@@ -737,6 +892,385 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* ====== Spesimen Dialog ====== */
+.spesimen-dialog-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.spesimen-dialog-icon {
+  width: 38px;
+  height: 38px;
+  background: var(--p-primary-color);
+  color: var(--p-primary-contrast-color);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.dialog-title-main {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--p-text-color);
+}
+.dialog-title-sub {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--p-text-muted-color);
+  margin-top: 1px;
+}
+.patient-info-strip {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  background: var(--p-surface-50);
+  border: 1px solid var(--p-surface-200);
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+}
+.pi-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pi-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--p-text-muted-color);
+}
+.pi-value {
+  font-size: 0.8rem;
+  color: var(--p-text-color);
+  font-weight: 500;
+}
+.pi-value.mono {
+  font-family: monospace;
+  color: var(--p-primary-color);
+}
+.spesimen-form {
+  padding: 0.25rem 0;
+}
+.spesimen-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.spesimen-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--p-text-color);
+  display: flex;
+  align-items: center;
+}
+.spesimen-label.required::after {
+  content: *;
+  color: #ef4444;
+  margin-left: 3px;
+}
+.hint-text {
+  color: var(--p-text-muted-color);
+  font-size: 0.72rem;
+}
+.loading-hint {
+  color: var(--p-primary-color);
+  font-size: 0.72rem;
+}
+.item-tags-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0.5rem 0.65rem;
+  background: var(--p-surface-50);
+  border: 1px solid var(--p-surface-200);
+  border-radius: 6px;
+  min-height: 38px;
+  align-items: center;
+}
+.item-tag {
+  font-size: 0.72rem !important;
+}
+.no-items {
+  font-size: 0.75rem;
+  color: var(--p-text-muted-color);
+  font-style: italic;
+}
+.spesimen-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+/* ====== Table Section ====== */
+.tabs-section {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.07);
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.table-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.table-title .pi {
+  color: #3b82f6;
+}
+
+.table-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ====== Elegant DataTable ====== */
+:deep(.elegant-datatable .p-datatable-thead > tr > th) {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: #f8fafc;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+  color: #475569;
+}
+
+:deep(.elegant-datatable .p-datatable-tbody > tr > td) {
+  padding: 0.85rem 1rem;
+  font-size: 0.84rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+}
+
+:deep(.elegant-datatable .p-datatable-tbody > tr) {
+  transition: all 0.2s ease;
+}
+
+:deep(.elegant-datatable .p-datatable-tbody > tr:hover > td) {
+  background: #f8fafc;
+}
+
+:deep(.elegant-datatable .p-paginator) {
+  border-top: 1px solid #e2e8f0;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.82rem;
+}
+
+:deep(.elegant-datatable .p-tag) {
+  font-size: 0.68rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+}
+
+/* ====== Patient Info ====== */
+.patient-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.patient-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.patient-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.patient-name {
+  color: #2563eb;
+  font-size: 0.88rem;
+  display: block;
+}
+
+.patient-extra {
+  color: #9ca3af;
+  font-size: 0.78rem;
+}
+
+/* ====== Address / DPJP Info ====== */
+.address-info {
+  display: flex;
+  align-items: center;
+  color: #6b7280;
+  font-size: 0.84rem;
+}
+
+.dpjp-block {
+  align-items: flex-start;
+}
+
+.dpjp-nama {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: steelblue;
+}
+
+.dpjp-poli {
+  display: block;
+  font-size: 0.72rem;
+  color: #9ca3af;
+}
+
+/* ====== Mr Badge / Rawat ====== */
+.mr-badge {
+  display: flex;
+  align-items: center;
+  background: #f3f4f6;
+  padding: 0.4rem 0.7rem;
+  border-radius: 6px;
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.82rem;
+}
+
+.rawat-block {
+  align-items: flex-start;
+  background: transparent;
+  padding: 0;
+}
+
+.rawat-jenis {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.rawat-cb {
+  display: block;
+  font-size: 0.7rem;
+  color: #9ca3af;
+}
+
+/* ====== Shared Column Styles ====== */
+.col-date {
+  font-size: 0.76rem;
+  color: var(--p-text-muted-color);
+  white-space: nowrap;
+}
+
+.col-trans {
+  font-family: monospace;
+  font-size: 0.73rem;
+  color: var(--p-primary-color);
+  font-weight: 600;
+}
+
+.col-klinis {
+  font-size: 0.76rem;
+  color: var(--p-text-color);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.col-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.timeline-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  color: var(--p-text-muted-color);
+}
+
+.timeline-icon {
+  font-size: 0.62rem;
+}
+
+.icon-masuk {
+  color: var(--p-primary-400);
+}
+
+.icon-proses {
+  color: #f59e0b;
+}
+
+.icon-selesai {
+  color: #22c55e;
+}
+
+/* ====== Action Buttons ====== */
+.action-buttons {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.specimen-action-button,
+.process-action-button {
+  min-width: 84px;
+  padding: 0.35rem 0.7rem !important;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* ====== Empty State ====== */
+.empty-state {
+  text-align: center;
+  padding: 3.5rem 2rem;
+  color: #64748b;
+}
+
+.empty-icon {
+  font-size: 3.5rem;
+  margin-bottom: 1.25rem;
+  opacity: 0.25;
+  display: block;
+}
+
+.empty-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.empty-description {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* ====== Legacy ====== */
 /* Compact table styling */
 :deep(.p-datatable .p-datatable-tbody > tr > td) {
   padding: 0.1rem 0.5rem;

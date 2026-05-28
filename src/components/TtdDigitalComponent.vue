@@ -114,6 +114,10 @@ const props = defineProps({
   mode: {
     type: Number,
   },
+  link_ttd: {
+    type: String,
+    default: null,
+  },
 })
 
 // Watch for localStorage
@@ -227,11 +231,17 @@ const verifyOtp = async () => {
       mode: props.mode,
     }
 
+    console.log('Data parameter for OTP verification:', data_param)
+
+    let link_ttd = props.link_ttd
+    if (link_ttd == null || link_ttd.trim() === '') {
+      link_ttd = 'otorisasi_v3'
+    }
+
     // Simulate API call - replace with your actual verification logic
     const url = configStore.apiBaseUrl
-    const response = await axios.post(`${url}/index.php/api/Triaseigd/otorisasi_v3`, data_param)
 
-    console.log(response.data)
+    const response = await axios.post(`${url}/index.php/api/Triaseigd/${link_ttd}`, data_param)
 
     if (response.data.metadata.code == '200') {
       showSuccess('Verifikasi berhasil! Tanda tangan digital telah dikonfirmasi.')

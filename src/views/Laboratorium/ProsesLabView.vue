@@ -1,31 +1,70 @@
 <template>
   <loading_overlay :is-loading="loading" message="Silahkan menunggu...." />
   <div class="content">
-    <div class="card elevation-0">
-      <div class="card-header">
-        <h5>
-          <Button
-            icon="pi pi-arrow-left"
-            class="p-button-rounded p-button-text p-button-lg back-button"
-            @click="goBack"
-            v-tooltip.bottom="'Kembali'"
-          /><i class="fas fa-vial mr-2"></i> Proses permintaan laboratorium
-        </h5>
+    <!-- ===== PAGE HEADER ===== -->
+    <div class="lab-page-header mb-2">
+      <div class="d-flex align-items-center gap-2">
+        <Button
+          icon="pi pi-arrow-left"
+          class="p-button-text p-button-sm"
+          @click="goBack"
+          v-tooltip.bottom="'Kembali'"
+        />
+        <span class="lab-page-title">
+          <i class="fas fa-vial me-2"></i>Proses Permintaan Laboratorium
+        </span>
       </div>
     </div>
+
     <Panel>
+      <!-- ===== PATIENT INFO HEADER ===== -->
       <template #header>
-        <div v-if="fact">
-          <h6>
-            <strong>
-              <i class="far fa-user mr-1" style="color: orange"></i>{{ fact?.NOMR }} -
-              {{ fact?.NAMA }} ({{ fact?.JENISKELAMIN }} {{ fact?.USIA }}) | {{ fact.JENISRAWAT }} |
-              {{ fact.DPJP }}
-            </strong>
-          </h6>
-          RUANG/POLI : <strong>{{ fact.POLI_RUANG }}</strong
-          ><br />
-          <i class="fas fa-map-marker-alt mr-1" style="color: orange"></i>{{ fact?.ALAMAT }}
+        <div class="patient-header-wrap">
+          <template v-if="loading_header">
+            <div class="patient-header-row">
+              <div class="patient-primary">
+                <Skeleton shape="circle" size="2rem" />
+                <Skeleton width="180px" height="1.2rem" class="skeleton-inline" />
+                <Skeleton width="100px" height="1rem" class="skeleton-inline" />
+                <Skeleton width="90px" height="1rem" class="skeleton-inline" />
+              </div>
+              <div class="patient-secondary">
+                <Skeleton width="120px" height="1.2rem" class="skeleton-tag" />
+                <Skeleton width="140px" height="1.2rem" class="skeleton-tag" />
+                <Skeleton width="110px" height="1.2rem" class="skeleton-tag" />
+              </div>
+            </div>
+            <div class="patient-header-meta">
+              <Skeleton width="100%" height="1rem" />
+              <Skeleton width="140px" height="1rem" class="skeleton-tag" />
+            </div>
+          </template>
+
+          <template v-else-if="fact">
+            <div class="patient-header-row">
+              <div class="patient-primary">
+                <i class="far fa-user-circle me-1" style="color: orange"></i>
+                <strong class="patient-name-text">{{ fact?.NAMA }}</strong>
+                <span class="patient-badge">{{ fact?.NOMR }}</span>
+                <span class="patient-badge">{{ fact?.JENISKELAMIN }}, {{ fact?.USIA }}</span>
+              </div>
+              <div class="patient-secondary">
+                <span class="patient-tag"><i class="pi pi-tag me-1"></i>{{ fact.JENISRAWAT }}</span>
+                <span class="patient-tag"
+                  ><i class="pi pi-building me-1"></i>{{ fact.POLI_RUANG }}</span
+                >
+                <span class="patient-tag"><i class="pi pi-user-plus me-1"></i>{{ fact.DPJP }}</span>
+              </div>
+            </div>
+            <div class="patient-header-meta">
+              <div v-if="fact?.ALAMAT" class="patient-address">
+                <i class="fas fa-map-marker-alt me-1" style="color: orange"></i>{{ fact?.ALAMAT }}
+              </div>
+              <span class="patient-tag patient-tag-klinis">
+                Klinis : <strong>{{ fact.KLINIS || '-' }}</strong>
+              </span>
+            </div>
+          </template>
         </div>
       </template>
       <template #icons>
@@ -35,12 +74,15 @@
           :loading="loadingTemplate"
           @click="panggilTemplate()"
           label="Template"
+          size="small"
         />
       </template>
 
-      <div class="row">
-        <!-- Scrollable Item List -->
-        <div class="col-md-2">
+      <!-- ===== MAIN 3-COLUMN LAYOUT ===== -->
+      <div class="lab-layout">
+        <!-- LEFT: Barcode List -->
+        <div class="lab-col-left">
+          <div class="col-section-label"><i class="pi pi-barcode me-1"></i> Permintaan</div>
           <div class="items-container">
             <LabRequestCard
               v-for="(item, index) in itemPemeriksaan"
@@ -54,14 +96,13 @@
           </div>
         </div>
 
-        <!-- Details Section -->
-        <div class="col-md-8">
+        <!-- CENTER: Results Table -->
+        <div class="lab-col-center">
           <ProgressBar
             v-if="LoadingHasil"
             mode="indeterminate"
-            :loading="LoadingHasil"
-            style="height: 3px"
-          ></ProgressBar>
+            style="height: 3px; margin-bottom: 4px"
+          />
           <DataTable
             :value="LoadHasilPemeriksaanlist"
             rowGroupMode="subheader"
@@ -70,83 +111,65 @@
             :sortOrder="1"
             striped-rows
             responsive-layout="scroll"
-            class="p-datatable-sm"
+            class="p-datatable-sm lab-datatable"
             :paginator="false"
             scrollable
-            scrollHeight="500px"
-            current-page-report-template="Menampilkan {first} hingga {last} dari {totalRecords} hasil"
+            scrollHeight="460px"
           >
-            <!-- === GROUP HEADER === -->
             <template #groupheader="slotProps">
               <tr>
-                <td colspan="8" class="bg-gray-100 text-sm">
-                  {{ slotProps.data.KATEGORI }}
+                <td colspan="6" class="group-header-cell">
+                  <i class="fas fa-layer-group me-2"></i>{{ slotProps.data.KATEGORI }}
                 </td>
-                <Button
-                  icon="pi pi-times"
-                  label=""
-                  text
-                  class="round-button2"
-                  severity="danger"
-                  size="small"
-                  @click="removeCategory(slotProps.data)"
-                />
+                <td class="group-action-cell">
+                  <Button
+                    icon="pi pi-times"
+                    text
+                    severity="danger"
+                    size="small"
+                    @click="removeCategory(slotProps.data)"
+                  />
+                </td>
               </tr>
             </template>
 
-            <!-- === OPTIONAL: GROUP FOOTER === -->
-            <!--
-  <template #groupfooter="slotProps">
-    <tr>
-      <td colspan="7" class="bg-gray-50 text-sm py-2">
-        Total item: {{ slotProps.group.length }}
-      </td>
-    </tr>
-  </template>
-  -->
-
-            <!-- === COLUMNS === -->
-            <Column field="PEMERIKSAAN" header="Pemeriksaan" :sortable="true" style="width: 20%">
+            <Column field="PEMERIKSAAN" header="Pemeriksaan" :sortable="true" style="width: 22%">
               <template #body="{ data }">
-                <span class="font-semibold ml-5">{{ data.PEMERIKSAAN }}</span>
+                <span class="font-semibold" style="padding-left: 1rem">{{ data.PEMERIKSAAN }}</span>
               </template>
             </Column>
 
-            <Column field="HASIL" header="Hasil" :sortable="true" style="width: 12%">
+            <Column field="HASIL" header="Hasil" style="width: 12%">
               <template #body="{ data }">
                 <InputText
                   v-model="data.HASIL"
                   @keydown.enter.prevent="moveToNextInput($event)"
                   class="w-full hasil-input hasil-focusable"
                   @update:model-value="updateHasilColor(data)"
-                  :class="{
-                    'hasil-abnormal': isAbnormal(data),
-                    'hasil-normal': !isAbnormal(data),
-                  }"
+                  :class="{ 'hasil-abnormal': isAbnormal(data), 'hasil-normal': !isAbnormal(data) }"
                 />
               </template>
             </Column>
 
-            <Column field="SATUAN" header="Satuan" style="width: 12%">
+            <Column field="SATUAN" header="Satuan" style="width: 9%">
               <template #body="{ data }">
-                <span class="text-gray-600">{{ data.SATUAN }}</span>
+                <span class="text-gray-600">{{ data.SATUAN || '-' }}</span>
               </template>
             </Column>
 
-            <Column field="NORMAL" header="Nilai Normal" style="width: 25%">
+            <Column field="NORMAL" header="Nilai Normal" style="width: 22%">
               <template #body="{ data }">
-                <span class="text-gray-700">{{ data.NORMAL }}</span>
+                <span class="text-gray-700">{{ data.NORMAL || '-' }}</span>
               </template>
             </Column>
 
-            <Column field="METODE" header="Metode" style="width: 12%">
+            <Column field="METODE" header="Metode" style="width: 10%">
               <template #body="{ data }">
-                <span v-if="data.METODE" class="text-gray-600">{{ data.METODE }}</span>
-                <span v-else class="text-gray-400">-</span>
+                <span class="text-gray-600">{{ data.METODE || '-' }}</span>
               </template>
             </Column>
 
-            <Column header="Status Tidak Normal" style="width: 12%">
+            <Column header="Status" style="width: 13%">
               <template #body="{ data }">
                 <div class="status-column">
                   <Checkbox
@@ -163,13 +186,12 @@
                 </div>
               </template>
             </Column>
-            <Column field="" heade="Aksi">
+
+            <Column style="width: 5%">
               <template #body="{ data }">
                 <Button
                   icon="pi pi-times"
-                  label=""
                   text
-                  class="round-button"
                   severity="danger"
                   size="small"
                   @click="removeItem(data)"
@@ -178,105 +200,107 @@
             </Column>
           </DataTable>
         </div>
-        <!-- Actions Section -->
-        <div class="col-md-2">
-          <div class="row">
-            <!-- Jenis Spesimen -->
-            <div class="col-md-12">
-              <div class="card elevation-0">
-                <div class="flex items-center gap-2">
-                  <InputText
-                    v-model="no_laboratorium"
-                    placeholder="Sink dengan LIS"
-                    class="w-50"
-                    style="width: 5em"
-                  />
-                  <Button
-                    class=""
-                    icon="pi pi-sync"
-                    :loading="loadingTemplate"
-                    @click="sync_data_LIS"
-                    style="height: 37px"
-                    label=""
-                  />
-                </div>
-              </div>
-              <div class="card elevation-0" style="background-color: aliceblue">
-                <div class="card-body">
-                  <h6 class="mb-1">Jenis Spesimen</h6>
-                  <div v-for="(specimen, index) in data.type" :key="index" class="mb-1">
-                    <p class="mb-0">
-                      <strong>{{ specimen.label }}</strong>
-                    </p>
-                    <small class="text-muted"
-                      >{{ specimen.snomed_code }} |
-                      {{ formatDate(specimen.waktu_terima_spesimen) }}</small
-                    >
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- Metode Pengambilan -->
 
-            <div class="col-md-12">
-              <div class="card elevation-0" style="background-color: aliceblue">
-                <div class="card-body">
-                  <h6 class="mb-1">Metode Pengambilan</h6>
-                  <div v-for="(method, index) in data.collectionMethod" :key="index" class="mb-1">
-                    <p class="mb-0">{{ index + 1 }}. {{ method.label }}</p>
-                  </div>
-                </div>
-              </div>
+        <!-- RIGHT: Info Panel -->
+        <div class="lab-col-right">
+          <!-- LIS Sync -->
+          <div class="right-section mb-2">
+            <div class="right-section-title">Sync LIS</div>
+            <div class="lis-sync-row">
+              <InputText v-model="no_laboratorium" placeholder="No. Lab" class="lis-no-input" />
+              <Button
+                icon="pi pi-sync"
+                label="Sync"
+                :loading="loadingTemplate"
+                @click="sync_data_LIS"
+                size="small"
+                class="lis-sync-btn"
+              />
+            </div>
+          </div>
+
+          <!-- Specimen -->
+          <div class="right-section mb-2">
+            <div class="right-section-title">Jenis Spesimen</div>
+            <div v-for="(specimen, index) in data.type" :key="index" class="right-item">
+              <strong class="right-item-label">{{ specimen.label }}</strong>
+              <small class="right-item-meta">{{ specimen.snomed_code }}</small>
+              <small class="right-item-meta">{{
+                formatDate(specimen.waktu_terima_spesimen)
+              }}</small>
+            </div>
+          </div>
+
+          <!-- Collection Method -->
+          <div class="right-section">
+            <div class="right-section-title">Metode Pengambilan</div>
+            <div v-for="(method, index) in data.collectionMethod" :key="index" class="right-item">
+              <span>{{ index + 1 }}. {{ method.label }}</span>
             </div>
           </div>
         </div>
       </div>
-      <hr />
+
+      <!-- ===== FOOTER ===== -->
       <template #footer>
-        <div class="row">
-          <div class="col-md-8">
+        <!-- Catatan Kesan -->
+        <div class="footer-notes mb-3">
+          <label class="footer-label">Catatan Kesan</label>
+          <Textarea v-model="catatan" autoResize rows="3" class="w-100" />
+        </div>
+
+        <!-- Actions + Otorisasi Status -->
+        <div class="footer-actions">
+          <div class="footer-btn-group">
             <Button
               label="Simpan"
               icon="pi pi-save"
               @click="simpanDataPemeriksaan"
               :disabled="hasOtorisasi?.status == 1"
             />
-
             <Button
               label="Otorisasi"
               severity="warn"
-              icon="pi pi-check"
+              icon="pi pi-check-circle"
               @click="showDialog = true"
               :disabled="hasOtorisasi?.status == 1"
             />
-            <Button label="Cetak" severity="default" icon="pi pi-print" @click="prinHasilLab" />
+            <Button
+              label="Cetak Hasil"
+              severity="secondary"
+              outlined
+              icon="pi pi-print"
+              @click="prinHasilLab"
+            />
             <Button
               label="Cetak Pengantar"
               severity="info"
+              outlined
               icon="pi pi-print"
               @click="printPengantar"
             />
           </div>
 
-          <div class="col-md-4">
-            <div class="form-group">
-              <label for="">Otoriasi Oleh</label>
-              {{ hasOtorisasi.nama_petugas }}|
-              <label for="">Stts Otorisasi</label>
-              {{ hasOtorisasi.tgl_verified }}
-            </div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-md-6">
-            <label>Catatan Kesan</label>
-            <Textarea v-model="catatan" autoResize rows="5" style="width: 100%" />
+          <div class="footer-auth-status">
+            <template v-if="hasOtorisasi?.status == 1">
+              <div class="auth-verified">
+                <i class="pi pi-verified me-1"></i>
+                <div>
+                  <div class="auth-by">{{ hasOtorisasi.nama_petugas }}</div>
+                  <div class="auth-date">{{ hasOtorisasi.tgl_verified }}</div>
+                </div>
+              </div>
+            </template>
+            <template v-else>
+              <div class="auth-pending"><i class="pi pi-clock me-1"></i> Menunggu Otorisasi</div>
+            </template>
           </div>
         </div>
       </template>
     </Panel>
   </div>
 
+  <!-- Template Dialog -->
   <Dialog
     v-model:visible="showTemplate"
     :style="{ width: '1200px' }"
@@ -284,49 +308,50 @@
     :closable="false"
   >
     <template #header>
-      <!-- Global Search -->
-      <div class="flex mb-3">
+      <div class="d-flex align-items-center justify-content-between w-100">
+        <strong><i class="fas fa-flask me-2"></i>Template Pemeriksaan</strong>
         <InputText
           v-model="filters.global.value"
-          placeholder="Search..."
+          placeholder="Cari pemeriksaan..."
           class="p-inputtext-sm"
-          style="width: 250px"
+          style="width: 260px"
         />
       </div>
     </template>
 
-    <table class="table group-table">
-      <thead>
-        <tr>
-          <th style="width: 40px">#</th>
-          <th>Nama Pemeriksaan</th>
-          <th>Satuan</th>
-          <th>Rujukan</th>
-        </tr>
-      </thead>
-
-      <tbody v-for="(items, kategori) in groupedTemplate" :key="kategori">
-        <!-- HEADER GRUP -->
-        <!-- Header Group -->
-        <tr class="group-row">
-          <td colspan="4">
-            {{ kategori }}
-            <button class="btn btn-success btn-xs" @click="addKategori(items)">Tambahkan</button>
-          </td>
-        </tr>
-
-        <!-- List item -->
-        <tr v-for="(item, index) in items" :key="item.ID">
-          <td>{{ index + 1 }}</td>
-          <td>{{ item.ITEM }}</td>
-          <td>{{ item.SATUAN }}</td>
-          <td>{{ item.RUJUKAN }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="template-table-scroll">
+      <table class="table group-table">
+        <thead>
+          <tr>
+            <th style="width: 40px">#</th>
+            <th>Nama Pemeriksaan</th>
+            <th>Satuan</th>
+            <th>Rujukan</th>
+            <th style="width: 120px">Aksi</th>
+          </tr>
+        </thead>
+        <tbody v-for="(items, kategori) in groupedTemplate" :key="kategori">
+          <tr class="group-row">
+            <td colspan="4"><i class="fas fa-layer-group me-1"></i>{{ kategori }}</td>
+            <td>
+              <button class="btn btn-success btn-xs" @click="addKategori(items)">
+                + Tambahkan
+              </button>
+            </td>
+          </tr>
+          <tr v-for="(item, index) in items" :key="item.ID">
+            <td>{{ index + 1 }}</td>
+            <td>{{ item.ITEM }}</td>
+            <td>{{ item.SATUAN }}</td>
+            <td>{{ item.RUJUKAN }}</td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <template #footer>
-      <Button label="Close" icon="pi pi-times" @click="showTemplate = false" />
+      <Button label="Tutup" icon="pi pi-times" severity="secondary" @click="showTemplate = false" />
     </template>
   </Dialog>
 
@@ -339,8 +364,6 @@
     style="width: 75vw"
     :breakpoints="{ '960px': '95vw' }"
   >
-    <!-- INFORMASI PASIEN -->
-
     <div class="mb-4 grid">
       <div class="col-6"><b>Nama</b> : {{ pasien.nama_pasien }}</div>
       <div class="col-6"><b>No RM</b> : {{ pasien.no_rm }}</div>
@@ -348,47 +371,29 @@
       <div class="col-6"><b>Tgl Lahir</b> : {{ pasien.tanggal_lahir }}</div>
       <div class="col-12"><b>No Lab</b> : {{ dataLab.no_laboratorium }}</div>
     </div>
-
     <Divider />
-
-    <!-- SUB KATEGORI -->
     <div v-for="(items, sub) in groupedPemeriksaan" :key="sub" class="mb-4">
-      <div class="row">
-        <div class="col-md-6">
-          <h5 class="mb-2">{{ sub }}</h5>
-        </div>
-        <div class="col-md-6" style="text-align: right">
-          <Button
-            label="Sinkronkan data"
-            class="round-button2 mb-1"
-            severity="warn"
-            icon="pi pi-sync"
-            @click="singkron_data(items)"
-          />
-        </div>
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h5 class="mb-0">{{ sub }}</h5>
+        <Button
+          label="Sinkronkan data"
+          class="round-button2 mb-1"
+          severity="warn"
+          icon="pi pi-sync"
+          @click="singkron_data(items)"
+        />
       </div>
-
       <DataTable :value="items" size="small" stripedRows responsiveLayout="scroll">
         <Column field="nama_pemeriksaan" header="Pemeriksaan" />
-
-        <Column header="Hasil">
-          <template #body="{ data }">
-            {{ data.hasil.nilai_hasil }}
-          </template>
-        </Column>
-
-        <Column header="Satuan">
-          <template #body="{ data }">
-            {{ data.hasil.satuan || '-' }}
-          </template>
-        </Column>
-
-        <Column header="Nilai Normal">
-          <template #body="{ data }">
-            {{ data.hasil.nilai_normal }}
-          </template>
-        </Column>
-
+        <Column header="Hasil"
+          ><template #body="{ data }">{{ data.hasil.nilai_hasil }}</template></Column
+        >
+        <Column header="Satuan"
+          ><template #body="{ data }">{{ data.hasil.satuan || '-' }}</template></Column
+        >
+        <Column header="Nilai Normal"
+          ><template #body="{ data }">{{ data.hasil.nilai_normal }}</template></Column
+        >
         <Column header="Flag" style="width: 80px">
           <template #body="{ data }">
             <Tag
@@ -400,10 +405,7 @@
         </Column>
       </DataTable>
     </div>
-
     <Divider />
-
-    <!-- FOOTER -->
     <div class="grid text-sm">
       <div class="col-6"><b>Analis</b> : {{ dataLab.analis }}</div>
       <div class="col-6"><b>Waktu Verifikasi</b> : {{ dataLab.waktu_verifikasi }}</div>
@@ -413,12 +415,12 @@
   <Toast />
   <ConfirmDialog />
 </template>
-
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import Checkbox from 'primevue/checkbox'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import Skeleton from 'primevue/skeleton'
 import { useConfigStore } from '@/stores/config'
 import { useAuthStore } from '@/stores/config'
 import { useToast } from 'primevue/usetoast'
@@ -445,6 +447,7 @@ const catatan = ref(null)
 const showDialog = ref(false)
 
 const loading = ref(false)
+const loading_header = ref(false)
 const fact = ref(null)
 const itemPemeriksaan = ref([])
 const selectedBarcode = ref(null)
@@ -748,7 +751,7 @@ const printPengantar = async () => {
 
 const fetchData = async () => {
   try {
-    loading.value = true
+    loading_header.value = true
 
     const payload = {
       id_client: id_client.value,
@@ -771,7 +774,7 @@ const fetchData = async () => {
     console.error('Error fetching data:', error)
     showError(error.message)
   } finally {
-    loading.value = false
+    loading_header.value = false
   }
 }
 
@@ -799,11 +802,10 @@ const sync_data_LIS = async () => {
     const url = configStore.apiBaseUrl
     const response = await axios.post(`${url}/index.php/api/penunjang/get_hasil_lis`, payload)
 
-    console.log(response.data)
     //templateList.value = response.data.response || []
     // loadingTemplate.value = false
-    loading.value = false 
-    if (response.data.metadata.code == 200) {
+    loading.value = false
+    if (response.data.metadata?.code == 200) {
       showSuccess(response.data.metadata.message)
     } else {
       showWarning(response.data.message)
@@ -821,6 +823,7 @@ const getTemplatePemeriksaan = async () => {
     const response = await axios.get(
       `${url}/index.php/api/data_referensi/get_template_lab/${id_client.value}`,
     )
+
     templateList.value = response.data.response || []
     // loadingTemplate.value = false
   } catch (error) {
@@ -1018,6 +1021,280 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* ====== Page Header ====== */
+.lab-page-header {
+  padding: 0.5rem 0.25rem;
+}
+.lab-page-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--p-text-color);
+}
+
+/* ====== Patient Header ====== */
+.patient-header-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--p-surface-200);
+  border-radius: 12px;
+  background: var(--p-surface-50);
+}
+.patient-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: center;
+}
+.patient-primary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  font-size: 0.92rem;
+  min-width: 0;
+}
+.patient-name-text {
+  font-weight: 700;
+}
+.patient-badge {
+  background: var(--p-primary-100);
+  color: var(--p-primary-700);
+  border-radius: 12px;
+  padding: 1px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.patient-secondary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: flex-end;
+  min-width: 0;
+}
+.patient-tag {
+  background: var(--p-surface-100);
+  border: 1px solid var(--p-surface-200);
+  border-radius: 12px;
+  padding: 1px 9px;
+  font-size: 0.72rem;
+  color: var(--p-text-color);
+}
+.patient-tag-klinis {
+  background: var(--p-primary-50);
+  border-color: var(--p-primary-200);
+  color: var(--p-primary-700);
+}
+.patient-header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.patient-address {
+  font-size: 0.72rem;
+  color: var(--p-text-muted-color);
+  flex: 1 1 100%;
+}
+.skeleton-inline {
+  display: inline-flex;
+  margin-right: 0.5rem;
+}
+.skeleton-tag {
+  border-radius: 12px;
+}
+@media (max-width: 768px) {
+  .patient-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .patient-secondary {
+    justify-content: flex-start;
+  }
+}
+
+/* ====== 3-Column Layout ====== */
+.lab-layout {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+.lab-col-left {
+  width: 175px;
+  flex-shrink: 0;
+}
+.lab-col-center {
+  flex: 1;
+  min-width: 0;
+}
+.lab-col-right {
+  width: 185px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.col-section-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--p-text-muted-color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0 0 0.4rem;
+  border-bottom: 2px solid var(--p-primary-200);
+  margin-bottom: 0.5rem;
+}
+
+/* Right Panel */
+.right-section {
+  border: 1px solid var(--p-surface-200);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.right-section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--p-primary-contrast-color);
+  background: var(--p-primary-color);
+  padding: 0.3rem 0.65rem;
+}
+.right-item {
+  display: flex;
+  flex-direction: column;
+  padding: 0.35rem 0.65rem;
+  border-bottom: 1px solid var(--p-surface-100);
+  font-size: 0.78rem;
+}
+.right-item:last-child {
+  border-bottom: none;
+}
+.right-item-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--p-text-color);
+}
+.right-item-meta {
+  font-size: 0.67rem;
+  color: var(--p-text-muted-color);
+}
+.lis-sync-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem 0.65rem;
+}
+.lis-no-input {
+  width: 100%;
+  font-size: 0.75rem !important;
+}
+.lis-sync-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* DataTable */
+.lab-datatable :deep(th) {
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--p-surface-50);
+  padding: 7px 10px;
+  border-bottom: 2px solid var(--p-surface-200);
+}
+.lab-datatable :deep(td) {
+  font-size: 0.8rem;
+  padding: 5px 10px;
+  vertical-align: middle;
+}
+.group-header-cell {
+  background: var(--p-primary-color) !important;
+  color: var(--p-primary-contrast-color) !important;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 5px 10px !important;
+}
+.group-action-cell {
+  background: var(--p-primary-color) !important;
+  padding: 2px 4px !important;
+}
+
+/* Footer */
+.footer-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--p-text-color);
+  display: block;
+  margin-bottom: 0.3rem;
+}
+.footer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.footer-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.footer-auth-status {
+  flex-shrink: 0;
+}
+.auth-verified {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.85rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  color: #15803d;
+  font-size: 0.78rem;
+}
+.auth-by {
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+.auth-date {
+  font-size: 0.68rem;
+  opacity: 0.75;
+}
+.auth-pending {
+  display: flex;
+  align-items: center;
+  padding: 0.35rem 0.85rem;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  color: #b45309;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+/* Template Dialog */
+.template-table-scroll {
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .lab-layout {
+    flex-direction: column;
+  }
+  .lab-col-left,
+  .lab-col-right {
+    width: 100%;
+  }
+}
+
+/* Items scrollbar */
 .items-container {
   max-height: 600px;
   overflow-y: auto;

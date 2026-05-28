@@ -301,7 +301,7 @@
                   <Button
                     label="Histori"
                     icon="pi pi-history"
-                    @click="showHistoryTeraphy = true"
+                    @click="showRadiologi = true"
                     class="p-button-info round-button2 ml-1"
                   />
                 </div>
@@ -312,6 +312,8 @@
       </div>
     </div>
   </Panel>
+
+  <HistoryRadiologiComponent v-model="showRadiologi" :datapasien="props.datapasien" />
 
   <Drawer
     v-model:visible="hasilLab"
@@ -362,13 +364,11 @@
       </table>
     </div>
   </Drawer>
-
-  <HIstoryTeraphy v-model:showHistoryTeraphy="showHistoryTeraphy" @sendData="getDataHistori" />
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import HIstoryTeraphy from '@/components/PoliklinikComponent/HIstoryTeraphy.vue'
+import HistoryRadiologiComponent from '@/views/Poliklinik/Penunjang/HistoryRadiologiComponent.vue'
 
 import ScrollPanel from 'primevue/scrollpanel'
 import DataTable from 'primevue/datatable'
@@ -398,7 +398,6 @@ const route = useRoute()
 const confirm = useConfirm()
 const toast = useToast()
 
-// Props
 const props = defineProps({
   datapasien: {
     type: Object,
@@ -411,7 +410,7 @@ const props = defineProps({
 const loading = ref(false)
 const listObat = ref(false)
 const hasilLab = ref(false)
-const showHistoryTeraphy = ref(false)
+const showRadiologi = ref(false)
 
 const selectedObatObatan = ref([])
 const availableObat = ref([])

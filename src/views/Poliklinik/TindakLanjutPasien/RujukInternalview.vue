@@ -137,8 +137,8 @@ const konfirmasi_rujuk_internal = () => {
 const lakukan_rujuk_internal = async () => {
   try {
     loading.value = true
-    const url = configStore.apiBaseUrl
 
+    const url = configStore.apiBaseUrl
     const response = await axios.post(
       `${url}/index.php/api/data_referensi/rujuk_internal/${route.query.noreg}/${PoliSelected.value.KODE}/${dokterkontrolSelected.value.kodeDokter}/${user_id.value}/${id_client.value}/${PoliSelected.value.KODE_BPJS}`,
     )

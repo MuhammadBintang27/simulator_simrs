@@ -1,5 +1,30 @@
 <template>
   <div class="login-page">
+    <!-- ══ ANIMATED TICKER BACKGROUND ══ -->
+    <div class="ticker-bg" aria-hidden="true">
+      <div
+        v-for="(row, ri) in tickerRows"
+        :key="ri"
+        class="ticker-row"
+        :style="{ '--speed': row.speed }"
+      >
+        <div class="ticker-track" :class="row.dir === 'ltr' ? 'track-ltr' : 'track-rtl'">
+          <div
+            v-for="(item, ii) in [...row.items, ...row.items]"
+            :key="`r${ri}-i${ii}`"
+            class="ticker-box"
+          >
+            <i :class="item.icon" class="tb-icon"></i>
+            <div class="tb-text">
+              <span class="tb-title">{{ item.title }}</span>
+              <span class="tb-sub">{{ item.sub }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ LOGIN CARD ══ -->
     <div class="login-card">
       <div class="logo-section">
         <h2><strong>SIMRS</strong> LOGIN</h2>
@@ -19,7 +44,7 @@
             <input
               v-model="formData.password"
               :type="showPassword ? 'text' : 'password'"
-              placeholder="••••••••"
+              placeholder="xxxxxxxx"
               required
             />
             <i
@@ -36,7 +61,7 @@
         </button>
       </form>
 
-      <p class="footer-text">© 2025 SIMRS — All Rights Reserved</p>
+      <p class="footer-text">© 2025 SIMRS POINTMEDIC. All rights reserved.</p>
 
       <Toast />
     </div>
@@ -44,18 +69,17 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { useConfigStore } from '@/stores/config'
 import { useAuthStore } from '@/stores/config'
 import { usePenugasanLayananStore } from '@/stores/penugasanLayanan'
 import axios from 'axios'
-import { storeToRefs } from 'pinia'
 
 // PrimeVue Components
 import Toast from 'primevue/toast'
-const logoUrl = 'https://ws-simrs.link/logo/sehat.png'
+const logoUrl = 'https://ws-simrs.net/logo/sehat.png'
 // Composables
 const router = useRouter()
 const toast = useToast()
@@ -72,6 +96,64 @@ const formData = reactive({
   password: '',
 })
 
+// ── Ticker background data ─────────────────────────────────
+const tickerRows = [
+  {
+    dir: 'ltr',
+    speed: '38s',
+    items: [
+      { icon: 'fas fa-file-medical', title: 'Rekam Medis Elektronik', sub: 'EMR Terintegrasi' },
+      { icon: 'fas fa-pills', title: 'Manajemen Apotek', sub: 'Farmasi & Stok Obat' },
+      { icon: 'fas fa-microscope', title: 'Laboratorium', sub: 'Hasil Lab Digital' },
+      { icon: 'fas fa-stethoscope', title: 'Pemeriksaan Klinis', sub: 'Rawat Jalan & Inap' },
+      { icon: 'fas fa-user-md', title: 'Poli Spesialis', sub: 'Jadwal & Konsultasi' },
+      { icon: 'fas fa-procedures', title: 'Rawat Inap', sub: 'Manajemen Kamar RS' },
+    ],
+  },
+  {
+    dir: 'rtl',
+    speed: '28s',
+    items: [
+      { icon: 'fas fa-id-card', title: 'BPJS Kesehatan', sub: 'Klaim & Verifikasi' },
+      { icon: 'fas fa-receipt', title: 'Billing Pasien', sub: 'Tagihan & Keuangan RS' },
+      { icon: 'fas fa-x-ray', title: 'Radiologi', sub: 'Pencitraan Medis Digital' },
+      { icon: 'fas fa-ambulance', title: 'IGD Triase', sub: 'Penanganan Gawat Darurat' },
+      { icon: 'fas fa-calendar-alt', title: 'Pendaftaran Online', sub: 'Antrian Pasien Digital' },
+      { icon: 'fas fa-lock', title: 'Keamanan Data', sub: 'Privasi & Kerahasiaan Pasien' },
+    ],
+  },
+  {
+    dir: 'ltr',
+    speed: '44s',
+    items: [
+      { icon: 'fas fa-heartbeat', title: 'ICU Monitoring', sub: 'Intensive Care Unit' },
+      { icon: 'fas fa-tint', title: 'Hemodialisis', sub: 'Terapi Cuci Darah' },
+      { icon: 'fas fa-dumbbell', title: 'Fisioterapi', sub: 'Rehabilitasi Medis' },
+      { icon: 'fas fa-apple-alt', title: 'Gizi & Dietisien', sub: 'Nutrisi Pasien RS' },
+      { icon: 'fas fa-baby', title: 'Neonatal Care', sub: 'Perawatan Bayi Baru Lahir' },
+      { icon: 'fas fa-syringe', title: 'Imunisasi', sub: 'Program Vaksinasi Pasien' },
+    ],
+  },
+  {
+    dir: 'rtl',
+    speed: '24s',
+    items: [
+      { icon: 'fas fa-satellite-dish', title: 'Satu Sehat', sub: 'Integrasi Kemenkes RI' },
+      { icon: 'fas fa-file-signature', title: 'TTE BSrE', sub: 'Tanda Tangan Elektronik' },
+      { icon: 'fas fa-chart-bar', title: 'Laporan & Analitik', sub: 'Dashboard Manajemen RS' },
+      { icon: 'fas fa-tooth', title: 'Odontogram Digital', sub: 'Rekam Medis Gigi' },
+      { icon: 'fas fa-eye', title: 'Pemeriksaan Visus', sub: 'Poli Mata Oftalmologi' },
+      { icon: 'fas fa-hospital-alt', title: 'Kamar Operasi', sub: 'Penjadwalan Tindakan OK' },
+    ],
+  },
+]
+
+// ── Toggle password ────────────────────────────────────────
+const togglePassword = () => {
+  showPassword.value = !showPassword.value
+}
+
+// ── Existing functions (tidak diubah) ──────────────────────
 const profile_rs = async (id_client) => {
   try {
     const url = configStore.simrs
@@ -101,6 +183,50 @@ const profile_rs = async (id_client) => {
   }
 }
 
+const check_jam_server_dan_local = async () => {
+  try {
+    const url = configStore.simrs
+
+    const endpoint = `/index.php/api/transaksi_pasien/check_jamserver`
+
+    const response = await axios.get(`${url}${endpoint}`)
+
+    const tanggalLocal = getTanggalLocal()
+    const tanggalServer = response.data.waktuserver
+
+    if (tanggalLocal !== tanggalServer) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Gagal Login',
+        detail: `Tanggal server (${tanggalServer}) tidak sama dengan tanggal lokal (${tanggalLocal}).
+        Pastikan tanggal dan waktu perangkat Anda benar untuk menghindari masalah sinkronisasi data. silahakan hubungi admin.`,
+        life: 8000,
+      })
+      return false
+    } else {
+      return true
+    }
+  } catch (error) {
+    // console.error('Auth error:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Gagal terkoneksi ke server. Pastikan komputer terhubung ke internet',
+      life: 4000,
+    })
+  }
+}
+
+const getTanggalLocal = () => {
+  const now = new Date()
+
+  const tahun = now.getFullYear()
+  const bulan = String(now.getMonth() + 1).padStart(2, '0')
+  const tanggal = String(now.getDate()).padStart(2, '0')
+
+  return `${tahun}-${bulan}-${tanggal}` // format: "2026-03-26"
+}
+
 const profile_apol = async (id_client) => {
   try {
     const url = configStore.simrs
@@ -124,6 +250,11 @@ const profile_apol = async (id_client) => {
 const handleSubmit = async () => {
   loading.value = true
   try {
+    const jamServerCheck = await check_jam_server_dan_local()
+    if (jamServerCheck == false) {
+      // Lanjutkan proses login
+      return
+    }
     const url = configStore.simrs
     const payload = { username: formData.name, pass: formData.password }
 
@@ -239,10 +370,15 @@ const handleSubmit = async () => {
     loading.value = false
   }
 }
+
+onMounted(() => {
+  // Cek jika sudah login, langsung redirect ke dashboard
+  //check_jam_server_dan_local()
+})
 </script>
 
 <style scoped>
-/* Background lembut abu-abu */
+/* ── Root page ── */
 .login-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #2d1b69 0%, #11998e 100%);
@@ -251,14 +387,141 @@ const handleSubmit = async () => {
   justify-content: center;
   font-family: 'Inter', sans-serif;
   padding: 1rem;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Card transparan elegan */
+/* ══════════════════════════════════════════════════════════
+   TICKER BACKGROUND
+══════════════════════════════════════════════════════════ */
+.ticker-bg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+  z-index: 0;
+  /* Edge fade via mask */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.6) 10%,
+    rgba(0, 0, 0, 0.6) 90%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.6) 10%,
+    rgba(0, 0, 0, 0.6) 90%,
+    transparent 100%
+  );
+}
+
+.ticker-row {
+  flex: 1;
+  overflow: hidden;
+  width: 100%;
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.ticker-row:last-child {
+  border-bottom: none;
+}
+
+/* Track: flex, no-wrap, infinite width */
+.ticker-track {
+  display: flex;
+  gap: 0;
+  width: max-content;
+  align-items: stretch;
+  will-change: transform;
+}
+
+/* LTR: slides left → right */
+@keyframes scroll-ltr {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* RTL: slides right → left */
+@keyframes scroll-rtl {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.track-ltr {
+  animation: scroll-ltr var(--speed, 35s) linear infinite;
+}
+.track-rtl {
+  animation: scroll-rtl var(--speed, 35s) linear infinite;
+}
+
+/* Pause on hover (optional UX) */
+.ticker-row:hover .ticker-track {
+  animation-play-state: paused;
+}
+
+/* Individual box */
+.ticker-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.06);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0;
+  white-space: nowrap;
+  flex-shrink: 0;
+  height: 100%;
+  box-sizing: border-box;
+  transition: background 0.2s;
+}
+
+.tb-icon {
+  font-size: 1.1rem;
+  color: rgba(129, 230, 217, 0.9);
+  width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.tb-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.tb-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.2;
+}
+
+.tb-sub {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.48);
+  line-height: 1.2;
+}
+
+/* ══════════════════════════════════════════════════════════
+   LOGIN CARD
+══════════════════════════════════════════════════════════ */
 .login-card {
   background: rgba(255, 255, 255, 0.25);
-
   backdrop-filter: blur(20px);
-  border-radius: 16px;
+  border-radius: 4px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 400px;
@@ -266,6 +529,7 @@ const handleSubmit = async () => {
   text-align: center;
   color: #333;
   position: relative;
+  z-index: 1;
 }
 
 .logo-section {
@@ -380,5 +644,12 @@ input:focus {
   margin-top: 1.5rem;
   font-size: 0.8rem;
   color: rgba(55, 65, 81, 0.6);
+}
+
+/* ── Responsive: sembunyikan ticker di layar sangat kecil ── */
+@media (max-width: 480px) {
+  .ticker-bg {
+    display: none;
+  }
 }
 </style>

@@ -28,6 +28,11 @@ const RekapDietView = () => import('@/views/gizi/RekapDietView.vue')
 const ListPasienOperasiView = () => import('@/views/RuangOperasi/ListPasienOperasiView.vue')
 const PersiapanOperasiVIew = () => import('@/views/RuangOperasi/PersiapanOperasiVIew.vue')
 
+// Informed Consent
+const AnestesiConsentView = () => import('@/views/RuangOperasi/Consent/AnestesiConsentView.vue')
+const TindakanConsentView = () => import('@/views/RuangOperasi/Consent/TindakanConsentView.vue')
+const RanapConsentView = () => import('@/views/RuangOperasi/Consent/RanapConsentView.vue')
+
 // Apotik Online
 const ReferensiApolView = () => import('@/views/Apol/ReferensiApolView.vue')
 const TransaksiResepView = () => import('@/views/Apol/TransaksiResepView.vue')
@@ -87,6 +92,26 @@ const MonitoringRMEBPJS = () => import('@/views/Rme/MonitoringRMEBPJS.vue')
 
 const MasterAssetView = () => import('@/views/Asset/MasterAssetView.vue')
 
+const FormIGDView = () => import('@/views/IGD/FormIGDView.vue')
+
+const TindakLanjutPasienView = () => import('@/views/TindakLanjut/TindakLanjutPasienView.vue')
+const ResumeRanapView = () => import('@/views/keuangan/ResumeRanapView.vue')
+
+// Fisioterapi
+const HomeFisioterapiView = () => import('@/views/Poliklinik/Fisioteraphi/HomeFisioterapiView.vue')
+const ProsesFisioteraphiView = () =>
+  import('@/views/Poliklinik/Fisioteraphi/ProsesFisioteraphiView.vue')
+
+// UTD (Unit Transfusi Darah)
+const PenerimaanDarahView = () => import('@/views/UTD/PenerimaanDarah.vue')
+const SesiDonorView = () => import('@/views/UTD/SesiDonorView.vue')
+
+const PrintOutsesiDonor = () => import('@/views/UTD/PrintOutsesiDonor.vue')
+
+// Rekam Medis Elektronik - Viewer & KCO
+const RMEViewer = () => import('@/views/RekamMedis/RMEViewer.vue')
+const KartuCatatanObatView = () => import('@/views/RekamMedis/KartuCatatanObatView.vue')
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -125,6 +150,25 @@ const router = createRouter({
       path: '/laboratorium/print-pengantar/:noreceipt',
       name: 'PrintPengantarView',
       component: PrintPengantarView,
+    },
+    {
+      path: '/utd/print',
+      name: 'PrintOutsesiDonor',
+      component: PrintOutsesiDonor,
+    },
+    {
+      // Rekam Medis Elektronik — Standalone viewer (tanpa MainLayouts)
+      // Akses: /rekam-medis/viewer?noreg=xxxxx
+      path: '/rekam-medis/viewer',
+      name: 'RMEViewer',
+      component: RMEViewer,
+    },
+    {
+      // Kartu Catatan Obat — Landscape A4 print
+      // Akses: /rekam-medis/kartu-obat?noreg=xxx&nama=xxx&ruangan=xxx
+      path: '/rekam-medis/kartu-obat',
+      name: 'KartuCatatanObatView',
+      component: KartuCatatanObatView,
     },
     {
       path: '/keuangan/print-bill/:norm/:noreg',
@@ -219,10 +263,28 @@ const router = createRouter({
           component: ListPasienOperasiView,
         },
         {
-          path: 'operasi/persiapan-operasi', // No leading slash for child routes
+          path: 'operasi/persiapan-operasi',
           name: 'PersiapanOperasiVIew',
-          meta: { requiresAuth: true }, // ✅ Protect this route
+          meta: { requiresAuth: true },
           component: PersiapanOperasiVIew,
+        },
+        {
+          path: 'operasi/consent/anestesi/:noreg/:kodebooking?',
+          name: 'AnestesiConsentView',
+          meta: { requiresAuth: true },
+          component: AnestesiConsentView,
+        },
+        {
+          path: 'operasi/consent/tindakan/:noreg/:kodebooking?',
+          name: 'TindakanConsentView',
+          meta: { requiresAuth: true },
+          component: TindakanConsentView,
+        },
+        {
+          path: 'operasi/consent/ranap/:noreg/:kodebooking?',
+          name: 'RanapConsentView',
+          meta: { requiresAuth: true },
+          component: RanapConsentView,
         },
 
         {
@@ -379,6 +441,50 @@ const router = createRouter({
           meta: { requiresAuth: true },
           component: MasterAssetView,
         },
+        {
+          path: 'igd/form-igd',
+          name: 'FormIGDView',
+          meta: { requiresAuth: true },
+          component: FormIGDView,
+        },
+        {
+          path: 'tindak-lanjut/pemindahan-pasien',
+          name: 'TindakLanjutPasienView',
+          meta: { requiresAuth: true },
+          component: TindakLanjutPasienView,
+        },
+        {
+          path: 'keuangan/resume-ranap',
+          name: 'ResumeRanapView',
+          meta: { requiresAuth: true },
+          component: ResumeRanapView,
+        },
+        {
+          path: 'fisioterapi/home',
+          name: 'HomeFisioterapiView',
+          meta: { requiresAuth: true },
+          component: HomeFisioterapiView,
+        },
+        {
+          path: 'fisioterapi/proses/:noreg',
+          name: 'ProsesFisioterapiView',
+          meta: { requiresAuth: true },
+          component: ProsesFisioteraphiView,
+        },
+
+        // UTD
+        {
+          path: 'utd/penerimaan-darah',
+          name: 'PenerimaanDarahView',
+          meta: { requiresAuth: true },
+          component: PenerimaanDarahView,
+        },
+        {
+          path: 'utd/sesi-donor',
+          name: 'SesiDonorView',
+          meta: { requiresAuth: true },
+          component: SesiDonorView,
+        },
       ],
     },
   ],
@@ -409,7 +515,7 @@ events.forEach((event) => window.addEventListener(event, resetIdleTimer))
 // Start idle timer on page load
 resetIdleTimer()
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   // Ambil status login dari localStorage
   const loggedIn = localStorage.getItem('loggedIn') === 'true'
 

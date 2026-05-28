@@ -1,359 +1,407 @@
 <template>
-  <div class="card elevation-0">
-    <div class="card-body">
-      <div class="form-header mb-3">
-        <h4 class="text-lg font-bold mb-1">Formulir Pendaftaran Pasien</h4>
-        <p class="text-gray-600" style="font-size: 0.9rem">
-          Lengkapi semua data yang diperlukan untuk pendaftaran
-        </p>
+  <div class="reg-form-wrap">
+    <!-- ── SECTION 1: Identitas & Waktu ── -->
+    <Panel class="reg-section">
+      <template #header>
+        <div class="reg-section-head">
+          <i class="pi pi-id-card"></i>
+          <span>Identitas & Waktu Masuk</span>
+        </div>
+      </template>
+
+      <div class="reg-grid-2">
+        <div class="reg-field">
+          <label class="reg-label">Nomor Rekam Medis</label>
+          <InputText v-model="norm" class="w-100" readonly />
+        </div>
+
+        <div class="reg-field">
+          <label class="reg-label">Tanggal & Jam Masuk RS <span class="req">*</span></label>
+          <DatePicker
+            v-model="TanggalRawat"
+            dateFormat="dd M yy"
+            placeholder="Pilih tanggal"
+            showIcon
+            showTime
+            hourFormat="24"
+            iconDisplay="input"
+            class="w-100"
+            :class="{ 'p-invalid': formErrors.TanggalRawat }"
+          />
+        </div>
+        <div class="reg-field" v-if="carabayarSelected?.KODE == 5">
+          <label class="reg-label">Tanggal SEP <span class="req">*</span></label>
+          <DatePicker
+            v-model="TanggalSEP"
+            dateFormat="dd M yy"
+            placeholder="Pilih tanggal SEP"
+            showIcon
+            iconDisplay="input"
+            class="w-100"
+            :class="{ 'p-invalid': formErrors.TanggalSEP }"
+          />
+        </div>
       </div>
-      <hr />
-      <div class="row">
-        <div class="col-md-8">
-          <div class="form-group">
-            <label>Nomor Rekam Medis</label><br />
-            <InputText v-model="norm" style="width: 100%" readonly />
-          </div>
-          <div class="form-group">
-            <label>Tanggal Jam Masuk RS</label><br />
-            <DatePicker
-              id="tanggal_pulang"
-              v-model="TanggalRawat"
-              dateFormat="dd M yy"
-              placeholder="Pilih tanggal"
-              showIcon
-              showTime
-              hourFormat="24"
-              iconDisplay="input"
-              style="width: 100%"
-            />
-          </div>
-          <div class="form-group" v-if="carabayarSelected?.KODE == 5">
-            <label>Tanggal SEP</label><br />
-            <DatePicker
-              id="tanggal_pulang"
-              v-model="TanggalSEP"
-              dateFormat="dd M yy"
-              placeholder="Pilih tanggal"
-              showIcon
-              iconDisplay="input"
-              style="width: 100%"
-            />
-          </div>
+    </Panel>
 
-          <div class="form-group">
-            <label>Jenis Rawat</label><br />
-            <Select
-              v-model="jenisrawatSelected"
-              :options="JenisRawatList"
-              optionLabel="caption"
-              placeholder="Pilih Cara Bayar"
-              class="w-100"
-            />
-          </div>
+    <!-- ── SECTION 2: Pelayanan ── -->
+    <Panel class="reg-section">
+      <template #header>
+        <div class="reg-section-head">
+          <i class="pi pi-sitemap"></i>
+          <span>Jenis Pelayanan</span>
+        </div>
+      </template>
+      <div class="reg-grid-2">
+        <div class="reg-field">
+          <label class="reg-label">Jenis Rawat <span class="req">*</span></label>
+          <Select
+            v-model="jenisrawatSelected"
+            :options="JenisRawatList"
+            optionLabel="caption"
+            placeholder="Pilih Jenis Rawat"
+            class="w-100"
+            :class="{ 'p-invalid': formErrors.jenisrawatSelected }"
+          />
+        </div>
+        <div class="reg-field">
+          <label class="reg-label">Cara Bayar <span class="req">*</span></label>
+          <Select
+            v-model="carabayarSelected"
+            :options="listcaraBayar"
+            optionLabel="NAMA"
+            placeholder="Pilih Cara Bayar"
+            class="w-100"
+            filter
+            showClear
+            :class="{ 'p-invalid': formErrors.carabayarSelected }"
+          />
+        </div>
+        <div class="reg-field">
+          <label class="reg-label">DPJP <span class="req">*</span></label>
+          <Select
+            v-model="dokterSelected"
+            :options="list_dokter"
+            optionLabel="NAMADOKTER"
+            placeholder="Pilih DPJP"
+            class="w-100"
+            filter
+            showClear
+            :class="{ 'p-invalid': formErrors.dokterSelected }"
+          />
+        </div>
+        <div class="reg-field">
+          <label class="reg-label">Diagnosa Pasien</label>
+          <Select
+            v-model="diagnoseSelected"
+            :options="listDiagnose"
+            optionLabel="dx"
+            :filter="true"
+            :showClear="false"
+            @filter="searchDiagnose"
+            placeholder="Cari diagnosa ICD..."
+            appendTo="body"
+            class="w-100"
+          />
+        </div>
+      </div>
+    </Panel>
 
-          <div class="form-group">
-            <label>Cara Bayar</label><br />
-            <Select
-              v-model="carabayarSelected"
-              :options="listcaraBayar"
-              optionLabel="NAMA"
-              placeholder="Pilih Cara Bayar"
-              class="w-100"
-              filter
-              showClear
-            />
-          </div>
+    <!-- ── SECTION 3: Penempatan ── -->
+    <Panel class="reg-section">
+      <template #header>
+        <div class="reg-section-head">
+          <i class="pi pi-building"></i>
+          <span>Penempatan Pasien</span>
+        </div>
+      </template>
 
-          <div class="form-group">
-            <label>Pilih DPJP</label><br />
-            <Select
-              v-model="dokterSelected"
-              :options="list_dokter"
-              optionLabel="NAMADOKTER"
-              placeholder="Pilih DPJP"
-              class="w-100"
-              filter
-              showClear
-            />
-          </div>
+      <!-- Poli Klinik (Jalan) -->
+      <div v-if="jenisrawatSelected.code == 2" class="reg-field">
+        <label class="reg-label">Poli Klinik <span class="req">*</span></label>
+        <Select
+          v-model="poliSelected"
+          :options="listPolyKlinik"
+          optionLabel="nama"
+          :showClear="true"
+          :loading="load_ruangan"
+          placeholder="Pilih Poli Klinik"
+          appendTo="body"
+          class="w-100"
+          :class="{ 'p-invalid': formErrors.poliSelected }"
+        />
+      </div>
 
-          <div class="form-group" v-if="jenisrawatSelected.code == 2">
-            <label>Pilih Poli Klinik</label><br />
-
-            <div class="input-group">
-              <Select
-                v-model="poliSelected"
-                :options="listPolyKlinik"
-                optionLabel="nama"
-                :showClear="true"
-                :loading="load_ruangan"
-                placeholder="Pilih Poli Klinik"
-                appendTo="body"
-                class="w-100"
-              />
-            </div>
-          </div>
-
-          <!-- <div class="form-group">
-            <label>Spesialisasi</label><br />
-            {{ listPoliKlinik }}
-            <Select
-              v-model="poliKlinikSelected"f
-              :options="listPoliKlinik"
-              optionLabel="NAMA"
-              placeholder="Spesialis"
-              class="w-100"
-              filter
-              showClear
-            />
-          </div> -->
-
-          <div class="form-group">
-            <label>Pilih Diagnosa Pasien</label><br />
-            <Select
-              v-model="diagnoseSelected"
-              :options="listDiagnose"
-              optionLabel="dx"
-              :filter="true"
-              :showClear="false"
-              @filter="searchDiagnose"
-              placeholder="Search diagnose..."
-              appendTo="body"
-              style="width: 100%; height: 35px"
-            />
-          </div>
-          <div
-            class="form-group"
-            v-if="carabayarSelected?.KODE == 5 && jenisrawatSelected.code == 1"
+      <!-- Ruang Rawat Inap -->
+      <div v-if="jenisrawatSelected.code == 1" class="reg-field">
+        <label class="reg-label">
+          Ruang Rawat Inap <span class="req">*</span>
+          <span class="reg-label-meta">
+            <i class="pi pi-clock"></i>
+            Diperbarui: {{ formatDateTimeForAPI(last_update_ruangan) }}
+          </span>
+        </label>
+        <div class="d-flex gap-2">
+          <Select
+            v-model="ruanganSelected"
+            :options="listRuangan"
+            optionLabel="NAMA"
+            :filter="true"
+            :showClear="true"
+            :loading="load_ruangan"
+            placeholder="Pilih Ruang Rawat Inap"
+            appendTo="body"
+            class="flex-grow-1"
+            :class="{ 'p-invalid': formErrors.ruanganSelected }"
           >
-            <label>SPRI (Surat Perintah Rawat Inap)</label><br />
-            <div class="input-group">
-              <InputText v-model="NoSPRI" style="width: 80%" />
-              <Button
-                label="SPRI"
-                severity="success"
-                text
-                @click="callFOrmListSPRI()"
-                icon="pi pi-history"
-                style="height: 35px"
-                class="p-button p-button-secondary round-button2 mt-0"
-                :class="{ 'input-error': formErrors.TanggalRawat }"
-              />
-            </div>
-          </div>
-
-          <div class="form-group" v-if="jenisrawatSelected.code == 1">
-            <label>
-              Ruang Rawat Inap
-              <small>update terakhir pada: {{ formatDateTimeForAPI(last_update_ruangan) }}</small>
-            </label>
-            <div class="input-group">
-              <Select
-                v-model="ruanganSelected"
-                :options="listRuangan"
-                optionLabel="NAMA"
-                :filter="true"
-                :showClear="true"
-                :loading="load_ruangan"
-                placeholder="Pilih Ruang Rawat Inap"
-                appendTo="body"
-                style="width: 80%; height: 35px"
-              >
-                <template #option="slotProps">
-                  <div class="flex flex-col gap-1 py-2">
-                    <div class="font-semibold text-sm text-gray-900 dark:text-gray-100">
-                      {{ slotProps.option?.NAMA }}
-                      <span class="ml-1"><small>Tersedia</small></span>
-                      <Tag
-                        severity="success"
-                        :value="slotProps.option?.TERSEDIA"
-                        :class="`text-xs ml-2 px-2 py-1 rounded-full ml-1${slotProps.option?.COLOR}`"
-                        style="font-size: 10px; font-weight: 500"
-                      />
-                      <small class="ml-2">dari</small>
-                      <Tag
-                        severity="success"
-                        :value="slotProps.option?.JUMLAH_TT"
-                        :class="`text-xs px-2 py-1 rounded-full ml-1`"
-                        style="font-size: 10px; font-weight: 500"
-                      />
-                      <!-- <small class="ml-1"> {{ slotProps.option.LAST_UPDATE_KELUAR }}</small> -->
-                    </div>
-                  </div>
-                </template>
-              </Select>
-              <Button
-                small
-                class="text"
-                @click="getRuangan"
-                style="height: 35px"
-                :loading="load_ruangan"
-                text
-                icon="pi pi-refresh"
-              />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <div style="display: flex; align-items: center; margin-top: 3rem; margin-bottom: 25px">
-              <Checkbox v-model="pasienkatarak" :binary="true" id="pasienkatarak" />
-              <label
-                for="pasienkatarak"
-                style="margin-left: 8px; margin-bottom: 0em; cursor: pointer"
-              >
-                Pasien Katarak
-              </label>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="font-bold">Naik Kelas Rawat </label>
-
-            <Select
-              v-model="selectedKelas"
-              :options="klsRawatNaik"
-              optionLabel="caption"
-              placeholder="Pilih Kelas Rawat"
-              class="w-100"
-            />
-          </div>
-
-          <!-- Traffic Accident -->
-          <div class="form-group" v-if="carabayarSelected?.KODE == 5">
-            <label class="font-bold">Pasien KLL? <span class="text-danger">*</span></label>
-            <Select
-              v-model="lakaLantasSelected"
-              :options="lakaLantasOptions"
-              optionLabel="caption"
-              placeholder="Pilih status KLL"
-              class="w-100"
-            />
-          </div>
-
-          <!-- Traffic Accident Details (conditional) -->
-          <div v-if="lakaLantasSelected.code > 0" class="kll-details">
-            <div class="form-group">
-              <label class="font-bold">Tanggal KLL <span class="text-danger">*</span></label>
-              <DatePicker
-                v-model="tanggalKLL"
-                :showIcon="true"
-                view="date"
-                dateFormat="dd/mm/yy"
-                :yearNavigator="true"
-                yearRange="2000:2030"
-                placeholder="Pilih Tanggal KLL"
-                class="w-100"
-              />
-            </div>
-
-            <div class="form-group">
-              <label class="font-bold"
-                >Provinsi Lokasi KLL <span class="text-danger">*</span></label
-              >
-              <Select
-                v-model="provinsiKLL"
-                :options="provinsiOptions"
-                optionLabel="nama"
-                :filter="true"
-                :showClear="true"
-                @change="GeKabupaten_bpjs"
-                placeholder="Pilih Provinsi"
-                class="w-100"
-              />
-            </div>
-
-            <div class="form-group">
-              <label class="font-bold">Kabupaten/Kota <span class="text-danger">*</span></label>
-
-              <Select
-                v-model="kabupatenKLL"
-                :options="kabupatenOptions"
-                optionLabel="nama"
-                :filter="true"
-                :showClear="true"
-                :disabled="!provinsiKLL"
-                @change="GetKecamatan_bpjs"
-                placeholder="Pilih Kabupaten/Kota"
-                :loading="loading_load_kab"
-                class="w-100"
-              />
-            </div>
-
-            <div class="form-group">
-              <label class="font-bold">Kecamatan <span class="text-danger">*</span></label>
-
-              <Select
-                v-model="kecamatanKLL"
-                :options="kecamatanOptions"
-                optionLabel="nama"
-                :filter="true"
-                :showClear="true"
-                :disabled="!kabupatenKLL"
-                :loading="loading_load_kec"
-                placeholder="Pilih Kecamatan"
-                class="w-100"
-              />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Catatan</label><br />
-            <Textarea v-model="Catatan" style="width: 100%" rows="3" />
-          </div>
-
-          <!-- <div class="form-group">
-            <label>NOSEP</label><br />
-            <div class="input-group">
-              <InputText v-model="nomor_sep" style="width: 70%" />
-              <Button
-                label="SPRI"
-                severity="success"
-                text
-                @click="callFOrmListSPRI()"
-                icon="pi pi-history"
-                style="height: 35px"
-                class="p-button p-button-secondary round-button2 mt-0"
-              />
-            </div>
-          </div> -->
+            <template #option="slotProps">
+              <div class="ruang-option">
+                <span class="ruang-name">{{ slotProps.option?.NAMA }}</span>
+                <div class="ruang-meta">
+                  <Tag
+                    :severity="slotProps.option?.TERSEDIA > 0 ? 'success' : 'danger'"
+                    :value="`${slotProps.option?.TERSEDIA} tersedia`"
+                    style="font-size: 10px"
+                  />
+                  <span class="ruang-total">dari {{ slotProps.option?.JUMLAH_TT }} TT</span>
+                </div>
+              </div>
+            </template>
+          </Select>
+          <Button
+            icon="pi pi-refresh"
+            text
+            severity="secondary"
+            :loading="load_ruangan"
+            @click="getRuangan"
+            v-tooltip.top="'Perbarui daftar ruangan'"
+          />
         </div>
       </div>
 
-      <hr />
-
-      <div class="flex justify-content-between align-items-center mt-3">
-        <div class="flex gap-2">
+      <!-- SPRI -->
+      <div
+        class="reg-field mt-3"
+        v-if="carabayarSelected?.KODE == 5 && jenisrawatSelected.code == 1"
+      >
+        <label class="reg-label">No. SPRI (Surat Perintah Rawat Inap)</label>
+        <div class="d-flex gap-2">
+          <InputText v-model="NoSPRI" class="flex-grow-1" placeholder="Nomor SPRI..." />
           <Button
-            label="Cari Pasien"
-            icon="pi pi-users"
-            class="p-button p-button-success round-button2"
-            @click="ShowFormPendaftaran"
-          />
-          <Button
-            label="Simpan"
-            icon="pi pi-save"
-            class="p-button p-button-info ml-2 round-button2"
-            :loading="loading"
-            @click="submitForm"
-          />
-          <!-- <Button
-            label="Reset"
-            icon="pi pi-refresh"
-            class="p-button p-button-secondary ml-2"
-            @click="hapusSEP"
-          /> -->
-          <Button
-            label="Riwayat Pendaftaran"
-            severity="warn"
-            icon="pi pi-save"
-            class="p-button p-button-success ml-2 round-button2"
-            @click="callChildFetch"
+            label="Riwayat SPRI"
+            severity="success"
+            outlined
+            icon="pi pi-history"
+            @click="callFOrmListSPRI()"
           />
         </div>
+      </div>
+    </Panel>
+
+    <!-- ── SECTION 4: Informasi Tambahan ── -->
+    <Panel class="reg-section">
+      <template #header>
+        <div class="reg-section-head">
+          <i class="pi pi-list"></i>
+          <span>Informasi Tambahan</span>
+        </div>
+      </template>
+      <div class="reg-grid-2">
+        <div class="reg-field">
+          <label class="reg-label">Naik Kelas Rawat</label>
+          <Select
+            v-model="selectedKelas"
+            :options="klsRawatNaik"
+            optionLabel="caption"
+            placeholder="Pilih Kelas (opsional)"
+            class="w-100"
+            showClear
+          />
+        </div>
+        <div class="reg-field" v-if="carabayarSelected?.KODE == 5">
+          <label class="reg-label">Status KLL <span class="req">*</span></label>
+          <Select
+            v-model="lakaLantasSelected"
+            :options="lakaLantasOptions"
+            optionLabel="caption"
+            placeholder="Pilih status KLL"
+            class="w-100"
+          />
+        </div>
+        <div class="reg-field reg-field-full">
+          <label class="reg-label">Catatan</label>
+          <Textarea v-model="Catatan" class="w-100" rows="3" placeholder="Catatan tambahan..." />
+        </div>
+        <div class="reg-field reg-field-full">
+          <div class="reg-checkbox-row">
+            <Checkbox v-model="pasienkatarak" :binary="true" inputId="pasienkatarak" />
+            <label for="pasienkatarak" class="reg-checkbox-label">Pasien Katarak</label>
+          </div>
+        </div>
+        <div class="reg-field reg-field-full">
+          <div class="bpjs-adv-wrap">
+            <span class="bpjs-adv-toggle" @click="showAdvBPJS = !showAdvBPJS">
+              <i
+                :class="showAdvBPJS ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                style="font-size: 0.6rem"
+              ></i>
+              Opsi lanjutan
+            </span>
+            <Transition name="adv-fade">
+              <div v-if="showAdvBPJS" class="bpjs-adv-content">
+                <div
+                  class="reg-checkbox-row bpjs-only-row"
+                  :class="{ 'bpjs-only-active': hanyaSimpanKeBPJS }"
+                >
+                  <Checkbox
+                    v-model="hanyaSimpanKeBPJS"
+                    :binary="true"
+                    inputId="hanyaSimpanKeBPJS"
+                  />
+                  <label for="hanyaSimpanKeBPJS" class="reg-checkbox-label">
+                    Hanya simpan ke server BPJS
+                    <span class="reg-checkbox-hint">(data tidak disimpan ke SIMRS)</span>
+                  </label>
+                </div>
+              </div>
+            </Transition>
+          </div>
+        </div>
+      </div>
+    </Panel>
+
+    <!-- ── SECTION 5: Detail KLL (conditional) ── -->
+    <Panel class="reg-section reg-section-kll" v-if="lakaLantasSelected.code > 0">
+      <template #header>
+        <div class="reg-section-head reg-section-head-warn">
+          <i class="pi pi-exclamation-triangle"></i>
+          <span>Detail Kecelakaan Lalu Lintas (KLL)</span>
+        </div>
+      </template>
+      <div class="reg-grid-2">
+        <div class="reg-field">
+          <label class="reg-label">Tanggal KLL <span class="req">*</span></label>
+          <DatePicker
+            v-model="tanggalKLL"
+            showIcon
+            dateFormat="dd/mm/yy"
+            placeholder="Pilih Tanggal KLL"
+            class="w-100"
+            :class="{ 'p-invalid': formErrors.tanggalKLL }"
+          />
+        </div>
+        <div class="reg-field">
+          <label class="reg-label">Provinsi Lokasi KLL <span class="req">*</span></label>
+          <Select
+            v-model="provinsiKLL"
+            :options="provinsiOptions"
+            optionLabel="nama"
+            filter
+            showClear
+            @change="GeKabupaten_bpjs"
+            placeholder="Pilih Provinsi"
+            class="w-100"
+            :class="{ 'p-invalid': formErrors.provinsiKLL }"
+          />
+        </div>
+        <div class="reg-field">
+          <label class="reg-label">Kabupaten / Kota <span class="req">*</span></label>
+          <Select
+            v-model="kabupatenKLL"
+            :options="kabupatenOptions"
+            optionLabel="nama"
+            filter
+            showClear
+            :disabled="!provinsiKLL"
+            @change="GetKecamatan_bpjs"
+            placeholder="Pilih Kabupaten/Kota"
+            :loading="loading_load_kab"
+            class="w-100"
+            :class="{ 'p-invalid': formErrors.kabupatenKLL }"
+          />
+        </div>
+        <div class="reg-field">
+          <label class="reg-label">Kecamatan <span class="req">*</span></label>
+          <Select
+            v-model="kecamatanKLL"
+            :options="kecamatanOptions"
+            optionLabel="nama"
+            filter
+            showClear
+            :disabled="!kabupatenKLL"
+            :loading="loading_load_kec"
+            placeholder="Pilih Kecamatan"
+            class="w-100"
+            :class="{ 'p-invalid': formErrors.kecamatanKLL }"
+          />
+        </div>
+      </div>
+    </Panel>
+
+    <!-- ── Banner peringatan hanya-BPJS ── -->
+    <Transition name="bpjs-banner">
+      <div v-if="hanyaSimpanKeBPJS" class="bpjs-only-banner">
+        <div class="bpjs-banner-icon">
+          <i class="pi pi-exclamation-triangle"></i>
+        </div>
+        <div class="bpjs-banner-body">
+          <strong>Mode "Hanya BPJS" aktif</strong>
+          <span>
+            Data pendaftaran ini <u>hanya akan dikirim ke server BPJS</u> dan
+            <u>tidak tersimpan ke SIMRS</u>. Pastikan pilihan ini sudah benar sebelum menyimpan.
+          </span>
+        </div>
+        <button class="bpjs-banner-dismiss" @click="hanyaSimpanKeBPJS = false" title="Nonaktifkan">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+    </Transition>
+
+    <!-- ── ACTION BAR ── -->
+    <div class="reg-action-bar">
+      <div class="reg-action-left">
+        <Button
+          label="Cari Pasien"
+          icon="pi pi-search"
+          severity="secondary"
+          outlined
+          @click="ShowFormPendaftaran"
+        />
+        <Button
+          label="Riwayat Pendaftaran"
+          icon="pi pi-history"
+          severity="warn"
+          outlined
+          @click="callChildFetch"
+        />
+        <Button
+          label="Tindak Lanjut Pasien IGD"
+          icon="pi pi-send"
+          severity="info"
+          outlined
+          @click="PrintSEP"
+        />
+        <!-- <Button
+          label="Cetak SEP"
+          icon="pi pi-print"
+          severity="info"
+          outlined
+          :loading="loadingCetakSEP"
+          @click="cetakSEPButton"
+        /> -->
+      </div>
+      <div class="reg-action-right">
+        <Button
+          label="Simpan Pendaftaran"
+          icon="pi pi-save"
+          severity="success"
+          :loading="loading"
+          @click="submitForm"
+        />
       </div>
     </div>
   </div>
+
   <RecentPendaftaranView ref="childRef" />
 
   <!-- <Dialog
@@ -664,8 +712,17 @@
         class="p-button p-button-secondary flex-button"
         :class="{ 'w-full': isMobile }"
       />
+
+      <Button
+        label="Riwayat SPRI BPJS (Server BPJS)"
+        icon="pi pi-history"
+        severity="info"
+        @click="spriDialogRef.open()"
+      />
     </div>
   </Dialog>
+
+  <SPRIDialog ref="spriDialogRef" :noKartu="props.os.noKartu" />
 
   <Toast />
 </template>
@@ -681,7 +738,7 @@ import Dialog from 'primevue/dialog'
 import Checkbox from 'primevue/checkbox'
 import Tag from 'primevue/tag'
 import { useToast } from 'primevue/usetoast'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import axios from 'axios'
 
@@ -694,6 +751,18 @@ const authStore = useAuthStore()
 const { id_client, user_id, company } = storeToRefs(authStore)
 const toast = useToast()
 const route = useRoute()
+const router = useRouter()
+
+const goToTindakLanjut = () => {
+  // 1. Resolve route untuk mendapatkan URL lengkap berdasarkan nama dan query
+  const routeData = router.resolve({
+    name: 'TindakLanjutPasienView',
+    query: { noreg: route.query.noreg },
+  })
+
+  // 2. Buka URL tersebut di tab baru
+  window.open(routeData.href, '_blank')
+}
 
 const props = defineProps({
   os: {
@@ -706,6 +775,10 @@ const props = defineProps({
 })
 
 import RecentPendaftaranView from '@/views/Pendaftaran/RecentPendaftaranView.vue'
+
+import SPRIDialog from '@/views/Pendaftaran/SpriDataBPJSComponent.vue'
+
+const spriDialogRef = ref(null)
 
 const lakaLantasSelected = ref({
   caption: '0 - Bukan Kecelakaan lalu lintas [BKLL]',
@@ -737,6 +810,8 @@ const ruanganSelected = ref(null)
 const isLoadingSPRI = ref(false)
 const copiedSPRIIndex = ref(null)
 const pasienkatarak = ref(false)
+const hanyaSimpanKeBPJS = ref(false)
+const showAdvBPJS = ref(false)
 const Catatan = ref(null)
 
 // KLL related data
@@ -775,6 +850,9 @@ const last_update_ruangan = ref(new Date())
 
 // SPRI data
 const spriHistoryData = ref([])
+
+const tempNoregister = ref(null)
+const tempNosep = ref(null)
 
 // Options
 const lakaLantasOptions = ref([
@@ -927,7 +1005,7 @@ const searchDiagnose = async (event) => {
     isLoading.value = true
     const url = configStore.apiBaseUrl
     const response = await axios.post(`${url}/index.php/api/data_referensi/get_icd_v2`, payload)
-    console.log(response.data)
+
     listDiagnose.value = response.data
   } catch (error) {
     console.error('Error searching diagnose:', error)
@@ -1021,7 +1099,6 @@ const doterbitkanSPRI = async () => {
     const url = configStore.apiBaseUrl
     const response = await axios.post(`${url}/index.php/api/transaksi_pasien/terbitkan_SPRI`, param)
 
-    console.log(response.data)
     if (response.data.metadata.code == 200) {
       showSuccess(response.data.metadata.message)
       GetListSPRI()
@@ -1138,7 +1215,6 @@ const get_provinsi_bpjs = async () => {
 const loading_load_kab = ref(false)
 
 const GeKabupaten_bpjs = async (e) => {
-  console.log(e.value)
   loading_load_kab.value = true
 
   if (e.value == null) {
@@ -1166,9 +1242,7 @@ const GeKabupaten_bpjs = async (e) => {
 // Method converted to function
 const loading_load_kec = ref(false)
 const GetKecamatan_bpjs = async (e) => {
-  console.log(e.value)
   loading_load_kec.value = true
-
   if (e.value == null) {
     kecamatanOptions.value = []
   }
@@ -1238,12 +1312,14 @@ const submitForm = async () => {
         jenis_kunj: 1,
         kd_cara_bayar: carabayarSelected.value.KODE,
         pasienkatarak: pasienkatarak.value ? 1 : 0,
+        hanya_simpan_bpjs: hanyaSimpanKeBPJS.value ? 1 : 0,
         lakaLantas: lakaLantasSelected.value,
         nospri: NoSPRI.value,
         dokterSelected: dokterSelected.value,
         provSelected: provinsiKLL.value,
         kabSelected: kabupatenKLL.value,
         kecSelected: kecamatanKLL.value,
+        catatan: Catatan.value,
         noreggister_origin: route.query.noreg,
         ruanganSelected: {
           kode:
@@ -1261,9 +1337,21 @@ const submitForm = async () => {
     if (response.data.metadata.code == '200') {
       showSuccess(response.data.metadata.message)
 
-      if (carabayarSelected.value.KODE == 5) {
-        PrintSEP(response.data.data_trans.metadata.sep, response.data.data_trans.metadata.no_reg)
+      if (hanyaSimpanKeBPJS.value == 1) {
+        resetForm()
+        return
       }
+
+      const noReg = response.data.data_trans.metadata.no_reg
+      const noSepResp = response.data.data_trans.metadata.sep || ''
+
+      if (carabayarSelected.value.KODE == 5) {
+        PrintSEP(noSepResp, noReg, norm.value)
+      } else {
+        PrintSEP('', noReg, norm.value)
+      }
+
+      resetForm()
     } else {
       showInfo(response.data.metadata.message)
     }
@@ -1276,19 +1364,17 @@ const submitForm = async () => {
   }
 }
 
-const PrintSEP = async (nosep, noregister) => {
-  const payLoad = {
+const PrintSEP = async (nosep, noregister, norm) => {
+  const data = {
     data: {
       NOPENDAFTARAN: noregister,
       NOSEP: nosep,
       id_client: id_client.value,
+      NORM: norm,
     },
   }
-
-  const url = configStore.laravel
-  const response = await axios.post(`${url}/get_data_sep_api`, payLoad)
-
-  console.log('prin sep', response)
+  // const response = await axios.post(`${url}/get_data_sep_api`, payLoad)
+  const response = await axios.post(`${configStore.laravel}/get_data_sep_api`, data)
 
   window.open(response.data, '_blank')
 }
@@ -1425,24 +1511,71 @@ const validateForm = () => {
 }
 
 const resetForm = () => {
+  // ── Tanggal ──
   TanggalRawat.value = new Date()
+  TanggalSEP.value = new Date()
+
+  // ── Pelayanan ──
+  jenisrawatSelected.value = { code: 1, caption: 'INAP' }
   dokterSelected.value = null
   diagnoseSelected.value = null
   carabayarSelected.value = null
-  ruanganSelected.value = null
 
+  // ── Penempatan ──
+  ruanganSelected.value = null
+  poliSelected.value = null
+  NoSPRI.value = null
+
+  // ── KLL ──
   lakaLantasSelected.value = {
     caption: '0 - Bukan Kecelakaan lalu lintas [BKLL]',
     code: 0,
   }
-
   tanggalKLL.value = null
   provinsiKLL.value = null
   kabupatenKLL.value = null
   kecamatanKLL.value = null
+  kabupatenOptions.value = []
+  kecamatanOptions.value = []
+
+  // ── Informasi tambahan ──
+  selectedKelas.value = null
   pasienkatarak.value = false
   Catatan.value = null
-  NoSPRI.value = null
+
+  // ── Opsi lanjutan BPJS ──
+  hanyaSimpanKeBPJS.value = false
+  showAdvBPJS.value = false
+
+  // ── Temp & SEP ──
+  nomor_sep.value = null
+  noSEP.value = null
+  tempNoregister.value = null
+  tempNosep.value = null
+  copiedSPRIIndex.value = null
+
+  // ── Validasi ──
+  Object.keys(formErrors.value).forEach((key) => {
+    formErrors.value[key] = false
+  })
+}
+
+const loadingCetakSEP = ref(false)
+const cetakSEPButton = async () => {
+  // const noreg = tempNoregister.value || ''
+  // if (!noreg) {
+  //   showError('Nomor register tidak ditemukan. Pastikan pasien sudah terdaftar.')
+  //   return
+  // }
+  try {
+    loadingCetakSEP.value = true
+    //await PrintSEP(null, noreg, norm.value)
+    PrintSEP('', '112605424604', '654308')
+  } catch (error) {
+    showError('Gagal mencetak SEP: ' + error.message)
+  } finally {
+    loadingCetakSEP.value = false
+  }
 }
 
 const loadingPrint = ref(false)
@@ -1451,7 +1584,6 @@ const cetakSPRI = async (data) => {
 
   try {
     loadingPrint.value = true
-
     const formData = {
       NO_KARTU: data.NO_KARTU,
       NAMA: data.NAMA,
@@ -1504,7 +1636,6 @@ watch(carabayarSelected, (newVal) => {
 watch(jenisrawatSelected, (newVal) => {
   if (newVal) {
     try {
-      console.log(jenisrawatSelected.value)
       localStorage.setItem('jenisrawatSelected', JSON.stringify(newVal))
     } catch (error) {
       console.error('Error saving to localStorage:', error)
@@ -1537,7 +1668,6 @@ const LoadDataPoly = async () => {
 
     if (response.data.length) {
       listPolyKlinik.value = response.data
-      console.log('load data poly', listPolyKlinik.value)
     } else {
       showError('Data pasien tidak ditemukan (lokal)')
     }
@@ -1592,6 +1722,254 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* ── Form wrapper ── */
+.reg-form-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reg-section {
+  border-radius: 8px;
+}
+.reg-section-kll {
+  border-color: #fde68a;
+}
+
+.reg-section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 13px;
+}
+.reg-section-head-warn {
+  color: #b45309;
+}
+.reg-section-head-warn .pi {
+  color: #d97706;
+}
+
+.reg-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 768px) {
+  .reg-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.reg-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.reg-field-full {
+  grid-column: 1 / -1;
+}
+
+.reg-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.req {
+  color: #dc3545;
+}
+
+.reg-label-meta {
+  font-size: 10px;
+  color: #adb5bd;
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.reg-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  width: fit-content;
+}
+.reg-checkbox-label {
+  font-size: 13px;
+  cursor: pointer;
+  margin: 0;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.reg-checkbox-hint {
+  font-size: 11px;
+  font-weight: 400;
+  color: #b45309;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+/* ── Banner peringatan hanya-BPJS ── */
+.bpjs-only-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: #fff7ed;
+  border: 1.5px solid #f59e0b;
+  border-left: 5px solid #f59e0b;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+}
+.bpjs-banner-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  background: #f59e0b;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+}
+.bpjs-banner-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.82rem;
+  color: #92400e;
+}
+.bpjs-banner-body strong {
+  font-size: 0.88rem;
+  color: #78350f;
+}
+.bpjs-banner-dismiss {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: #d97706;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  line-height: 1;
+  transition: background 0.15s;
+}
+.bpjs-banner-dismiss:hover {
+  background: #fde68a;
+}
+.bpjs-banner-enter-active,
+.bpjs-banner-leave-active {
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+.bpjs-banner-enter-from,
+.bpjs-banner-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+/* ── Opsi Lanjutan BPJS ── */
+.bpjs-adv-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bpjs-adv-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #94a3b8;
+  cursor: pointer;
+  user-select: none;
+  width: fit-content;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+.bpjs-adv-toggle:hover {
+  color: #64748b;
+}
+.bpjs-adv-content {
+  padding-left: 4px;
+}
+.bpjs-only-row {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+.bpjs-only-active {
+  border-color: #f59e0b !important;
+  background: #fef3c7 !important;
+}
+.adv-fade-enter-active,
+.adv-fade-leave-active {
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+.adv-fade-enter-from,
+.adv-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+.ruang-option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 2px 0;
+}
+.ruang-name {
+  font-size: 13px;
+  font-weight: 500;
+}
+.ruang-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ruang-total {
+  font-size: 11px;
+  color: #6c757d;
+}
+
+.reg-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.reg-action-left {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.reg-action-right {
+  display: flex;
+  gap: 8px;
+}
+
 .kll-details {
   background-color: #f8f9fa;
   border: 1px solid #dee2e6;

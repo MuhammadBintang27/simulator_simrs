@@ -1,59 +1,76 @@
 <template>
   <div class="container">
-    <!-- Loading State -->
     <loading_overlay :is-loading="loading" message="Memuat data...." />
+
+    <!-- Page Header -->
+    <div class="ep-header">
+      <div class="ep-header-left">
+        <div class="ep-header-icon"><i class="pi pi-file-edit"></i></div>
+        <div>
+          <div class="ep-header-title">Edit Pendaftaran Pasien</div>
+          <div class="ep-header-sub" v-if="formData.NAMAPASIEN">
+            <i class="pi pi-user me-1"></i>{{ formData.NAMAPASIEN }}
+            <span class="ep-header-sep">·</span>
+            <i class="pi pi-id-card me-1"></i>{{ formData.NOMR }}
+            <span class="ep-header-sep">·</span>
+            <i class="pi pi-tag me-1"></i>{{ formData.JENISRAWAT }}
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Main Form -->
     <div class="form-wrapper">
-      <!-- Header -->
-      <div class="form-header">
-        <h1>Edit Pendaftaran Pasien</h1>
-      </div>
-      <!-- Patient Info Section (Read Only) -->
-      <div class="section">
-        <h2><i class="pi pi-user"></i> Informasi Pasien</h2>
+      <!-- Informasi Pasien -->
+      <div class="ep-section">
+        <div class="ep-section-head">
+          <i class="pi pi-user"></i>
+          <span>Informasi Pasien</span>
+          <span class="ep-section-badge">Read Only</span>
+        </div>
         <div class="grid-2">
           <div class="form-group">
-            <label>Nomor Registrasi</label>
-            <InputText v-model="formData.NOPENDAFTARAN" readonly />
+            <label class="ep-label">Nomor Registrasi</label>
+            <InputText v-model="formData.NOPENDAFTARAN" readonly class="ep-readonly" />
           </div>
           <div class="form-group">
-            <label>No RM</label>
-            <InputText v-model="formData.NOMR" readonly />
+            <label class="ep-label">No. Rekam Medis</label>
+            <InputText v-model="formData.NOMR" readonly class="ep-readonly" />
           </div>
           <div class="form-group">
-            <label>Nama Pasien</label>
-            <InputText v-model="formData.NAMAPASIEN" readonly />
+            <label class="ep-label">Nama Pasien</label>
+            <InputText v-model="formData.NAMAPASIEN" readonly class="ep-readonly" />
           </div>
           <div class="form-group">
-            <label>NIK</label>
-            <InputText v-model="formData.NOKTP" readonly />
+            <label class="ep-label">NIK</label>
+            <InputText v-model="formData.NOKTP" readonly class="ep-readonly" />
           </div>
           <div class="form-group">
-            <label>Cara Bayar <span class="required">*</span></label>
-
+            <label class="ep-label">Cara Bayar <span class="required">*</span></label>
             <Select
               v-model="formData.CARABAYAR"
               :options="listcaraBayar"
-              optionDisabled="disabled"
               optionLabel="NAMA"
               placeholder="Pilih cara bayar..."
+              class="w-100"
             />
           </div>
           <div class="form-group">
-            <label>JENIS RAWAT</label>
-            <InputText v-model="formData.JENISRAWAT" readonly />
+            <label class="ep-label">Jenis Rawat</label>
+            <InputText v-model="formData.JENISRAWAT" readonly class="ep-readonly" />
           </div>
         </div>
       </div>
 
-      <!-- Edit Section -->
-      <div class="section">
-        <h2><i class="pi pi-calendar"></i> Data Kunjungan</h2>
-
+      <!-- Data Kunjungan -->
+      <div class="ep-section">
+        <div class="ep-section-head">
+          <i class="pi pi-calendar"></i>
+          <span>Data Kunjungan</span>
+        </div>
         <div class="grid-2">
-          <!-- Tanggal Masuk -->
           <div class="form-group">
-            <label>Tanggal & Jam Masuk <span class="required">*</span></label>
+            <label class="ep-label">Tanggal & Jam Masuk <span class="required">*</span></label>
             <DatePicker
               v-model="formData.MASUKPOLY"
               @update:modelValue="formData.MASUKPOLY = $event"
@@ -61,12 +78,11 @@
               :showTime="true"
               hourFormat="24"
               placeholder="Pilih tanggal & jam"
+              class="w-100"
             />
           </div>
-
-          <!-- Dokter -->
           <div class="form-group">
-            <label>Pilih Dokter <span class="required">*</span></label>
+            <label class="ep-label">DPJP / Dokter <span class="required">*</span></label>
             <Select
               v-model="dokterSelected"
               :options="listDokter"
@@ -75,14 +91,12 @@
               filter
               :loading="loadingDokter"
               @change="onDokterChange"
+              class="w-100"
             />
           </div>
         </div>
-        <br />
-        <!-- Diagnosa -->
-        <div class="form-group">
-          <label>Diagnosa <span class="required">*</span></label>
-
+        <div class="form-group" style="margin-top: 0.85rem">
+          <label class="ep-label">Diagnosa <span class="required">*</span></label>
           <Select
             v-model="diagnoseSelected"
             :options="listDiagnose"
@@ -92,31 +106,157 @@
             @filter="searchDiagnose"
             @change="onDiagnosaChange()"
             :loading="loadingDiagnosa"
+            class="w-100"
           />
         </div>
-        <br />
-        <!-- Catatan -->
-        <div class="form-group">
-          <label>Catatan Medis <span class="required">*</span></label>
+        <div class="form-group" style="margin-top: 0.85rem">
+          <label class="ep-label">Catatan Medis <span class="required">*</span></label>
           <Textarea
             v-model="formData.CATATAN"
             :autoResize="true"
-            rows="4"
+            rows="3"
             placeholder="Masukkan catatan medis pasien..."
+            class="w-100"
           />
         </div>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="form-actions">
+      <!-- ══ NORM EDIT (tersembunyi) ══ -->
+      <div class="norm-adv-wrap">
+        <button class="norm-adv-toggle" @click="showNormEdit = !showNormEdit" type="button">
+          <i class="pi pi-id-card" style="color: darkcyan"></i>
+          <span>Edit No. Rekam Medis</span>
+          <span class="norm-adv-hint">— opsi lanjutan</span>
+          <i class="pi ms-auto" :class="showNormEdit ? 'pi-chevron-up' : 'pi-chevron-down'"></i>
+        </button>
+
+        <Transition name="norm-slide">
+          <div v-if="showNormEdit" class="norm-edit-panel">
+            <div class="norm-warn-banner">
+              <i class="pi pi-exclamation-triangle" style="font-size: 1.1rem; flex-shrink: 0"></i>
+              <div>
+                <strong>Perhatian!</strong> Perubahan No. Rekam Medis akan berdampak pada seluruh
+                riwayat rekam medis pasien. Pastikan Anda memiliki wewenang sebelum mengubah data
+                ini.
+              </div>
+            </div>
+            <div class="grid-2" style="margin-top: 0.75rem">
+              <div class="form-group">
+                <label class="ep-label">No. Rekam Medis Saat Ini</label>
+                <InputText v-model="formData.NOMR" readonly class="ep-readonly w-100" />
+              </div>
+              <div class="form-group">
+                <label class="ep-label">
+                  No. Rekam Medis Baru
+                  <span style="font-size: 0.7rem; color: darkcyan; font-weight: 600"
+                    >(No. RM Pengganti)</span
+                  >
+                </label>
+                <InputText
+                  v-model="editNormValue"
+                  class="w-100 norm-input"
+                  placeholder="Masukkan No. Rekam Medis baru..."
+                />
+              </div>
+            </div>
+
+            <!-- Tombol simpan NORM tersendiri -->
+            <div class="norm-action-bar">
+              <span class="norm-action-hint">
+                <i class="pi pi-info-circle"></i>
+                Perubahan ini hanya memperbarui No. Rekam Medis pada transaksi ini.
+              </span>
+              <Button
+                label="Simpan No. Rekam Medis"
+                icon="pi pi-save"
+                class="round-button2"
+                :loading="loadingNorm"
+                :disabled="!editNormValue?.trim() || editNormValue === formData.NOMR"
+                @click="updateNomrRM"
+                style="background: darkcyan; border-color: darkcyan"
+              />
+            </div>
+          </div>
+        </Transition>
+      </div>
+
+      <!-- ══ SEP EDIT (tersembunyi) ══ -->
+      <div class="sep-adv-wrap">
+        <button class="sep-adv-toggle" @click="showSepEdit = !showSepEdit" type="button">
+          <i class="pi pi-shield" style="color: #b45309"></i>
+          <span>Edit No. SEP</span>
+          <span class="sep-adv-hint">— opsi lanjutan</span>
+          <i class="pi ms-auto" :class="showSepEdit ? 'pi-chevron-up' : 'pi-chevron-down'"></i>
+        </button>
+
+        <Transition name="sep-slide">
+          <div v-if="showSepEdit" class="sep-edit-panel">
+            <div class="sep-warn-banner">
+              <i class="pi pi-exclamation-triangle" style="font-size: 1.1rem; flex-shrink: 0"></i>
+              <div>
+                <strong>Perhatian!</strong> Perubahan No. SEP berdampak langsung pada klaim BPJS.
+                Pastikan Anda memiliki wewenang sebelum mengubah data ini.
+              </div>
+            </div>
+            <div class="grid-2" style="margin-top: 0.75rem">
+              <div class="form-group">
+                <label class="ep-label">
+                  No. SEP
+                  <span style="font-size: 0.7rem; color: #b45309; font-weight: 600"
+                    >(Surat Eligibilitas Peserta)</span
+                  >
+                </label>
+                <InputText
+                  v-model="formData.NOSEP"
+                  class="w-100 sep-input"
+                  placeholder="Masukkan No. SEP..."
+                />
+              </div>
+              <div class="form-group">
+                <label class="ep-label">No. Kartu BPJS</label>
+                <InputText v-model="formData.NOJAMINAN" readonly class="ep-readonly" />
+              </div>
+            </div>
+
+            <!-- Tombol simpan SEP tersendiri -->
+            <div class="sep-action-bar">
+              <span class="sep-action-hint">
+                <i class="pi pi-info-circle"></i>
+                Perubahan ini hanya memperbarui No. SEP, tidak mengubah data pendaftaran lainnya.
+              </span>
+              <Button
+                label="Simpan No. SEP"
+                icon="pi pi-save"
+                class="round-button2"
+                :loading="loadingSep"
+                :disabled="!formData.NOSEP?.trim()"
+                @click="updateNomorSEP"
+                style="background: #b45309; border-color: #b45309"
+              />
+            </div>
+          </div>
+        </Transition>
+      </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="ep-action-bar">
+      <div class="ep-action-left">
+        <Button
+          label="Histori BPJS"
+          icon="pi pi-clock"
+          severity="warn"
+          outlined
+          class="round-button2"
+          @click="riwayatBpjsRef.open()"
+        />
         <Button
           severity="info"
           class="round-button2"
           :loading="loading"
           @click="showMergerForm = true"
         >
-          <i class="fa-solid fa-arrows-turn-to-dots"></i>
-          <span>Merge Transaksi</span>
+          <i class="fa-solid fa-arrows-turn-to-dots me-1"></i>Merge Transaksi
         </Button>
         <Button
           label="Rubah ke BPJS"
@@ -126,15 +266,15 @@
           :loading="loading"
           @click="conversiKEBPJS"
         />
-        <Button
-          label="Simpan"
-          icon="pi pi-save"
-          severity="success"
-          class="round-button2"
-          :loading="loading"
-          @click="saveData"
-        />
       </div>
+      <Button
+        label="Simpan Perubahan"
+        icon="pi pi-save"
+        severity="success"
+        class="round-button2"
+        :loading="loading"
+        @click="saveData"
+      />
     </div>
 
     <Dialog v-model:visible="showDialogConversi" modal :style="{ width: '800px' }" :closable="true">
@@ -485,8 +625,16 @@
           class="p-button p-button-secondary flex-button"
           :class="{ 'w-full': isMobile }"
         />
+        <Button
+          label="Riwayat SPRI BPJS (Server BPJS)"
+          icon="pi pi-history"
+          severity="info"
+          @click="spriDialogRef.open()"
+        />
       </div>
     </Dialog>
+
+    <SPRIDialog ref="spriDialogRef" :noKartu="originalFormData.NOJAMINAN" />
 
     <Dialog
       v-model:visible="showMergerForm"
@@ -718,12 +866,246 @@
         </Stepper>
       </div>
     </Dialog>
+    <!-- ══ DIALOG REVIEW SEP ══ -->
+    <Dialog
+      v-model:visible="showSepConfirmDialog"
+      header="Review Data SEP — Konfirmasi Penyimpanan"
+      :style="{ width: '640px', maxWidth: '95vw' }"
+      modal
+      :closable="!loadingSep"
+    >
+      <div v-if="sepCheckResult" class="sep-review">
+        <!-- Status peserta -->
+        <div
+          class="sep-review-status"
+          :class="
+            sepCheckResult.peserta?.keterangan?.kode === '0' ? 'status-aktif' : 'status-nonaktif'
+          "
+        >
+          <i
+            class="pi"
+            :class="
+              sepCheckResult.peserta?.keterangan?.kode === '0'
+                ? 'pi-check-circle'
+                : 'pi-times-circle'
+            "
+          ></i>
+          <span>
+            Peserta
+            <strong>{{ sepCheckResult.peserta?.keterangan?.keterangan ?? '-' }}</strong>
+          </span>
+        </div>
+
+        <!-- Grid info -->
+        <div class="sep-review-grid">
+          <!-- Kolom kiri: Info SEP -->
+          <div class="sep-review-col">
+            <div class="sep-review-col-head"><i class="pi pi-file mr-1"></i>Informasi SEP</div>
+            <div class="sep-review-row">
+              <span class="sep-rv-lbl">No. SEP</span>
+              <span class="sep-rv-val mono">{{ sepCheckResult.noSep ?? '-' }}</span>
+            </div>
+            <div class="sep-review-row">
+              <span class="sep-rv-lbl">Tanggal SEP</span>
+              <span class="sep-rv-val">{{ sepCheckResult.tglSep ?? '-' }}</span>
+            </div>
+            <div class="sep-review-row">
+              <span class="sep-rv-lbl">Jenis Pelayanan</span>
+              <span class="sep-rv-val">{{ sepCheckResult.jnsPelayanan ?? '-' }}</span>
+            </div>
+            <div class="sep-review-row">
+              <span class="sep-rv-lbl">Kelas Rawat</span>
+              <span class="sep-rv-val">{{ sepCheckResult.kelasRawat ?? '-' }}</span>
+            </div>
+            <div class="sep-review-row">
+              <span class="sep-rv-lbl">Poli</span>
+              <span class="sep-rv-val">{{ sepCheckResult.poli ?? '-' }}</span>
+            </div>
+            <div class="sep-review-row">
+              <span class="sep-rv-lbl">Diagnosa</span>
+              <span class="sep-rv-val">{{ sepCheckResult.diagnosa ?? '-' }}</span>
+            </div>
+            <div class="sep-review-row">
+              <span class="sep-rv-lbl">Status Kecelakaan</span>
+              <span class="sep-rv-val">{{ sepCheckResult.nmstatusKecelakaan ?? '-' }}</span>
+            </div>
+          </div>
+
+          <!-- Kolom kanan: Info Peserta -->
+          <div class="sep-review-col">
+            <div class="sep-review-col-head"><i class="pi pi-user mr-1"></i>Data Peserta</div>
+            <div class="sep-review-row">
+              <span class="sep-rv-lbl">Nama</span>
+              <span class="sep-rv-val">{{ sepCheckResult.peserta?.nama ?? '-' }}</span>
+            </div>
+            <div class="sep-review-row">
+              <span class="sep-rv-lbl">No. Kartu</span>
+              <span class="sep-rv-val mono">{{ sepCheckResult.peserta?.noKartu ?? '-' }}</span>
+            </div>
+            <div class="sep-review-row">
+              <span class="sep-rv-lbl">No. MR</span>
+              <span class="sep-rv-val mono">{{ sepCheckResult.peserta?.noMr ?? '-' }}</span>
+            </div>
+            <div class="sep-review-row">
+              <span class="sep-rv-lbl">Tgl. Lahir</span>
+              <span class="sep-rv-val">{{ sepCheckResult.peserta?.tglLahir ?? '-' }}</span>
+            </div>
+            <div class="sep-review-row">
+              <span class="sep-rv-lbl">Jenis Peserta</span>
+              <span class="sep-rv-val">{{ sepCheckResult.peserta?.jnsPeserta ?? '-' }}</span>
+            </div>
+            <div class="sep-review-row">
+              <span class="sep-rv-lbl">Hak Kelas</span>
+              <span class="sep-rv-val">{{ sepCheckResult.peserta?.hakKelas ?? '-' }}</span>
+            </div>
+            <div class="sep-review-row">
+              <span class="sep-rv-lbl">DPJP</span>
+              <span class="sep-rv-val">{{ sepCheckResult.dpjp?.nmDPJP ?? '-' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- No. SEP yang akan disimpan -->
+        <div class="sep-review-target">
+          <i class="pi pi-arrow-right-arrow-left"></i>
+          No. SEP akan diperbarui ke:
+          <code>{{ formData.NOSEP }}</code>
+        </div>
+      </div>
+
+      <template #footer>
+        <Button
+          label="Batal"
+          icon="pi pi-times"
+          severity="secondary"
+          outlined
+          @click="showSepConfirmDialog = false"
+          :disabled="loadingSep"
+        />
+        <Button
+          label="Konfirmasi & Simpan SEP"
+          icon="pi pi-save"
+          :loading="loadingSep"
+          @click="doSaveNomorSEP"
+          style="background: #b45309; border-color: #b45309"
+        />
+      </template>
+    </Dialog>
+
+    <!-- ══ DIALOG KONFIRMASI NORM ══ -->
+    <Dialog
+      v-model:visible="showNormConfirmDialog"
+      header="Konfirmasi Perubahan No. Rekam Medis"
+      :style="{ width: '560px', maxWidth: '95vw' }"
+      modal
+      :closable="!loadingNorm"
+    >
+      <div class="norm-confirm">
+        <!-- Warning -->
+        <div class="norm-confirm-warn">
+          <i class="pi pi-exclamation-triangle" style="flex-shrink: 0; font-size: 1.1rem"></i>
+          <span
+            >Anda akan mengubah No. Rekam Medis pada transaksi ini. Tindakan ini tidak dapat
+            dibatalkan secara otomatis.</span
+          >
+        </div>
+
+        <!-- Perbandingan NORM -->
+        <div class="norm-confirm-compare">
+          <div class="norm-compare-item norm-compare-old">
+            <div class="norm-compare-label">No. RM Saat Ini</div>
+            <div class="norm-compare-value">{{ formData.NOMR }}</div>
+          </div>
+          <div class="norm-compare-arrow"><i class="pi pi-arrow-right"></i></div>
+          <div class="norm-compare-item norm-compare-new">
+            <div class="norm-compare-label">No. RM Baru</div>
+            <div class="norm-compare-value">{{ editNormValue }}</div>
+          </div>
+        </div>
+
+        <!-- Data Pasien Pemilik NORM Baru -->
+        <div v-if="normPatientData" class="norm-patient-card">
+          <div class="norm-patient-card-head">
+            <i class="pi pi-user-check me-1"></i>
+            <span
+              >Data Pasien — No. RM <code>{{ normPatientData.NOMR }}</code></span
+            >
+          </div>
+          <div class="norm-patient-card-body">
+            <div class="norm-pd-row">
+              <span class="norm-pd-lbl">Nama</span>
+              <span class="norm-pd-val fw-bold">{{ normPatientData.NAMAPASIEN }}</span>
+            </div>
+            <div class="norm-pd-row">
+              <span class="norm-pd-lbl">NIK</span>
+              <span class="norm-pd-val mono">{{
+                normPatientData.NOKTP ?? normPatientData.NOKTP
+              }}</span>
+            </div>
+            <div class="norm-pd-row">
+              <span class="norm-pd-lbl">Tgl. Lahir</span>
+              <span class="norm-pd-val"
+                >{{ normPatientData.TGLLAHIR }} &nbsp;·&nbsp; {{ normPatientData.USIA }} tahun</span
+              >
+            </div>
+            <div class="norm-pd-row">
+              <span class="norm-pd-lbl">Jenis Kelamin</span>
+              <span class="norm-pd-val">{{
+                normPatientData.JENISKELAMIN === 'L' ? 'Laki-laki' : 'Perempuan'
+              }}</span>
+            </div>
+            <div class="norm-pd-row">
+              <span class="norm-pd-lbl">Alamat</span>
+              <span class="norm-pd-val">{{ normPatientData.ALAMAT || '-' }}</span>
+            </div>
+            <div class="norm-pd-row">
+              <span class="norm-pd-lbl">Kota / Kec.</span>
+              <span class="norm-pd-val"
+                >{{ normPatientData.namakecamatan }}, {{ normPatientData.namakota }}</span
+              >
+            </div>
+            <div v-if="normPatientData.NO_KARTU" class="norm-pd-row">
+              <span class="norm-pd-lbl">No. Kartu BPJS</span>
+              <span class="norm-pd-val mono">{{ normPatientData.NO_KARTU }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info registrasi aktif -->
+        <div class="norm-patient-row">
+          <i class="pi pi-file me-1" style="color: darkcyan"></i>
+          <span>Transaksi:</span>
+          <strong class="ms-1">{{ formData.NAMAPASIEN }}</strong>
+          <span class="norm-patient-reg">{{ formData.NOPENDAFTARAN }}</span>
+        </div>
+      </div>
+
+      <template #footer>
+        <Button
+          label="Batal"
+          icon="pi pi-times"
+          severity="secondary"
+          outlined
+          @click="showNormConfirmDialog = false"
+          :disabled="loadingNorm"
+        />
+        <Button
+          label="Konfirmasi & Simpan"
+          icon="pi pi-save"
+          :loading="loadingNorm"
+          @click="doSaveNomrRM"
+          style="background: darkcyan; border-color: darkcyan"
+        />
+      </template>
+    </Dialog>
+
     <Toast />
   </div>
+  <RiwayatBPJSDialog ref="riwayatBpjsRef" :noKartu="formData.NOJAMINAN" />
 </template>
 
 <script setup>
-import { ref, onMounted, computed, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useConfigStore } from '@/stores/config'
 import { useAuthStore } from '@/stores/config'
 import { storeToRefs } from 'pinia'
@@ -737,6 +1119,9 @@ import StepList from 'primevue/steplist'
 import StepPanels from 'primevue/steppanels'
 import Step from 'primevue/step'
 import StepPanel from 'primevue/steppanel'
+
+import RiwayatBPJSDialog from '@/views/Pendaftaran/RiwayatBPJSComponent.vue'
+const riwayatBpjsRef = ref(null)
 
 // Setup
 const configStore = useConfigStore()
@@ -761,12 +1146,19 @@ const transaksiTerpilih = ref(null)
 const showMergerForm = ref(false)
 
 const showDialogConversi = ref(false)
+const showSepEdit = ref(false)
+
+import SPRIDialog from '@/views/Pendaftaran/SpriDataBPJSComponent.vue'
+
+const spriDialogRef = ref(null)
 
 const formData = ref({
   NOPENDAFTARAN: '',
   NOMR: '',
   NAMAPASIEN: '',
   NOKTP: '',
+  NOJAMINAN: '',
+  NOSEP: '',
   MASUKPOLY: null,
   IDDOKTER: null,
   IDDIAGNOSA: null,
@@ -813,16 +1205,6 @@ const prosesMerger = async () => {
     showError(error)
   }
 }
-// Computed property untuk format display
-const formattedTglMasuk = computed({
-  get() {
-    return formData.value.MASUKPOLY
-  },
-  set(value) {
-    formData.value.MASUKPOLY = value
-  },
-})
-
 const NoSPRI = ref()
 
 const loadingPrint = ref(false)
@@ -866,8 +1248,6 @@ const lakaLantasSelected = ref({
   code: 0,
 })
 
-const carabayarSelected = ref(null)
-
 const originalFormData = ref({})
 const dokterSelected = ref(null)
 const listDokter = ref([])
@@ -891,9 +1271,6 @@ const showError = (msg) => {
   toast.add({ severity: 'error', summary: 'Error', detail: msg, life: 5000 })
 }
 
-const showWarning = (msg) => {
-  toast.add({ severity: 'warn', summary: 'Peringatan', detail: msg, life: 4000 })
-}
 // Options
 const lakaLantasOptions = ref([
   { caption: '0 - Bukan Kecelakaan lalu lintas [BKLL]', code: 0 },
@@ -964,20 +1341,6 @@ const GetCaraBayar = async () => {
     if (response.data) {
       // pastikan response.data array
       listcaraBayar.value = response.data
-      //   if (formData.value.CARABAYAR_KODE == '5') {
-      //     listcaraBayar.value = response.data.map((item) => {
-      //       return {
-      //         ...item,
-      //       }
-      //     })
-      //   } else {
-      //     listcaraBayar.value = response.data.map((item) => {
-      //       return {
-      //         ...item,
-      //         disabled: item.KODE == '5' ? true : false, // Atau item.KDCARABAYAR === '5'
-      //       }
-      //     })
-      //   }
     }
   } catch (error) {
     console.error('Error fetching cara bayar:', error)
@@ -1150,7 +1513,7 @@ const searchDiagnose = async (event) => {
 // Handle dokter change
 const onDokterChange = () => {
   if (dokterSelected.value) {
-    formData.value.DOKTER = dokterSelected.value
+    formData.value.IDDOKTER = dokterSelected.value
   }
 }
 
@@ -1167,27 +1530,6 @@ const onDiagnosaChange = () => {
   if (dokterSelected.value) {
     formData.value.IDDIAGNOSA = diagnoseSelected.value
   }
-}
-
-// Validate form
-const validateForm = () => {
-  if (!formData.value.MASUKPOLY) {
-    showWarning('Tanggal masuk harus diisi')
-    return false
-  }
-  if (!formData.value.IDDOKTER) {
-    showWarning('Dokter harus dipilih')
-    return false
-  }
-  if (!formData.value.IDDIAGNOSA) {
-    showWarning('Diagnosa harus dipilih')
-    return false
-  }
-  if (!formData.value.CATATAN?.trim()) {
-    showWarning('Catatan harus diisi')
-    return false
-  }
-  return true
 }
 
 const conversiKEBPJS = async () => {
@@ -1215,6 +1557,183 @@ const conversiKEBPJS = async () => {
     showError('Terjadi kesalahan saat menyimpan')
   } finally {
     loading.value = false
+  }
+}
+// ── Update No. Rekam Medis (fungsi tersendiri) ────────────
+const showNormEdit = ref(false)
+const loadingNorm = ref(false)
+const showNormConfirmDialog = ref(false)
+const editNormValue = ref('')
+const normPatientData = ref(null)
+
+const updateNomrRM = async () => {
+  if (!editNormValue.value?.trim()) {
+    showError('No. Rekam Medis tidak boleh kosong')
+    return
+  }
+  if (editNormValue.value.trim() === formData.value.NOMR) {
+    showError('No. Rekam Medis baru sama dengan yang lama')
+    return
+  }
+  loadingNorm.value = true
+  normPatientData.value = null
+  try {
+    const result = await get_data_pasien(editNormValue.value.trim())
+    if (!result) {
+      showError('No. Rekam Medis tidak ditemukan dalam database. Pastikan nomor sudah benar.')
+      return
+    }
+    normPatientData.value = result[0]
+    showNormConfirmDialog.value = true
+  } finally {
+    loadingNorm.value = false
+  }
+}
+
+const doSaveNomrRM = async () => {
+  loadingNorm.value = true
+  try {
+    const url = configStore.apiBaseUrl
+    const payload = {
+      noregister: formData.value.NOPENDAFTARAN,
+      norm_lama: formData.value.NOMR,
+      norm_baru: editNormValue.value.trim(),
+      id_client: id_client.value,
+      user_id: user_id.value,
+    }
+    const response = await axios.post(
+      `${url}/index.php/api/bpjs_api/update_no_rekam_medis_transaksi`,
+      payload,
+    )
+    const code = response.data?.code ?? response.data?.metadata?.code ?? response.data?.status
+    const message =
+      response.data?.message ??
+      response.data?.metadata?.message ??
+      'No. Rekam Medis berhasil diperbarui'
+    if (code == 200 || code === 'success' || code === '200') {
+      showSuccess(message)
+      formData.value.NOMR = editNormValue.value.trim()
+      editNormValue.value = ''
+      showNormConfirmDialog.value = false
+      showNormEdit.value = false
+    } else {
+      showError(message || 'Gagal memperbarui No. Rekam Medis')
+    }
+  } catch (error) {
+    console.error('Error updating NOMR:', error)
+    showError('Terjadi kesalahan saat memperbarui No. Rekam Medis')
+  } finally {
+    loadingNorm.value = false
+  }
+}
+
+const get_data_pasien = async (nomr = null) => {
+  try {
+    const url = configStore.apiBaseUrl
+    const payload = {
+      nomr: nomr ?? formData.value.NOMR,
+      id_client: id_client.value,
+      mode: 3,
+    }
+    const response = await axios.post(
+      `${url}/index.php/api/data_referensi/GetDataPasien_v3`,
+      payload,
+    )
+    if (response.data?.response?.length > 0) {
+      return response.data.response
+    } else {
+      return null
+    }
+  } catch (error) {
+    console.error('Error fetching patient data:', error)
+    return null
+  }
+}
+
+// ── Update No. SEP (fungsi tersendiri) ────────────────────
+const loadingSep = ref(false)
+const showSepConfirmDialog = ref(false)
+const sepCheckResult = ref(null)
+
+// Langkah 1: validasi input → cek SEP ke BPJS → tampilkan dialog review
+const updateNomorSEP = async () => {
+  if (!formData.value.NOSEP?.trim()) {
+    showError('No. SEP tidak boleh kosong')
+    return
+  }
+
+  loadingSep.value = true
+  sepCheckResult.value = null
+  try {
+    const url = configStore.apiBaseUrl
+
+    const response = await axios.get(
+      `${url}/index.php/api/Bpjs_api/getdata_SEP_v2/${formData.value.NOSEP}/${id_client.value}`,
+    )
+
+    const metaCode = response.data?.metaData?.code
+    if ((metaCode === '200' || metaCode === 200) && response.data?.response) {
+      sepCheckResult.value = response.data.response
+      showSepConfirmDialog.value = true
+    } else {
+      showError(
+        response.data?.metaData?.message || 'SEP tidak ditemukan atau tidak valid di server BPJS',
+      )
+    }
+  } catch (err) {
+    console.error('checkSEPAktif:', err)
+    showError('Gagal memeriksa status SEP ke server BPJS')
+  } finally {
+    loadingSep.value = false
+  }
+}
+
+// Langkah 2: user konfirmasi di dialog → simpan ke database
+const doSaveNomorSEP = async () => {
+  loadingSep.value = true
+  try {
+    const url = configStore.apiBaseUrl
+    const payload = {
+      noregister: formData.value.NOPENDAFTARAN,
+      nosep: formData.value.NOSEP,
+      nojaminan: formData.value.NOJAMINAN,
+      norm: formData.value.NOMR,
+      id_client: id_client.value,
+      user_id: user_id.value,
+    }
+
+    const response = await axios.post(`${url}/index.php/api/penunjang/update_nomor_sep`, payload)
+
+    console.log('Response update SEP:', response.data)
+
+    const code = response.data?.code ?? response.data?.metadata?.code ?? response.data?.status
+    const message =
+      response.data?.message ?? response.data?.metadata?.message ?? 'No. SEP berhasil diperbarui'
+
+    if (code == 200 || code === 'success' || code === '200') {
+      showSuccess(message)
+      originalFormData.value.NOSEP = formData.value.NOSEP
+      showSepConfirmDialog.value = false
+      showSepEdit.value = false
+    } else {
+      showError(message || 'Gagal memperbarui No. SEP')
+    }
+  } catch (error) {
+    console.error('Error updating NOSEP:', error)
+    showError('Terjadi kesalahan saat memperbarui No. SEP')
+  } finally {
+    loadingSep.value = false
+  }
+}
+
+const check_SEP_PESErTA = async () => {
+  try {
+    const url = configStore.apiBaseUrl
+    const response = await axios.get(
+      `${url}/index.php/api/Bpjs_api/getdata_SEP_v2/${formData.value.NOSEP}/${id_client.value}`,
+    )
+  } catch (error) {
+    console.error('Error fetching data:', error)
   }
 }
 // Save data
@@ -1398,12 +1917,6 @@ const GetKecamatan_bpjs = async (e) => {
   }
 }
 
-// Reset form
-const resetForm = () => {
-  formData.value = { ...originalFormData.value }
-  showWarning('Form direset')
-}
-
 // Set form data
 const setFormData = (data) => {
   console.log(data)
@@ -1417,7 +1930,8 @@ const setFormData = (data) => {
 
   formData.value = {
     NOPENDAFTARAN: data.NOPENDAFTARAN || '',
-    NOJAMINAN: data.NOJAMINAN,
+    NOJAMINAN: data.NOJAMINAN || '',
+    NOSEP: data.NOSEP || '',
     NOMR: data.NOMR || '',
     NAMAPASIEN: data.NAMAPASIEN || '',
     NOKTP: data.NOKTP || '',
@@ -1514,36 +2028,140 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.container {
-  margin: 0 auto;
-  padding: 20px;
+/* ── Page Header ── */
+.ep-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, darkcyan 0%, #00838f 100%);
+  color: white;
+  border-radius: 4px;
+  padding: 0.85rem 1.25rem;
+  margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.ep-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+.ep-header-icon {
+  width: 38px;
+  height: 38px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.ep-header-title {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.ep-header-sub {
+  font-size: 0.75rem;
+  opacity: 0.85;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.ep-header-sep {
+  opacity: 0.5;
+}
+/* ── Action Bar (bawah form) ── */
+.ep-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-top: 3px solid darkcyan;
   border-radius: 8px;
+  padding: 0.85rem 1.25rem;
+  margin-top: 0.75rem;
+}
+.ep-action-left {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
-.loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 400px;
+/* ── Form wrapper ── */
+.container {
+  margin: 0 auto;
+  padding: 1rem 1.25rem;
 }
 
 .form-wrapper {
   background: white;
   border-radius: 8px;
-  padding: 30px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  border-top: 3px solid darkcyan;
+  overflow: hidden;
 }
 
-.form-header {
-  margin-bottom: 30px;
-  border-bottom: 2px solid #007bff;
-  padding-bottom: 15px;
+/* ── Section ── */
+.ep-section {
+  padding: 1.1rem 1.25rem 1.25rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+.ep-section:last-child {
+  border-bottom: none;
 }
 
-.form-header h1 {
-  font-size: 24px;
-  color: #333;
+.ep-section-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: darkcyan;
+  margin-bottom: 1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid #e0f7f7;
+}
+.ep-section-badge {
+  margin-left: auto;
+  font-size: 0.6rem;
   font-weight: 600;
+  background: #f1f5f9;
+  color: #64748b;
+  border-radius: 4px;
+  padding: 1px 7px;
+  letter-spacing: 0.05em;
+}
+
+/* ── Labels ── */
+.ep-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* ── Readonly fields ── */
+:deep(.ep-readonly) {
+  background: #f8fafc !important;
+  color: #6b7280;
+  cursor: default;
+}
+
+/* Legacy – kept for backward compat */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
 }
 
 .section {
@@ -1752,5 +2370,427 @@ onMounted(async () => {
   .info-row .label {
     margin-bottom: 2px;
   }
+}
+
+/* ── NORM Edit (tersembunyi) ── */
+.norm-adv-wrap {
+  border-top: 1px dashed #b2dfdb;
+  padding: 0.6rem 1.25rem 0.75rem;
+  background: #e0f2f1;
+}
+.norm-adv-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #006064;
+  text-align: left;
+}
+.norm-adv-toggle:hover {
+  color: darkcyan;
+}
+.norm-adv-hint {
+  font-weight: 400;
+  color: darkcyan;
+  opacity: 0.7;
+  font-size: 0.72rem;
+}
+.norm-edit-panel {
+  margin-top: 0.65rem;
+  background: #fff;
+  border: 1px solid #b2dfdb;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+}
+.norm-warn-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #e0f7fa;
+  border: 1px solid #b2dfdb;
+  border-left: 4px solid #00838f;
+  border-radius: 6px;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.8rem;
+  color: #004d40;
+}
+:deep(.norm-input) {
+  border-color: #b2dfdb !important;
+}
+:deep(.norm-input:focus) {
+  border-color: #00838f !important;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15) !important;
+}
+.norm-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed #b2dfdb;
+}
+.norm-action-hint {
+  font-size: 0.72rem;
+  color: #006064;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+}
+/* Transition animasi NORM */
+.norm-slide-enter-active,
+.norm-slide-leave-active {
+  transition: all 0.25s ease;
+  overflow: hidden;
+}
+.norm-slide-enter-from,
+.norm-slide-leave-to {
+  opacity: 0;
+  max-height: 0;
+  margin-top: 0;
+}
+.norm-slide-enter-to,
+.norm-slide-leave-from {
+  opacity: 1;
+  max-height: 320px;
+}
+
+/* ── Dialog Konfirmasi NORM ── */
+.norm-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 0.83rem;
+}
+.norm-confirm-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #e0f7fa;
+  border: 1px solid #b2dfdb;
+  border-left: 4px solid #00838f;
+  border-radius: 8px;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.82rem;
+  color: #004d40;
+}
+.norm-confirm-compare {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.norm-compare-item {
+  flex: 1;
+  min-width: 130px;
+  border-radius: 8px;
+  padding: 10px 14px;
+  text-align: center;
+}
+.norm-compare-old {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+}
+.norm-compare-new {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+}
+.norm-compare-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+.norm-compare-old .norm-compare-value {
+  font-family: monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #dc2626;
+}
+.norm-compare-new .norm-compare-value {
+  font-family: monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #16a34a;
+}
+.norm-compare-arrow {
+  color: darkcyan;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.norm-patient-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #e0f7fa;
+  border: 1px solid #b2dfdb;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+}
+.norm-patient-reg {
+  margin-left: auto;
+  font-family: monospace;
+  font-size: 0.78rem;
+  color: darkcyan;
+}
+
+/* Card data pasien di dialog NORM */
+.norm-patient-card {
+  border: 1px solid #b2dfdb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.norm-patient-card-head {
+  background: linear-gradient(135deg, darkcyan, #00838f);
+  color: #fff;
+  padding: 8px 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.norm-patient-card-head code {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #fff;
+}
+.norm-patient-card-body {
+  padding: 4px 0;
+  background: #e0f2f1;
+}
+.norm-pd-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 14px;
+  border-bottom: 1px solid #e0f7fa;
+  font-size: 0.8rem;
+}
+.norm-pd-row:last-child {
+  border-bottom: none;
+}
+.norm-pd-lbl {
+  flex: 0 0 120px;
+  color: #00838f;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.norm-pd-val {
+  color: #1e293b;
+  flex: 1;
+}
+.norm-pd-val.mono {
+  font-family: monospace;
+  font-size: 0.78rem;
+}
+
+/* ── SEP Edit (tersembunyi) ── */
+.sep-adv-wrap {
+  border-top: 1px dashed #fde68a;
+  padding: 0.6rem 1.25rem 0.75rem;
+  background: #fffbeb;
+}
+.sep-adv-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #92400e;
+  text-align: left;
+}
+.sep-adv-toggle:hover {
+  color: #b45309;
+}
+.sep-adv-hint {
+  font-weight: 400;
+  color: #b45309;
+  opacity: 0.7;
+  font-size: 0.72rem;
+}
+.sep-edit-panel {
+  margin-top: 0.65rem;
+  background: #fff;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+}
+.sep-warn-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-left: 4px solid #f59e0b;
+  border-radius: 6px;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.8rem;
+  color: #78350f;
+}
+:deep(.sep-input) {
+  border-color: #fcd34d !important;
+}
+:deep(.sep-input:focus) {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15) !important;
+}
+
+/* Action bar di dalam panel SEP */
+.sep-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed #fcd34d;
+}
+.sep-action-hint {
+  font-size: 0.72rem;
+  color: #92400e;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+}
+
+/* Transition animasi */
+.sep-slide-enter-active,
+.sep-slide-leave-active {
+  transition: all 0.25s ease;
+  overflow: hidden;
+}
+.sep-slide-enter-from,
+.sep-slide-leave-to {
+  opacity: 0;
+  max-height: 0;
+  margin-top: 0;
+}
+.sep-slide-enter-to,
+.sep-slide-leave-from {
+  opacity: 1;
+  max-height: 300px;
+}
+
+/* ── Dialog Review SEP ── */
+.sep-review {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 0.82rem;
+}
+.sep-review-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.status-aktif {
+  background: #d1fae5;
+  border: 1px solid #6ee7b7;
+  color: #065f46;
+}
+.status-nonaktif {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #991b1b;
+}
+.sep-review-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 540px) {
+  .sep-review-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.sep-review-col {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.sep-review-col-head {
+  background: #e2e8f0;
+  padding: 6px 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #475569;
+}
+.sep-review-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.sep-review-row:last-child {
+  border-bottom: none;
+}
+.sep-rv-lbl {
+  color: #94a3b8;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.sep-rv-val {
+  color: #1e293b;
+  font-weight: 600;
+  text-align: right;
+  word-break: break-all;
+}
+.sep-rv-val.mono {
+  font-family: monospace;
+  font-size: 0.8rem;
+}
+.sep-review-target {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  color: #1e40af;
+  font-size: 0.82rem;
+}
+.sep-review-target code {
+  font-family: monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: #dbeafe;
+  padding: 1px 6px;
+  border-radius: 4px;
 }
 </style>

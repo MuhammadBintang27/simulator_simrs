@@ -53,6 +53,7 @@
         </div>
         <div class="col-md-9">
           <h6>No Resep : {{ NO_RECEIPT }}</h6>
+
           <DataTable
             :value="detils_obat"
             :paginator="false"

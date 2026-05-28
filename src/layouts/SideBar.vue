@@ -1,189 +1,242 @@
 <template>
-  <aside class="main-sidebar sidebar-dark-primary elevation-2">
-    <!-- Brand Logo -->
-    <a href="/" class="brand-link custom-brand">
+  <aside
+    class="sb"
+    :class="{ 'sb--collapsed': isCollapsedView }"
+    @mouseenter="sidebarHovered = true"
+    @mouseleave="sidebarHovered = false"
+  >
+    <!-- Brand -->
+    <div class="sb__brand">
       <img
         :src="LINK_LOGO"
-        alt="Link Rental Logo"
-        class="brand-image img-circle elevation-3"
-        style="opacity: 0.9"
+        alt="Logo"
+        class="sb__logo"
+        :class="{ 'sb__logo--sm': isCollapsedView }"
       />
-    </a>
+    </div>
 
-    <!-- Sidebar -->
-    <div class="sidebar">
-      <!-- Search Form -->
-      <div class="form-inline mb-3 position-relative">
-        <div class="input-group" data-widget="sidebar-search">
-          <input
-            v-model="searchQuery"
-            @input="filterMenu"
-            @focus="showSearchResults = true"
-            @blur="hideSearchResults"
-            class="form-control form-control-sidebar"
-            type="search"
-            placeholder="Search menu..."
-            aria-label="Search"
-            style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2)"
-          />
-          <div class="input-group-append">
+    <!-- Search (hidden when collapsed) -->
+    <div v-show="!isCollapsedView" class="sb__search-wrap">
+      <div class="sb__search-box">
+        <i class="fas fa-search sb__search-icon"></i>
+        <input
+          v-model="searchQuery"
+          @input="filterMenu"
+          @focus="showSearchResults = true"
+          @blur="hideSearchResults"
+          @keydown.escape="clearSearch"
+          type="search"
+          placeholder="Cari menu..."
+          class="sb__search-input"
+        />
+        <button v-if="searchQuery" @click="clearSearch" class="sb__search-clear">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div v-if="showSearchResults && searchQuery" class="sb__search-results">
+        <template v-if="filteredMenuItems.length > 0">
+          <div
+            v-for="item in filteredMenuItems"
+            :key="item.path"
+            class="sb__search-item"
+            @mousedown="navigateToItem(item)"
+          >
+            <i :class="item.icon" class="sb__search-item-icon"></i>
+            <div>
+              <div class="sb__search-item-title">{{ item.title }}</div>
+              <div class="sb__search-item-cat">{{ item.category }}</div>
+            </div>
+          </div>
+        </template>
+        <div v-else class="sb__search-empty">
+          <i class="fas fa-inbox"></i><span>Tidak ditemukan</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="sb__nav">
+      <div v-show="!isCollapsedView" class="sb__section-label">MENU</div>
+
+      <template v-for="item in mainMenuItems_real" :key="item.id">
+        <!-- Single item -->
+        <div class="sb__hw">
+          <router-link
+            v-if="!item.children || item.children.length === 0"
+            :to="item.path || '#'"
+            class="sb__item"
+            active-class="sb__item--active"
+          >
+            <i :class="item.icon" class="sb__item-icon"></i>
+            <span v-show="!isCollapsedView" class="sb__item-label">{{ item.title }}</span>
+          </router-link>
+
+          <!-- Group item -->
+          <template v-else>
             <button
-              @click="clearSearch"
-              class="btn btn-sidebar"
-              style="background: rgba(255, 255, 255, 0.1)"
+              class="sb__item sb__item--group"
+              :class="{ 'sb__item--open': !isCollapsedView && openGroups.includes(item.id) }"
+              @click="toggleGroup(item.id)"
             >
-              <i class="fas" :class="searchQuery ? 'fa-times' : 'fa-search'"></i>
+              <i :class="item.icon" class="sb__item-icon"></i>
+              <span v-show="!isCollapsedView" class="sb__item-label">{{ item.title }}</span>
+              <i v-show="!isCollapsedView" class="fas fa-chevron-right sb__chevron"></i>
             </button>
+            <Transition name="slide">
+              <div v-if="!isCollapsedView && openGroups.includes(item.id)" class="sb__children">
+                <router-link
+                  v-for="child in item.children"
+                  :key="child.id"
+                  :to="child.path"
+                  class="sb__child"
+                  active-class="sb__child--active"
+                >
+                  <span class="sb__child-dot"></span>
+                  <span>{{ child.title }}</span>
+                  <span v-if="child.badge" class="sb__badge">{{ child.badge }}</span>
+                </router-link>
+              </div>
+            </Transition>
+          </template>
+
+          <!-- Hover popup (hanya tampil saat fully collapsed, bukan hover-expand) -->
+          <div v-if="isCollapsedView" class="sb__popup">
+            <div class="sb__popup-title">
+              <i :class="item.icon" class="sb__popup-icon"></i>
+              {{ item.title }}
+            </div>
+            <template v-if="item.children && item.children.length">
+              <router-link
+                v-for="child in item.children"
+                :key="child.id"
+                :to="child.path"
+                class="sb__popup-child"
+                active-class="sb__popup-child--active"
+              >
+                <i :class="child.icon" class="sb__popup-child-icon"></i>
+                {{ child.title }}
+              </router-link>
+            </template>
           </div>
         </div>
+      </template>
 
-        <!-- Search Results -->
-        <div v-if="showSearchResults && filteredMenuItems.length > 0" class="search-results">
-          <div class="search-results-header">
-            <small class="text-muted">Found {{ filteredMenuItems.length }} result(s)</small>
-          </div>
-          <div class="search-results-list">
-            <div
-              v-for="item in filteredMenuItems"
-              :key="item.path"
-              class="search-result-item"
-              @click="navigateToItem(item)"
-            >
-              <i :class="item.icon" class="search-result-icon"></i>
-              <div class="search-result-content">
-                <div class="search-result-title">{{ item.title }}</div>
-                <div class="search-result-path">{{ item.category }}</div>
-              </div>
+      <div v-show="!isCollapsedView" class="sb__section-label" style="margin-top: 8px">
+        AKSES CEPAT
+      </div>
+
+      <template v-for="item in quickAccessItems" :key="item.id">
+        <div class="sb__hw">
+          <router-link
+            v-if="!item.isLogout"
+            :to="item.path"
+            class="sb__item"
+            active-class="sb__item--active"
+          >
+            <i :class="item.icon" class="sb__item-icon"></i>
+            <span v-show="!isCollapsedView" class="sb__item-label">{{ item.title }}</span>
+            <span v-if="item.badge && !isCollapsedView" class="sb__badge">{{ item.badge }}</span>
+          </router-link>
+          <button v-else class="sb__item sb__item--logout" @click="logout">
+            <i :class="item.icon" class="sb__item-icon"></i>
+            <span v-show="!isCollapsedView" class="sb__item-label">{{ item.title }}</span>
+          </button>
+
+          <!-- Hover popup quick access -->
+          <div v-if="isCollapsedView" class="sb__popup">
+            <div class="sb__popup-title">
+              <i :class="item.icon" class="sb__popup-icon"></i>
+              {{ item.title }}
             </div>
           </div>
         </div>
+      </template>
+    </nav>
 
-        <!-- No Results -->
-        <div
-          v-if="showSearchResults && searchQuery && filteredMenuItems.length === 0"
-          class="search-results"
-        >
-          <div class="search-no-results">
-            <i class="fas fa-search text-muted"></i>
-            <p class="text-muted mb-0">No menu items found</p>
-            <small class="text-muted">Try different keywords</small>
-          </div>
-        </div>
-      </div>
-
-      <!-- Sidebar Menu -->
-      <nav class="mt-2">
-        <ul
-          class="nav nav-pills nav-sidebar flex-column nav-child-indent nav-collapse-hide-child"
-          data-widget="treeview"
-          role="menu"
-          data-accordion="false"
-        >
-          <!-- Main Menu Items Loop -->
-          <template v-for="menuItem in mainMenuItems_real" :key="menuItem.id">
-            <!-- Single Item (No Children) -->
-            <li v-if="!menuItem.children" class="nav-item">
-              <router-link :to="menuItem.path" class="nav-link">
-                <i class="nav-icon" :class="menuItem.icon"></i>
-                <p>{{ menuItem.title }}</p>
-              </router-link>
-            </li>
-            <!-- Item with Children -->
-            <li v-else class="nav-item menu-is-opening menu-open">
-              <a href="#" class="nav-link">
-                <i class="nav-icon" :class="menuItem.icon"></i>
-                <p>
-                  {{ menuItem.title }}
-                  <i class="right fas fa-angle-left"></i>
-                </p>
-              </a>
-              <ul class="nav nav-treeview">
-                <li v-for="child in menuItem.children" :key="child.id" class="nav-item">
-                  <router-link :to="child.path" class="nav-link">
-                    <i class="nav-icon" :class="child.icon"></i>
-                    <p>{{ child.title }}</p>
-                    <span v-if="child.badge" class="badge" :class="child.badgeClass">
-                      {{ child.badge }}
-                    </span>
-                  </router-link>
-                </li>
-              </ul>
-            </li>
-          </template>
-          <!-- Quick Access Section -->
-          <li class="nav-header">QUICK ACCESS</li>
-
-          <!-- Quick Access Items Loop -->
-          <li v-for="quickItem in quickAccessItems" :key="quickItem.id" class="nav-item">
-            <component
-              :is="quickItem.isLogout ? 'a' : 'router-link'"
-              :to="!quickItem.isLogout ? quickItem.path : undefined"
-              :href="quickItem.isLogout ? '#' : undefined"
-              class="nav-link"
-              @click="quickItem.isLogout ? logout : undefined"
-            >
-              <i class="nav-icon" :class="quickItem.icon"></i>
-              <p>
-                {{ quickItem.title }}
-                <span v-if="quickItem.badge" class="badge" :class="quickItem.badgeClass">
-                  {{ quickItem.badge }}
-                </span>
-              </p>
-            </component>
-          </li>
-        </ul>
-      </nav>
+    <!-- Footer -->
+    <div class="sb__footer">
+      <span class="sb__online-dot"><i class="fas fa-circle"></i></span>
+      <span v-show="!isCollapsedView">Online</span>
     </div>
   </aside>
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/config'
 import { storeToRefs } from 'pinia'
-import { useConfigStore } from '@/stores/config' // Import the Pinia store
+import { useConfigStore } from '@/stores/config'
 import axios from 'axios'
 
-const configStore = useConfigStore() // ✅ Define configStore properly
-
+const configStore = useConfigStore()
 const authStore = useAuthStore()
 const { id_client, user_id, LINK_LOGO } = storeToRefs(authStore)
+
+// storeToRefs membuat sidebarCollapsed sebagai reactive ref langsung dari store
+const { sidebarCollapsed: collapsed } = storeToRefs(configStore)
+
 const router = useRouter()
+
+const sidebarHovered = ref(false)
+// Sidebar terlihat collapsed hanya jika collapsed = true DAN mouse tidak sedang hover
+const isCollapsedView = computed(() => collapsed.value && !sidebarHovered.value)
 
 const searchQuery = ref('')
 const showSearchResults = ref(false)
 const filteredMenuItems = ref([])
+const openGroups = ref([])
+let searchDebounceTimer = null
+
+// Sinkronisasi body class (sb-collapsed = CSS kita, sidebar-collapse = AdminLTE)
+watch(
+  collapsed,
+  (val) => {
+    document.body.classList.toggle('sb-collapsed', val)
+    document.body.classList.toggle('sidebar-collapse', val)
+    if (val) openGroups.value = []
+  },
+  { immediate: true },
+)
+
+const toggleGroup = (id) => {
+  const idx = openGroups.value.indexOf(id)
+  if (idx === -1) openGroups.value.push(id)
+  else openGroups.value.splice(idx, 1)
+}
+
+const filterMenu = () => {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+  const query = searchQuery.value.trim()
+  if (!query) {
+    filteredMenuItems.value = []
+    return
+  }
+  searchDebounceTimer = setTimeout(() => {
+    const lq = query.toLowerCase()
+    filteredMenuItems.value = getAllMenuItems()
+      .filter((i) => i.title.toLowerCase().includes(lq) || i.category.toLowerCase().includes(lq))
+      .sort(
+        (a, b) =>
+          (a.title.toLowerCase().startsWith(lq) ? 0 : 1) -
+          (b.title.toLowerCase().startsWith(lq) ? 0 : 1),
+      )
+      .slice(0, 10)
+  }, 300)
+}
 
 const useFavicon = () => {
-  /**
-   * Ganti favicon secara dinamis
-   * @param {string|null} url - URL icon baru, atau null untuk fallback
-   */
   const setFavicon = (url = null) => {
-    const faviconId = ''
-    let faviconEl = '' //document.getElementById(faviconId)
-
-    // Ambil dari localStorage jika URL tidak diberikan
-    const storedIcon = localStorage.getItem('app_icon_url')
-    const iconUrl = url || storedIcon
-
-    if (faviconEl) {
-      faviconEl.href = iconUrl
-    } else {
-      faviconEl = document.createElement('link')
-      faviconEl.id = faviconId
-      faviconEl.rel = 'icon'
-      faviconEl.type = 'image/png'
-      faviconEl.href = iconUrl
-      document.head.appendChild(faviconEl)
-    }
+    const iconUrl = url || localStorage.getItem('app_icon_url')
+    const el = document.createElement('link')
+    el.rel = 'icon'
+    el.type = 'image/png'
+    el.href = iconUrl
+    document.head.appendChild(el)
   }
-  return {
-    setFavicon,
-  }
+  return { setFavicon }
 }
-// Main Menu Structure
+
 const mainMenuItems = ref([
   {
     id: 'dashboard',
@@ -212,9 +265,22 @@ const mainMenuItems = ref([
     children: [
       {
         id: 'data-rawat-pasien',
-        title: 'Data rawat pasien',
+        title: 'Data Rawat Pasien',
         path: '/ListPasien',
         icon: 'fas fa-bed',
+      },
+    ],
+  },
+  {
+    id: 'fisioterapi',
+    title: 'Fisioterapi',
+    icon: 'fas fa-walking',
+    children: [
+      {
+        id: 'home-fisioterapi',
+        title: 'Daftar Permintaan',
+        path: '/fisioterapi/home',
+        icon: 'fas fa-clipboard-list',
       },
     ],
   },
@@ -294,24 +360,18 @@ const mainMenuItems = ref([
       },
     ],
   },
-
   {
-    id: 'manajemenklaim',
+    id: 'keuangan',
     title: 'Keuangan',
-    icon: 'fas fa-coins', // lebih cocok untuk keuangan
+    icon: 'fas fa-coins',
     children: [
       {
-        id: 'data-kunjungan',
-        title: 'Klaim manajemen',
+        id: 'klaim-manajemen',
+        title: 'Klaim Manajemen',
         path: '/keuangan/klaim-manajemen',
-        icon: 'fas fa-file-invoice-dollar', // ikon klaim atau invoice
+        icon: 'fas fa-file-invoice-dollar',
       },
-      {
-        id: 'asir',
-        title: 'Kasir',
-        path: '/keuangan/kasir',
-        icon: 'fas fa-money-bill-wave',
-      },
+      { id: 'kasir', title: 'Kasir', path: '/keuangan/kasir', icon: 'fas fa-money-bill-wave' },
     ],
   },
 ])
@@ -319,319 +379,576 @@ const mainMenuItems = ref([
 const mainMenuItems_real = ref([])
 const LoadMenu = async () => {
   try {
-    const url = configStore.apiBaseUrl
-    const response = await axios.get(
-      `${url}/index.php/api/data_referensi/get_menu_item/${user_id.value}/${id_client.value}`,
-    ) // ✅ Cleaner syntax
-
-    // console.log('Menu items fetched:', response.data)
-    mainMenuItems_real.value = response.data || []
-  } catch (error) {
-    // console.error('Error fetching data:', error)
+    const res = await axios.get(
+      `${configStore.apiBaseUrl}/index.php/api/data_referensi/get_menu_item/${user_id.value}/${id_client.value}`,
+    )
+    let data = res.data || []
+    if (data && typeof data === 'object' && !Array.isArray(data)) data = Object.values(data)
+    mainMenuItems_real.value = data
+  } catch {
+    mainMenuItems_real.value = mainMenuItems.value
   }
 }
 
-// Quick Access Items
 const quickAccessItems = ref([
-  {
-    id: 'home',
-    title: 'Home',
-    path: '/',
-    icon: 'fas fa-home text-info',
-  },
+  { id: 'home', title: 'Home', path: '/', icon: 'fas fa-home' },
   {
     id: 'notifications',
-    title: 'Notifications',
+    title: 'Notifikasi',
     path: '/Setting/Notification',
-    icon: 'fas fa-bell text-success',
+    icon: 'fas fa-bell',
     badge: '3',
-    badgeClass: 'badge-danger right',
   },
-  {
-    id: 'help',
-    title: 'Help & Support',
-    path: '/help',
-    icon: 'fas fa-question-circle text-primary',
-  },
-  {
-    id: 'logout',
-    title: 'Logout',
-    icon: 'fas fa-sign-out-alt text-danger',
-    isLogout: true,
-  },
+  { id: 'help', title: 'Bantuan', path: '/help', icon: 'fas fa-question-circle' },
+  { id: 'logout', title: 'Keluar', icon: 'fas fa-sign-out-alt', isLogout: true },
 ])
 
-// Flatten menu items for search
 const getAllMenuItems = () => {
   const items = []
-  console.log('panggil menu', mainMenuItems_real.value)
-
   mainMenuItems_real.value.forEach((menu) => {
-    if (menu.children) {
-      menu.children.forEach((child) => {
+    if (menu.children?.length > 0)
+      menu.children.forEach((child) =>
         items.push({
           title: child.title,
           path: child.path,
           icon: child.icon,
           category: menu.title,
-        })
-      })
-    } else {
-      items.push({
-        title: menu.title,
-        path: menu.path,
-        icon: menu.icon,
-        category: 'Main',
-      })
-    }
+        }),
+      )
+    else items.push({ title: menu.title, path: menu.path, icon: menu.icon, category: 'Main' })
   })
-
   quickAccessItems.value.forEach((item) => {
-    if (!item.isLogout) {
-      items.push({
-        title: item.title,
-        path: item.path,
-        icon: item.icon,
-        category: 'Quick Access',
-      })
-    }
+    if (!item.isLogout)
+      items.push({ title: item.title, path: item.path, icon: item.icon, category: 'Akses Cepat' })
   })
-
   return items
-}
-
-const filterMenu = () => {
-  if (!searchQuery.value.trim()) {
-    filteredMenuItems.value = []
-    return
-  }
-
-  const query = searchQuery.value.toLowerCase()
-  const allItems = getAllMenuItems()
-
-  filteredMenuItems.value = allItems
-    .filter(
-      (item) =>
-        item.title.toLowerCase().includes(query) || item.category.toLowerCase().includes(query),
-    )
-    .slice(0, 8)
 }
 
 const navigateToItem = (item) => {
   router.push(item.path)
   clearSearch()
 }
-
 const clearSearch = () => {
   searchQuery.value = ''
   filteredMenuItems.value = []
   showSearchResults.value = false
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
 }
-
-const hideSearchResults = () => {
+const hideSearchResults = () =>
   setTimeout(() => {
     showSearchResults.value = false
-  }, 200)
+  }, 150)
+const logout = () => {
+  authStore.clearAuthData()
+  router.push('/login')
+}
+
+const onKeydown = (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault()
+    if (!collapsed.value) document.querySelector('.sb__search-input')?.focus()
+  }
 }
 
 onMounted(async () => {
-  // Inisialisasi favicon saat komponen dimuat
+  document.addEventListener('keydown', onKeydown)
   const { setFavicon } = useFavicon()
   setFavicon(LINK_LOGO.value)
   await LoadMenu()
 })
 
-const logout = () => {
-  console.log('Logout clicked')
-  // Add your logout logic here
-}
+onUnmounted(() => {
+  document.removeEventListener('keydown', onKeydown)
+})
 </script>
 
 <style scoped>
-/* Custom Sidebar Enhancements */
-.main-sidebar {
-  transition: all 0.3s ease;
+.sb {
+  width: 250px;
+  height: 100vh;
+  background: linear-gradient(180deg, #162d4e 0%, #1a3a5f 60%, #1e4475 100%);
+  border-right: 1px solid rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1038;
+  overflow: hidden;
+  transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sb--collapsed {
+  width: 64px;
 }
 
-.nav-link {
-  transition: all 0.2s ease;
-  border-radius: 0.25rem;
-  margin: 1px 8px;
-}
-
-.nav-link:hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  color: #fff !important;
-}
-
-.nav-link.active {
-  background-color: rgba(255, 255, 255, 0.2) !important;
-  color: #fff !important;
-  font-weight: 600;
-}
-
-.nav-treeview .nav-link {
-  padding-left: 2.5rem;
-  font-size: 0.9rem;
-}
-
-.nav-header {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: rgba(255, 255, 255, 0.6);
-  margin: 15px 0 5px 0;
-  padding: 0 1rem;
-}
-
-.badge {
-  font-size: 0.7rem;
-  padding: 0.2em 0.5em;
-}
-
-.user-panel {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.user-panel .info a {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.9rem;
-}
-
-/* Search Enhancement */
-.form-control-sidebar {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
-}
-
-.form-control-sidebar::placeholder {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.form-control-sidebar:focus {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: #fff;
-  box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.1);
-}
-
-/* Search Results Styling */
-.search-results {
-  position: absolute;
-  top: 100%;
-  left: 8px;
-  right: 8px;
-  background: #2c3e50;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.375rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-  z-index: 1000;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.search-results-header {
-  padding: 8px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.search-results-list {
-  max-height: 250px;
-  overflow-y: auto;
-}
-
-.search-result-item {
+.sb__brand {
+  height: 72px;
   display: flex;
   align-items: center;
-  padding: 10px 12px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  justify-content: center;
+  padding: 0 0.9rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
+}
+.sb--collapsed .sb__brand {
+  padding: 0 0.5rem;
+}
+.sb__logo {
+  height: 44px;
+  width: auto;
+  object-fit: contain;
+  filter: brightness(1.1) drop-shadow(0 1px 4px rgba(0, 0, 0, 0.3));
+}
+.sb__logo--sm {
+  height: 36px;
+  width: 44px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 50%;
 }
 
-.search-result-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+.sb__search-wrap {
+  padding: 0.75rem 0.9rem 0.5rem;
+  position: relative;
+  flex-shrink: 0;
 }
-
-.search-result-item:last-child {
-  border-bottom: none;
+.sb__search-box {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 0 0.6rem;
+  height: 36px;
+  gap: 0.4rem;
 }
-
-.search-result-icon {
-  margin-right: 12px;
-  color: rgba(255, 255, 255, 0.7);
-  width: 16px;
-  text-align: center;
+.sb__search-box:focus-within {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.3);
 }
-
-.search-result-content {
+.sb__search-icon {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+}
+.sb__search-input {
   flex: 1;
+  border: none;
+  background: none;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.9);
+  outline: none;
+  min-width: 0;
 }
-
-.search-result-title {
-  color: #fff;
-  font-size: 0.9rem;
+.sb__search-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+.sb__search-clear {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  font-size: 0.65rem;
+  padding: 0;
+}
+.sb__search-results {
+  position: absolute;
+  top: calc(100% - 2px);
+  left: 0.9rem;
+  right: 0.9rem;
+  background: #1a3a5f;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.sb__search-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.8rem;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.sb__search-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.sb__search-item-icon {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+  width: 13px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.sb__search-item-title {
+  font-size: 0.82rem;
   font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+.sb__search-item-cat {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 1px;
+}
+.sb__search-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 1.1rem;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.78rem;
+}
+.sb__search-empty i {
+  font-size: 1rem;
+}
+
+.sb__nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.3rem 0.6rem 0.75rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+.sb--collapsed .sb__nav {
+  padding: 0.3rem 0.5rem 0.75rem;
+}
+.sb__nav::-webkit-scrollbar {
+  width: 3px;
+}
+.sb__nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 99px;
+}
+
+.sb__section-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  padding: 0.65rem 0.5rem 0.3rem;
+  white-space: nowrap;
+}
+
+.sb__item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background 0.15s,
+    color 0.15s;
   margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
 }
-
-.search-result-path {
+.sb--collapsed .sb__item {
+  justify-content: center;
+  padding: 0.55rem 0;
+  gap: 0;
+  border-radius: 8px;
+}
+.sb__item:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+.sb__item--active {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff !important;
+  font-weight: 600;
+}
+.sb__item-icon {
+  width: 18px;
+  text-align: center;
+  font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.6);
-  font-size: 0.75rem;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.sb--collapsed .sb__item-icon {
+  width: 20px;
+  font-size: 1rem;
+}
+.sb__item:hover .sb__item-icon {
+  color: #fff;
+}
+.sb__item--active .sb__item-icon {
+  color: #fff;
+}
+.sb__item-label {
+  flex: 1;
+  line-height: 1.3;
+}
+.sb__chevron {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.35);
+  transition:
+    transform 0.18s,
+    color 0.15s;
+  flex-shrink: 0;
+}
+.sb__item--open .sb__chevron {
+  transform: rotate(90deg);
+  color: rgba(255, 255, 255, 0.8);
 }
 
-.search-no-results {
-  padding: 20px;
+.sb__children {
+  margin: 2px 0 4px 1rem;
+  padding-left: 0.75rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.sb__child {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.42rem 0.5rem;
+  border-radius: 5px;
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  transition:
+    background 0.12s,
+    color 0.12s;
+  white-space: nowrap;
+}
+.sb__child:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+.sb__child--active {
+  color: #fff !important;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.12);
+}
+.sb__child-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+  transition: background 0.12s;
+}
+.sb__child--active .sb__child-dot {
+  background: #fff;
+}
+
+.sb__badge {
+  margin-left: auto;
+  font-size: 0.6rem;
+  font-weight: 700;
+  background: #e74c3c;
+  color: #fff;
+  border-radius: 10px;
+  padding: 1px 6px;
+  min-width: 18px;
   text-align: center;
 }
 
-.search-no-results i {
-  font-size: 2rem;
-  margin-bottom: 10px;
-  opacity: 0.5;
+.sb__item--logout {
+  color: rgba(255, 150, 150, 0.85);
+}
+.sb__item--logout:hover {
+  background: rgba(220, 50, 50, 0.2);
+  color: #ffaaaa;
+}
+.sb__item--logout .sb__item-icon {
+  color: rgba(255, 150, 150, 0.7);
 }
 
-.search-no-results p {
-  font-size: 0.9rem;
+.sb__footer {
+  padding: 0.65rem 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.sb--collapsed .sb__footer {
+  justify-content: center;
+  padding: 0.65rem 0;
+}
+.sb__online-dot {
+  font-size: 0.4rem;
+  color: #2ecc71;
+  flex-shrink: 0;
 }
 
-.search-no-results small {
+.slide-enter-active,
+.slide-leave-active {
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
+}
+.slide-enter-from,
+.slide-leave-to {
+  opacity: 0;
+  transform: translateY(-5px);
+}
+
+.sb__hw {
+  position: relative;
+}
+.sb__hw::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -12px;
+  width: 12px;
+  height: 100%;
+}
+
+.sb__popup {
+  position: absolute;
+  left: calc(100% + 4px);
+  top: 0;
+  min-width: 190px;
+  background: linear-gradient(135deg, #1a3a5f 0%, #1e4475 100%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  box-shadow: 4px 4px 24px rgba(0, 0, 0, 0.4);
+  padding: 6px;
+  z-index: 2000;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+.sb__hw:hover .sb__popup {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.sb__popup-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+  padding: 0.45rem 0.65rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  margin-bottom: 4px;
+}
+.sb__popup-icon {
   font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  width: 14px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.sb__popup-child {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.42rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: none;
+  transition:
+    background 0.12s,
+    color 0.12s;
+  white-space: nowrap;
+}
+.sb__popup-child:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+.sb__popup-child--active {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.15);
+  font-weight: 500;
+}
+.sb__popup-child-icon {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.4);
+  width: 13px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.sb__popup-child--active .sb__popup-child-icon {
+  color: rgba(255, 255, 255, 0.9);
+}
+.sb__popup::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 14px;
+  border: 6px solid transparent;
+  border-right-color: rgba(255, 255, 255, 0.18);
+  border-left: none;
+}
+.sb__popup::after {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 15px;
+  border: 5px solid transparent;
+  border-right-color: #1a3a5f;
+  border-left: none;
+}
+</style>
+
+<style>
+/* Global: adjust content-wrapper when sidebar collapses */
+body .content-wrapper,
+body .main-footer {
+  margin-left: 250px;
+  transition: margin-left 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+body .main-header.navbar {
+  margin-left: 250px;
+  transition: margin-left 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+body.sb-collapsed .content-wrapper,
+body.sb-collapsed .main-footer {
+  margin-left: 64px;
+}
+body.sb-collapsed .main-header.navbar {
+  margin-left: 64px;
 }
 
-/* Icon Colors */
-.text-info {
-  color: #17a2b8 !important;
-}
-
-.text-success {
-  color: #28a745 !important;
-}
-
-.text-warning {
-  color: #ffc107 !important;
-}
-
-.text-primary {
-  color: #007bff !important;
-}
-
-.text-danger {
-  color: #dc3545 !important;
-}
-
-/* Responsive Improvements */
+/* ── Mobile: sembunyikan sidebar ── */
 @media (max-width: 768px) {
-  .nav-treeview .nav-link {
-    padding-left: 2rem;
-    font-size: 0.85rem;
+  .sb {
+    display: none !important;
   }
-
-  .brand-text {
-    font-size: 1rem;
+  body .content-wrapper,
+  body .main-footer,
+  body.sb-collapsed .content-wrapper,
+  body.sb-collapsed .main-footer {
+    margin-left: 0 !important;
+  }
+  body .main-header.navbar,
+  body.sb-collapsed .main-header.navbar {
+    margin-left: 0 !important;
   }
 }
 </style>

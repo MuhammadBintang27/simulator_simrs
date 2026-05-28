@@ -16,7 +16,7 @@
             />
           </template>
           <img
-            src="https://ws-simrs.link/ilustration/ilustrasi1.png"
+            src="https://ws-simrs.net/ilustration/ilustrasi1.png"
             height="130"
             width="195"
             alt=""
@@ -73,7 +73,17 @@
                 <dl class="patient-details">
                   <dt><span class="stat-label">Cara Bayar</span></dt>
                   <dd>
-                    {{ fact?.CARABAYAR }} <strong> {{ fact?.NOSEP }}</strong>
+                    {{ fact?.CARABAYAR }}
+                    <strong>
+                      <Button
+                        @click="PrintSEP(fact?.NOSEP)"
+                        :label="fact?.NOSEP"
+                        severity="info"
+                        outlined
+                        size="small"
+                        class="ml-2 round-button2"
+                      />
+                    </strong>
                   </dd>
 
                   <dt><span class="stat-label">DPJP</span></dt>
@@ -120,21 +130,40 @@
                       Rincian Layanan
                     </button>
                   </dd>
+                  <dd style="margin-top:6px">
+                    <button
+                      @click="openRMEViewer"
+                      class="btn btn-primary btn-xs"
+                      title="Lihat Rekam Medis Elektronik lengkap"
+                    >
+                      📋 RME Viewer
+                    </button>
+                  </dd>
                 </dl>
               </div>
             </div>
           </div>
         </Panel>
-
         <div class="row">
           <div class="col-md-12 mt-1">
             <Tabs value="0" scrollable>
               <TabList>
                 <Tab value="0">PEMERIKSAAN</Tab>
+                <Tab
+                  v-if="
+                    fact?.KODEPOLI == 'GIG' || fact?.KODEPOLI == 'BDM' || fact?.KODEPOLI == 'PTD'
+                  "
+                  value="8"
+                  >ODONTOGRAM</Tab
+                >
+                <Tab v-if="fact?.KODEPOLI == 'HDL' || fact?.JENISRAWAT == 'INAP'" value="6"
+                  >HEMODIALISA</Tab
+                >
+                <Tab v-if="fact?.KODEPOLI == 'MAT'" value="7">VISUS MATA</Tab>
                 <Tab value="1">TINDAKAN</Tab>
                 <Tab value="2">TERAPHY</Tab>
                 <Tab value="3">LAMPIRAN FILE</Tab>
-                <Tab value="4">PENUNUNJANG</Tab>
+                <Tab value="4">PENUNJANG</Tab>
                 <Tab value="5">TINDAK LANJUT</Tab>
               </TabList>
               <TabPanels>
@@ -321,6 +350,14 @@
                           <template #header>
                             <h6 style="color: darkcyan"><strong>SOAP</strong></h6>
                           </template>
+                          <template #icons>
+                            <Button
+                              label="Template SOAP"
+                              severity="error"
+                              class="round-button2"
+                              @click="call_template_soap"
+                            />
+                          </template>
                           <div class="detail-item">
                             <label>Subjek</label>
                             <MultiSelect
@@ -447,6 +484,7 @@
                       <Tab value="0">LABORATORIUM</Tab>
                       <Tab value="1">RADIOLOGI</Tab>
                       <Tab value="2">FISOTERAPHI</Tab>
+                      <Tab value="3">PERMINTAAN OPERASI</Tab>
                     </TabList>
                     <TabPanels>
                       <TabPanel value="0">
@@ -463,12 +501,36 @@
                         <PermintaanFisioteraphyComponent v-if="fact" :datapasien="fact">
                         </PermintaanFisioteraphyComponent>
                       </TabPanel>
+                      <TabPanel value="3">
+                        <PermintaanRuangOperasiComponent
+                          v-if="fact"
+                          :datapasien="fact"
+                        ></PermintaanRuangOperasiComponent>
+                      </TabPanel>
                     </TabPanels>
                   </Tabs>
                 </TabPanel>
                 <TabPanel value="5">
                   <TindakLanjutPasienComponent v-if="fact" :datapasien="fact">
                   </TindakLanjutPasienComponent>
+                </TabPanel>
+                <TabPanel value="6">
+                  <HemodiComponent v-if="fact" :datapasien="fact"> </HemodiComponent>
+                  <!-- <ResikoJatuhComponent v-if="fact" :datapasien="fact"></ResikoJatuhComponent> -->
+                </TabPanel>
+                <TabPanel value="7">
+                  <PemeriksaanVisusPoliMata
+                    v-if="fact"
+                    :noregister="route.query.noreg"
+                    :dataset="fact"
+                  />
+                </TabPanel>
+                <TabPanel value="8">
+                  <OdontogramComponent
+                    v-if="fact"
+                    :noregister="route.query.noreg"
+                    :dataset="fact"
+                  />
                 </TabPanel>
               </TabPanels>
             </Tabs>
@@ -627,6 +689,11 @@
     :mode="10"
     @otpVerified="handleOtpSuccess"
   />
+
+  <SoapTemplateComponent
+    v-model:showFormSoap="showSoapTemplate"
+    @templateSelected="onTemplateSelected"
+  />
   <Toast />
 </template>
 
@@ -641,6 +708,16 @@ import PermintaanRadiologiComponent from '@/views/Poliklinik/Penunjang/Permintaa
 import PermintaanFisioteraphyComponent from '@/views/Poliklinik/Penunjang/PermintaanFisioteraphyComponent.vue'
 
 import TindakLanjutPasienComponent from '@/views/Poliklinik/TindakLanjutPasienComponent.vue'
+
+import SoapTemplateComponent from '@/components/umum/SoapTemplateComponent.vue'
+
+import PermintaanRuangOperasiComponent from '@/views/Poliklinik/Penunjang/PermintaanRuangOperasiComponent.vue'
+
+import HemodiComponent from '@/components/PoliklinikComponent/HemodiComponent.vue'
+import PemeriksaanVisusPoliMata from '@/components/PoliklinikComponent/PemeriksaanVisusPoliMata.vue'
+import OdontogramComponent from '@/views/Poliklinik/Gigi/OdontogramComponent.vue'
+
+import ResikoJatuhComponent from '@/components/KajianAwal/ResikoJatuhComponent.vue'
 
 import Pusher from 'pusher-js'
 
@@ -682,7 +759,6 @@ const showRiwayat = ref(false)
 const loaging_spinner = ref(false)
 
 import { useRouter } from 'vue-router'
-import { each } from 'jquery'
 
 const router = useRouter()
 
@@ -708,6 +784,10 @@ const getStatus = (idStatus) => {
       return ''
   }
 }
+const showSoapTemplate = ref(false)
+const call_template_soap = () => {
+  showSoapTemplate.value = true
+}
 
 const printBill = async () => {
   const routeData = router.resolve({
@@ -721,11 +801,37 @@ const printBill = async () => {
   window.open(routeData.href, '_blank')
 }
 
+// ── RME Viewer ─────────────────────────────────────────────────────────────────
+const openRMEViewer = () => {
+  const routeData = router.resolve({
+    name: 'RMEViewer',
+    query: { noreg: route.query.noreg },
+  })
+  window.open(routeData.href, '_blank')
+}
+
 const handleOtpSuccess = (data) => {
   console.log(data)
 
   if (data?.verified == true) {
     //loadProcedureHistory()
+  }
+}
+
+const PrintSEP = async (nosep) => {
+  try {
+    const data = {
+      data: {
+        NOPENDAFTARAN: route.query.noreg,
+        NOSEP: nosep,
+        id_client: id_client.value,
+        NORM: route.query.nomr,
+      },
+    }
+
+    const response = await axios.post(`${configStore.laravel}/get_data_sep_api`, data)
+    window.open(response.data, '_blank')
+  } finally {
   }
 }
 
@@ -1155,6 +1261,13 @@ const GetSoap = async () => {
   }
 }
 
+const onTemplateSelected = (data) => {
+  // data: { nama_template, subject, assessment, plan }
+  soap.subjek = data.subject
+  soap.asesmen = data.assesment
+  soap.plan = data.plan
+}
+
 const getriwayatJKN = async () => {
   try {
     loading.value = true
@@ -1183,8 +1296,12 @@ const fetchData = async () => {
       id_client: id_client.value,
     }
 
+    console.log('call data pasein')
+
     const url = configStore.apiBaseUrl
     const response = await axios.post(`${url}/index.php/api/transaksi_pasien/history_versi4`, param)
+
+    console.log('call data trans', response.data.response)
 
     if (response.data.response && response.data.response.length > 0) {
       fact.value = response.data.response[0]

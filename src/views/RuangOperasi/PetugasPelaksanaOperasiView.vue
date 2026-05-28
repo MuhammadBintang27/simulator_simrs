@@ -27,7 +27,6 @@
             filter
           />
         </div>
-
         <!-- dr_anestesi -->
         <div class="col-md-4 mb-3">
           <label>Dr. Anestesi</label>
@@ -275,31 +274,59 @@ const get_data_tim_operasi = async () => {
     const url = configStore.apiBaseUrl
     const response = await axios.post(`${url}/index.php/api/triaseigd/get_data_tim_operasi`, param)
 
-    if (response.data.response) {
+    if (response.data.response.length > 0) {
       time_selected.value = response.data.response[0]
 
-      form.value.dr_bedah.KDDOKTER = time_selected.value?.dr_bedah
-      form.value.dr_bedah.NAMADOKTER = time_selected.value?.nama_dokter_bedah
+      console.log('data dokter', time_selected.value)
 
-      form.value.dr_anestesi.KDDOKTER = time_selected.value?.dr_anestesi
-      form.value.dr_anestesi.NAMADOKTER = time_selected.value?.nama_dr_anestesi
+      form.value.dr_bedah =
+        list_dokter.value.find((element) => element.KDDOKTER === time_selected.value?.dr_bedah) ||
+        null
 
-      form.value.ast_dr_anestesi.KDDOKTER = time_selected.value?.ast_dr_anestesi
-      form.value.ast_dr_anestesi.NAMADOKTER = time_selected.value?.nama_ast_dr_anestesi
+      // form.value.dr_bedah.KDDOKTER = time_selected.value?.dr_bedah
+      // form.value.dr_bedah.NAMADOKTER = time_selected.value?.nama_dokter_bedah
 
-      form.value.ast_dr_bedah_1.KDDOKTER = time_selected.value?.ast_dr_bedah_1
-      form.value.ast_dr_bedah_1.NAMADOKTER = time_selected.value?.nama_ast_dr_bedah_1
+      form.value.dr_anestesi =
+        list_dokter.value.find((element) => element.KDDOKTER == time_selected.value?.dr_anestesi) ||
+        null
 
-      form.value.ast_dr_bedah_2.KDDOKTER = time_selected.value?.ast_dr_bedah_2
-      form.value.ast_dr_bedah_2.NAMADOKTER = time_selected.value?.nama_ast_dr_bedah_2
+      // form.value.ast_dr_anestesi.KDDOKTER = time_selected.value?.ast_dr_anestesi
+      // form.value.ast_dr_anestesi.NAMADOKTER = time_selected.value?.nama_ast_dr_anestesi
 
-      form.value.ast_dr_bedah_3.KDDOKTER = time_selected.value?.ast_dr_bedah_3
-      form.value.ast_dr_bedah_3.NAMADOKTER = time_selected.value?.nama_ast_dr_bedah_3
+      form.value.ast_dr_anestesi =
+        list_dokter.value.find((element) => element.KDDOKTER == time_selected.value?.dr_anestesi) ||
+        null
 
-      form.value.dr_anak.KDDOKTER = time_selected.value?.dr_anak
-      form.value.dr_anak.NAMADOKTER = time_selected.value?.nama_dr_anak
+      // form.value.ast_dr_bedah_1.KDDOKTER = time_selected.value?.ast_dr_bedah_1
+      // form.value.ast_dr_bedah_1.NAMADOKTER = time_selected.value?.nama_ast_dr_bedah_1
 
-      //////////////////
+      form.value.ast_dr_bedah_1 =
+        list_dokter.value.find(
+          (element) => element.KDDOKTER == time_selected.value?.ast_dr_bedah_1,
+        ) || null
+
+      // form.value.ast_dr_bedah_2.KDDOKTER = time_selected.value?.ast_dr_bedah_2
+      // form.value.ast_dr_bedah_2.NAMADOKTER = time_selected.value?.nama_ast_dr_bedah_2
+
+      form.value.ast_dr_bedah_2 =
+        list_dokter.value.find(
+          (element) => element.KDDOKTER == time_selected.value?.ast_dr_bedah_2,
+        ) || null
+
+      // form.value.ast_dr_bedah_3.KDDOKTER = time_selected.value?.ast_dr_bedah_3
+      // form.value.ast_dr_bedah_3.NAMADOKTER = time_selected.value?.nama_ast_dr_bedah_3
+
+      form.value.ast_dr_bedah_3 =
+        list_dokter.value.find(
+          (element) => element.KDDOKTER == time_selected.value?.ast_dr_bedah_3,
+        ) || null
+
+      // form.value.dr_anak.KDDOKTER = time_selected.value?.dr_anak
+      // form.value.dr_anak.NAMADOKTER = time_selected.value?.nama_dr_anak
+
+      form.value.dr_anak =
+        list_dokter.value.find((element) => element.KDDOKTER == time_selected.value?.dr_anak) ||
+        null
 
       data_user.prw_bedah_1.push({
         NIP: time_selected.value?.prw_bedah_1 || null,
@@ -366,6 +393,8 @@ const simpan_data = async () => {
       `${url}/index.php/api/triaseigd/simpan_tim_operasi`,
       form.value,
     ) // ✅ Cleaner syntax
+
+    console.log(response.data)
 
     if (response.data.metadata.code == 200) {
       toast.add({
@@ -456,9 +485,9 @@ const getda_user = async (event, fieldName) => {
 
 // Submit form function
 
-onMounted(() => {
-  getda_tadokter()
-  get_data_tim_operasi()
+onMounted(async () => {
+  await getda_tadokter()
+  await get_data_tim_operasi()
 })
 </script>
 

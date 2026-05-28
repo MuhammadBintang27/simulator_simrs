@@ -1,6 +1,14 @@
 <template>
   <div class="content">
     <Panel class="hero-section">
+      <template #header>
+        <h5 class="mt-0" style="color: white">
+          <b style="text-transform: uppercase"
+            >{{ fact.NAMAPASIEN || '' }} ({{ fact.USIA_PASIEN?.tahun }} Thn,
+            {{ fact.USIA_PASIEN?.bulan }} Bln, {{ fact.USIA_PASIEN?.hari }} Hr)</b
+          >
+        </h5>
+      </template>
       <div class="row">
         <div class="col-md-3">
           <div class="patient-card">
@@ -68,6 +76,14 @@ const toast = useToast()
 
 const loading = ref(false)
 
+const props = defineProps({
+  datapasien: {
+    type: Object,
+    required: false,
+    validator: (value) => value && typeof value === 'object',
+  },
+})
+
 import { useRoute } from 'vue-router'
 const route = useRoute()
 
@@ -113,9 +129,12 @@ const param = {
 
 const fetchData = async () => {
   try {
+    console.log('[fetchData] Fetching data with params:', JSON.stringify(param)) // ✅ Log lengkap sebelum request
     loading.value = true
     const url = configStore.apiBaseUrl
     const response = await axios.post(`${url}/index.php/api/transaksi_pasien/history_versi4`, param)
+
+    console.log('[fetchData] Response:', response.data) // ✅ Log lengkap
 
     fact.value = [...response.data.response]
     fact.value = fact.value[0]

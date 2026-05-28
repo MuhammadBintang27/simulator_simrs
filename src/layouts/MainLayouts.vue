@@ -15,8 +15,6 @@
       <router-view></router-view>
 
       <!-- Main content -->
-      <!-- <AboutView /> -->
-      <!-- /.content -->
     </div>
     <!-- /.content-wrapper -->
 

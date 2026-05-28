@@ -119,99 +119,59 @@
     </div>
 
     <!-- SUMMARY CARDS -->
-    <div class="card shadow-sm border-0 rounded-3">
-      <div class="card-body py-3">
-        <div class="row text-center">
-          <!-- TOTAL DATA -->
-          <div class="col-md-2 col-6 mb-2 mb-md-0">
-            <div class="stat-box gradient-primary p-3 rounded-3 h-100">
-              <label class="d-block mb-1 fw-semibold">
-                <i class="fas fa-list"></i> TOTAL DATA
-              </label>
-              <h5 class="fw-bold mb-0">{{ filteredCount }}</h5>
-            </div>
-          </div>
-
-          <!-- TOTAL KLAIM DIAJUKAN (TARIFCBG) -->
-          <div class="col-md-2 col-6 mb-2 mb-md-0">
-            <div class="stat-box gradient-info p-3 rounded-3 h-100">
-              <label class="d-block mb-1 fw-semibold">
-                <i class="fas fa-file-upload"></i> KLAIM DIAJUKAN
-              </label>
-              <h5 class="fw-bold mb-0">
-                <strong>{{ formatCurrency(totalTarifCBG) }}</strong>
-              </h5>
-            </div>
-          </div>
-
-          <!-- TOTAL KLAIM DISETUJUI (DISETUJUI) -->
-          <div class="col-md-2 col-6 mb-2 mb-md-0">
-            <div class="stat-box gradient-success p-3 rounded-3 h-100">
-              <label class="d-block mb-1 fw-semibold">
-                <i class="fas fa-check-circle"></i> KLAIM DISETUJUI
-              </label>
-              <h5 class="fw-bold mb-0">
-                <strong>{{ formatCurrency(disetujuiBPJS) }}</strong>
-              </h5>
-            </div>
-          </div>
-
-          <!-- SELISIH KLAIM -->
-          <div class="col-md-2 col-6 mb-2 mb-md-0">
-            <div
-              :class="[
-                'stat-box p-3 rounded-3 h-100',
-                selisihKlaim >= 0 ? 'gradient-warning' : 'gradient-danger',
-              ]"
-            >
-              <label class="d-block mb-1 fw-semibold">
-                <i class="fas fa-minus-circle"></i> SELISIH
-              </label>
-              <h5 class="fw-bold mb-0">
-                <strong>{{ formatCurrency(selisihKlaim) }}</strong>
-              </h5>
-              <small class="text-muted" v-if="totalTarifCBG > 0">
-                ({{ persentaseSelisih }}%)
-              </small>
-            </div>
-          </div>
-
-          <!-- PRESENTASE PERSETUJUAN -->
-          <div class="col-md-2 col-6 mb-2 mb-md-0">
-            <div class="stat-box gradient-secondary p-3 rounded-3 h-100">
-              <label class="d-block mb-1 fw-semibold">
-                <i class="fas fa-percent"></i> % PERSETUJUAN
-              </label>
-              <h5 class="fw-bold mb-0">
-                <strong>{{ persentasePersetujuan }}%</strong>
-              </h5>
-            </div>
-          </div>
-
-          <!-- RATA-RATA SELISIH PER KLAIM -->
-          <div class="col-md-2 col-6 mb-2 mb-md-0">
-            <div class="stat-box gradient-light p-3 rounded-3 h-100">
-              <label class="d-block mb-1 fw-semibold">
-                <i class="fas fa-chart-line"></i> RATA-RATA SELISIH
-              </label>
-              <h5 class="fw-bold mb-0">
-                <strong>{{ formatCurrency(rataRataSelisih) }}</strong>
-              </h5>
-            </div>
-          </div>
-
-          <!-- DATA TIDAK DIAJUKAN -->
-          <div class="col-md-2 col-6 mb-2 mb-md-0">
-            <div class="stat-box gradient-danger p-3 rounded-3 h-100">
-              <label class="d-block mb-1 fw-semibold">
-                <i class="fas fa-exclamation-triangle"></i> TIDAK DIAJUKAN
-              </label>
-              <h5 class="fw-bold mb-0">
-                <strong>{{ jumlahTidakDiajukan }}</strong>
-              </h5>
-              <small class="text-muted"> ({{ persentaseTidakDiajukan }}%) </small>
-            </div>
-          </div>
+    <div class="summary-strip">
+      <div class="summary-chip gradient-primary">
+        <i class="fas fa-list summary-chip-icon"></i>
+        <div class="summary-chip-body">
+          <span class="summary-chip-lbl">Total Data</span>
+          <span class="summary-chip-val">{{ filteredCount }}</span>
+        </div>
+      </div>
+      <div class="summary-chip gradient-info">
+        <i class="fas fa-file-upload summary-chip-icon"></i>
+        <div class="summary-chip-body">
+          <span class="summary-chip-lbl">Klaim Diajukan</span>
+          <span class="summary-chip-val">{{ formatCurrency(totalTarifCBG) }}</span>
+        </div>
+      </div>
+      <div class="summary-chip gradient-success">
+        <i class="fas fa-check-circle summary-chip-icon"></i>
+        <div class="summary-chip-body">
+          <span class="summary-chip-lbl">Klaim Disetujui</span>
+          <span class="summary-chip-val">{{ formatCurrency(disetujuiBPJS) }}</span>
+        </div>
+      </div>
+      <div class="summary-chip" :class="selisihKlaim >= 0 ? 'gradient-warning' : 'gradient-danger'">
+        <i class="fas fa-minus-circle summary-chip-icon"></i>
+        <div class="summary-chip-body">
+          <span class="summary-chip-lbl">Selisih</span>
+          <span class="summary-chip-val"
+            >{{ formatCurrency(selisihKlaim) }}
+            <small v-if="totalTarifCBG > 0">({{ persentaseSelisih }}%)</small></span
+          >
+        </div>
+      </div>
+      <div class="summary-chip gradient-secondary">
+        <i class="fas fa-percent summary-chip-icon"></i>
+        <div class="summary-chip-body">
+          <span class="summary-chip-lbl">% Persetujuan</span>
+          <span class="summary-chip-val">{{ persentasePersetujuan }}%</span>
+        </div>
+      </div>
+      <div class="summary-chip gradient-light">
+        <i class="fas fa-chart-line summary-chip-icon"></i>
+        <div class="summary-chip-body">
+          <span class="summary-chip-lbl">Rata-rata Selisih</span>
+          <span class="summary-chip-val">{{ formatCurrency(rataRataSelisih) }}</span>
+        </div>
+      </div>
+      <div class="summary-chip gradient-danger">
+        <i class="fas fa-exclamation-triangle summary-chip-icon"></i>
+        <div class="summary-chip-body">
+          <span class="summary-chip-lbl">Tidak Diajukan</span>
+          <span class="summary-chip-val"
+            >{{ jumlahTidakDiajukan }} <small>({{ persentaseTidakDiajukan }}%)</small></span
+          >
         </div>
       </div>
     </div>
@@ -219,47 +179,68 @@
     <!-- DATA TABLE -->
     <div class="card">
       <div class="card-body">
-        <!-- Column Visibility Toggle -->
-        <div class="mb-3 d-flex justify-content-between align-items-center">
-          <div class="flex gap-2">
+        <!-- Toolbar -->
+        <div class="tbl-toolbar">
+          <div class="tbl-filter-group">
+            <span class="tbl-filter-lbl">Status Coder</span>
+            <div class="tbl-stts-pills">
+              <button
+                v-for="opt in sttsCoderOpts"
+                :key="String(opt.value)"
+                class="tbl-stts-pill"
+                :class="[`tbl-stts-pill-${opt.cls}`, { active: sttsCoderFilter === opt.value }]"
+                @click="sttsCoderFilter = opt.value"
+              >
+                <i :class="opt.icon"></i>
+                {{ opt.label }}
+                <span class="tbl-stts-count">{{ sttsCoderCount[String(opt.value)] }}</span>
+              </button>
+            </div>
+          </div>
+          <div class="tbl-actions">
             <Button
-              type="button"
               icon="pi pi-filter-slash"
-              label="Clear Filters"
+              label="Reset"
+              size="small"
+              severity="secondary"
               outlined
-              @click="clearFilters"
+              @click="clearFilters()"
             />
             <Button
-              type="button"
               icon="pi pi-file-excel"
-              label="Export ke Excel"
+              label="Excel"
+              size="small"
               severity="success"
+              outlined
               @click="exportToExcel"
             />
             <Button
-              type="button"
               icon="pi pi-sync"
+              label="Sync BPJS"
+              size="small"
               severity="warn"
-              label="Sync dengan data BPJS"
+              outlined
               :loading="loadingSync"
               @click="syncDataBPJS"
             />
             <Button
-              type="button"
               icon="pi pi-sync"
+              label="Cek SEP"
+              size="small"
               severity="info"
-              label="Ceck Status Aktif SEP"
+              outlined
               :loading="loadingCheckSEP"
               @click="loopPengecheckanSEP"
             />
+            <Button
+              icon="pi pi-cog"
+              label="Atur Kolom"
+              size="small"
+              :severity="showColumnMenu ? 'primary' : 'secondary'"
+              :outlined="!showColumnMenu"
+              @click="toggleColumnMenu"
+            />
           </div>
-          <Button
-            type="button"
-            icon="pi pi-cog"
-            label="Atur Kolom"
-            @click="toggleColumnMenu"
-            :outlined="!showColumnMenu"
-          />
         </div>
 
         <!-- Column Selection Panel -->
@@ -299,7 +280,7 @@
         </div>
         <DataTable
           v-model:filters="filters"
-          :value="medicalData"
+          :value="filteredByStts"
           striped-rows
           showGridlines
           paginator
@@ -313,7 +294,7 @@
           responsive-layout="scroll"
           class="p-datatable-sm"
           scrollable
-          scrollHeight="600px"
+          scrollHeight="700px"
           :globalFilterFields="[
             'NAMAPASIEN',
             'POLI',
@@ -324,21 +305,25 @@
             'STTS_PULANG',
           ]"
         >
-          <!-- Kolom Status -->
-          <Column v-if="isColumnVisible('STTS_CODER')" field="STTS_CODER" header="STTS" sortable>
-            <template #body="{ data }">
-              <small v-if="data.STTS_CODER == 1" class="badge badge-success"> C</small>
-              <small v-if="data.STTS_CODER == 0" class="badge badge-danger"> M</small>
-            </template>
-          </Column>
-
           <!-- Kolom Data Dasar -->
           <Column
             v-if="isColumnVisible('NOPENDAFTARAN')"
             field="NOPENDAFTARAN"
             header="NOREG"
             sortable
-          />
+          >
+            <template #body="{ data }">
+              <Button
+                icon="pi pi-file-pdf"
+                label="ResumeMedis"
+                size="small"
+                severity="info"
+                outlined
+                class="round-button2"
+                @click="ShowDetailsdata(data)"
+              /> </template
+          ></Column>
+          <!-- "printResumePasien(data)" -->
           <Column v-if="isColumnVisible('NOMR')" field="NOMR" header="NOMR" sortable />
           <Column
             v-if="isColumnVisible('NAMAPASIEN')"
@@ -346,12 +331,30 @@
             header="Nama Pasien"
             style="min-width: 14rem"
             sortable
-          />
+          >
+            <template #filter="{ filterModel, filterCallback }">
+              <InputText
+                v-model="filterModel.value"
+                @input="filterCallback()"
+                placeholder="Cari nama..."
+                class="p-column-filter"
+                style="min-width: 10rem"
+              />
+            </template>
+          </Column>
           <Column v-if="isColumnVisible('USIA')" field="USIA" header="Usia" sortable />
           <Column
             v-if="isColumnVisible('JENISKELAMIN')"
             field="JENISKELAMIN"
             header="JK"
+            style="min-width: 4rem"
+            sortable
+          />
+
+          <Column
+            v-if="isColumnVisible('NOTELP')"
+            field="NOTELP"
+            header="NOTELP"
             style="min-width: 4rem"
             sortable
           />
@@ -370,6 +373,36 @@
                 :options="noSEP"
                 filter
                 placeholder="Pilih Cara Bayar"
+                class="p-column-filter"
+                showClear
+              />
+            </template>
+          </Column>
+          <!-- Kolom Status -->
+          <Column v-if="isColumnVisible('STTS_CODER')" field="STTS_CODER" header="STTS" sortable>
+            <template #body="{ data }">
+              <span
+                class="status-cell"
+                :class="{
+                  'status-cell-success': data.STTS_CODER == 1,
+                  'status-cell-warning': data.STTS_CODER == 2,
+                  'status-cell-danger': data.STTS_CODER == 0,
+                }"
+              >
+                <small v-if="data.STTS_CODER == 1" class="badge badge-success">C</small>
+                <small v-if="data.STTS_CODER == 2" class="badge badge-warning">P</small>
+                <small v-if="data.STTS_CODER == 0" class="badge badge-danger">M</small>
+              </span>
+            </template>
+            <template #filter="{ filterModel, filterCallback }">
+              <MultiSelect
+                :maxSelectedLabels="3"
+                v-model="filterModel.value"
+                @change="filterCallback()"
+                :options="sttsCoderFilterOptions"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Pilih Status"
                 class="p-column-filter"
                 showClear
               />
@@ -622,12 +655,41 @@
     :style="{ width: '700px' }"
     :modal="true"
     :closable="false"
+    header="Pengecekan Status SEP"
   >
-    <p>
-      No SEP : <strong> {{ nosepSedanSign }}</strong>
-    </p>
-    <ProgressBar :value="progress"></ProgressBar>
-    <table class="table-progress">
+    <div style="margin-bottom: 0.5rem; font-size: 0.85rem; color: #64748b">
+      <span v-if="loadingCheckSEP">
+        Sedang memproses: <strong>{{ nosepSedanSign }}</strong>
+      </span>
+      <span v-else>
+        Selesai —
+        <strong :style="{ color: listRespons.length > 0 ? '#dc2626' : '#16a34a' }">
+          {{ listRespons.length }} bermasalah
+        </strong>
+        dari {{ TempfilteredData.length }} SEP
+      </span>
+    </div>
+
+    <ProgressBar :value="progress" style="margin-bottom: 0.75rem" />
+
+    <div
+      v-if="!loadingCheckSEP && listRespons.length === 0"
+      style="
+        text-align: center;
+        padding: 1.5rem;
+        color: #16a34a;
+        font-weight: 600;
+        font-size: 0.9rem;
+      "
+    >
+      <i
+        class="pi pi-check-circle"
+        style="font-size: 1.5rem; display: block; margin-bottom: 0.4rem"
+      ></i>
+      Semua SEP aktif — tidak ada yang bermasalah
+    </div>
+
+    <table v-else-if="listRespons.length > 0" class="table-progress">
       <thead>
         <tr>
           <th style="width: 50px; text-align: center">No</th>
@@ -639,16 +701,32 @@
         <tr v-for="(item, index) in listRespons" :key="item.sep">
           <td style="text-align: center">{{ index + 1 }}</td>
           <td>{{ item.sep }}</td>
-          <td>{{ item.metadata || '-' }}</td>
+          <td style="color: #dc2626">{{ item.metadata || '-' }}</td>
         </tr>
       </tbody>
     </table>
+
+    <template #footer>
+      <Button
+        label="Tutup"
+        icon="pi pi-times"
+        severity="secondary"
+        outlined
+        :disabled="loadingCheckSEP"
+        @click="ShowProgressCheckSEP = false"
+      />
+    </template>
   </Dialog>
   <Toast />
+  <KlaimResumeComponent
+    v-model:showKlaim="showKlaim"
+    :noregister="selectedNoreg"
+    @saved="onKlaimSaved"
+  />
 </template>
 
 <script setup>
-import { ref, onMounted, computed, TransitionGroup } from 'vue'
+import { ref, onMounted, computed, TransitionGroup, nextTick } from 'vue'
 import { useConfigStore } from '@/stores/config'
 import axios from 'axios'
 import DatePicker from 'primevue/datepicker'
@@ -663,8 +741,12 @@ const configStore = useConfigStore()
 const authStore = useAuthStore()
 const { id_client, user_id } = storeToRefs(authStore)
 const toast = useToast()
+import { useRouter } from 'vue-router'
+const router = useRouter()
 
 const ShowProgressCheckSEP = ref(false)
+
+import KlaimResumeComponent from '@/components/Keuangan/KlaimResumeComponent.vue'
 
 const loading = ref(false)
 const startDate = ref(new Date())
@@ -672,6 +754,7 @@ const endDate = ref(new Date())
 
 // --- Data ---
 const medicalData = ref([])
+const selectedNoreg = ref('')
 // --- Column Visibility ---
 const showColumnMenu = ref(false)
 const visibleColumns = ref([
@@ -696,6 +779,7 @@ const visibleColumns = ref([
   'MASUKPOLY',
   'KELUARPOLY_NULL',
   'IS_AKTIF_SEP',
+  'NOTELP',
   'OBATAN',
 ])
 
@@ -720,12 +804,15 @@ const allColumns = ref([
   { field: 'PERSENTASE_SELISIH', header: '% Selisih' },
   { field: 'SUDAHFINALCLAIM', header: 'Final Claim' },
   { field: 'MASUKPOLY', header: 'Tgl Masuk' },
+  { field: 'NOTELP', header: 'No Telp' },
   { field: 'KELUARPOLY_NULL', header: 'Tgl Pulang' },
   { field: 'IS_AKTIF_SEP', header: 'SEP Aktif' },
 ])
 // --- Filters ---
 const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  STTS_CODER: { value: null, matchMode: FilterMatchMode.IN },
+  NAMAPASIEN: { value: null, matchMode: FilterMatchMode.CONTAINS },
   CARABAYAR: { value: null, matchMode: FilterMatchMode.IN },
   POLI: { value: null, matchMode: FilterMatchMode.IN },
   NAMADOKTER: { value: null, matchMode: FilterMatchMode.IN },
@@ -742,7 +829,58 @@ const totalTarifCBG = ref(0)
 const disetujuiBPJS = ref(0)
 const TempfilteredData = ref([])
 
+const showKlaim = ref(false)
+const DataSelected = ref(null)
+const sttsCoderFilter = ref(null) // null=Semua, 0=M, 1=C, 2=P
+
+const sttsCoderOpts = [
+  { label: 'Semua', value: null, icon: 'pi pi-list', cls: 'secondary' },
+  { label: 'M', value: 0, icon: 'pi pi-times-circle', cls: 'danger' },
+  { label: 'C', value: 1, icon: 'pi pi-check-circle', cls: 'success' },
+  { label: 'P', value: 2, icon: 'pi pi-exclamation-circle', cls: 'warning' },
+]
+
+// --- Helper Functions ---
+
+const onKlaimSaved = (data) => {
+  if (!data?.noregister) return
+  const row = medicalData.value.find((r) => r.NOPENDAFTARAN === data.noregister)
+  if (row && data.stts_coder !== undefined) {
+    row.STTS_CODER = data.stts_coder
+  }
+  const label =
+    data.stts_coder === 1
+      ? 'Lengkap (C)'
+      : data.stts_coder === 2
+        ? 'Perbaikan (P)'
+        : String(data.stts_coder)
+  toast.add({
+    severity: 'success',
+    summary: 'Klaim Tersimpan',
+    detail: `Status diperbarui → ${label}`,
+    life: 4000,
+  })
+}
+const ShowDetailsdata = (row) => {
+  // console.log(row)
+  // DataSelected.value = row
+  selectedNoreg.value = row.NOPENDAFTARAN
+  showKlaim.value = true
+}
+
 // --- Computed Properties untuk Analisis ---
+const filteredByStts = computed(() => {
+  if (sttsCoderFilter.value === null) return medicalData.value
+  return medicalData.value.filter((r) => r.STTS_CODER == sttsCoderFilter.value)
+})
+
+const sttsCoderCount = computed(() => ({
+  null: medicalData.value.length,
+  0: medicalData.value.filter((r) => r.STTS_CODER == 0).length,
+  1: medicalData.value.filter((r) => r.STTS_CODER == 1).length,
+  2: medicalData.value.filter((r) => r.STTS_CODER == 2).length,
+}))
+
 const selisihKlaim = computed(() => {
   return totalTarifCBG.value - disetujuiBPJS.value
 })
@@ -807,14 +945,25 @@ const sudahFilanClaim = ref([])
 const KetaranganOpt = ref([])
 const tarifCbgOptions = ref([])
 const isAktifSEP = ref([])
-
-// --- Helper Functions ---
+const sttsCoderFilterOptions = ref([
+  { label: 'M', value: 0 },
+  { label: 'C', value: 1 },
+  { label: 'P', value: 2 },
+])
 
 const calculatePersentaseSelisih = (data) => {
   const tarifCBG = parseFloat(data.TARIFCBG) || 0
   if (tarifCBG === 0) return 0
   const selisih = calculateSelisih(data)
   return ((selisih / tarifCBG) * 100).toFixed(2)
+}
+
+const printResumePasien = (data) => {
+  const routeData = router.resolve({
+    name: 'ResumeRanapView',
+    query: { noreg: data.NOPENDAFTARAN },
+  })
+  window.open(routeData.href, '_blank')
 }
 
 const statusLabel = (code) => {
@@ -935,12 +1084,13 @@ const onFilter = (event) => {
 const clearFilters = () => {
   filters.value = {
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    STTS_CODER: { value: null, matchMode: FilterMatchMode.IN },
+    NAMAPASIEN: { value: null, matchMode: FilterMatchMode.CONTAINS },
     CARABAYAR: { value: null, matchMode: FilterMatchMode.IN },
     POLI: { value: null, matchMode: FilterMatchMode.IN },
     NAMADOKTER: { value: null, matchMode: FilterMatchMode.IN },
     KETERANGAN: { value: null, matchMode: FilterMatchMode.IN },
     SUDAHFINALCLAIM: { value: null, matchMode: FilterMatchMode.IN },
-    OBAT_OBATAN: { value: null, matchMode: FilterMatchMode.IN },
     NOSEP: { value: null, matchMode: FilterMatchMode.IN },
     TARIFCBG: { value: null, matchMode: FilterMatchMode.IN },
     IS_AKTIF_SEP: { value: null, matchMode: FilterMatchMode.IN },
@@ -1063,11 +1213,14 @@ const nosepSedanSign = ref(0)
 const loopPengecheckanSEP = async () => {
   loadingCheckSEP.value = true
   ShowProgressCheckSEP.value = true
+  listRespons.value = []
+  progress.value = 0
+
+  await nextTick()
 
   const total = TempfilteredData.value.length
   let done = 0
-  progress.value = 0
-  listRespons.value = []
+
   for (const element of TempfilteredData.value) {
     nosepSedanSign.value = element.NOSEP
     await checkSEPAktif(element.NOSEP)
@@ -1077,7 +1230,8 @@ const loopPengecheckanSEP = async () => {
   }
 
   loadingCheckSEP.value = false
-  ShowProgressCheckSEP.value = false
+  nosepSedanSign.value = null
+  // Dialog dibiarkan terbuka agar user bisa melihat hasil
 }
 
 const listRespons = ref([])
@@ -1100,6 +1254,23 @@ const checkSEPAktif = async (nosep) => {
   }
 }
 
+/**
+ * Ambil data klaim JSON dari API.
+ * Contoh respons JSON yang diharapkan:
+ * {
+ *   "noregister": "72604418143",
+ *   "nosep": "0007R0050426V002066",
+ *   "user_id": "7-it",
+ *   "dx_utama": { ... },
+ *   "dx_sekunder": [ ... ],
+ *   "prosedur": [ ... ],
+ *   "status_klaim": "perbaikan",
+ *   "catatan_perbaikan": "----",
+ *   "catatan_umum": "",
+ *   "dokter_rawat_bersama": [ ... ]
+ * }
+ */
+
 const fetchData = async () => {
   try {
     const payload = {
@@ -1121,10 +1292,14 @@ const fetchData = async () => {
       payload,
     )
 
-    console.log(response.data)
     if (response.data.metadata.code == 200) {
-      medicalData.value = []
-      medicalData.value = response.data.response
+      medicalData.value = response.data.response.map((item) => ({
+        ...item,
+        STTS_CODER:
+          item.STTS_CODER === null || item.STTS_CODER === undefined || item.STTS_CODER === ''
+            ? null
+            : Number(item.STTS_CODER),
+      }))
       updateFilterOptions()
       showSuccess(`Data berhasil dimuat: ${medicalData.value.length} records`)
     } else {
@@ -1232,113 +1407,314 @@ const formatDateTimeForAPI = (date) => {
 </script>
 
 <style scoped>
+/* ── Card Header ──────────────────────────────────────────────────── */
+.card-header {
+  background: linear-gradient(135deg, #2d1b69 0%, #11998e 100%);
+  border-bottom: none;
+  padding: 8px 14px;
+}
+.card-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.03em;
+}
+
+/* ── Filter label ─────────────────────────────────────────────────── */
+.filter-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #4a7ab5;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+  margin-bottom: 2px;
+}
+.filter-label i {
+  margin-right: 3px;
+}
+
+/* ── Toolbar ──────────────────────────────────────────────────────── */
+.tbl-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 0 12px;
+  border-bottom: 1px solid #dde5ee;
+  margin-bottom: 12px;
+}
+.tbl-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tbl-filter-lbl {
+  font-size: 11px;
+  font-weight: 700;
+  color: #4a7ab5;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.tbl-stts-pills {
+  display: flex;
+  border: 1px solid #b2c8dd;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.tbl-stts-pill {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  background: #fff;
+  color: #5a7a9a;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s;
+  border-right: 1px solid #b2c8dd;
+}
+.tbl-stts-pill:last-child {
+  border-right: none;
+}
+.tbl-stts-pill:hover {
+  background: #f0f5fc;
+}
+.tbl-stts-count {
+  background: rgba(26, 58, 95, 0.1);
+  border-radius: 999px;
+  padding: 0 6px;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  text-align: center;
+  line-height: 16px;
+}
+.tbl-stts-pill-secondary.active {
+  background: #dde8f4;
+  color: #162d4e;
+}
+.tbl-stts-pill-danger.active {
+  background: #fde8e8;
+  color: #a03030;
+}
+.tbl-stts-pill-success.active {
+  background: #e0f2e9;
+  color: #2a6a40;
+}
+.tbl-stts-pill-warning.active {
+  background: #fef5dc;
+  color: #7a5a10;
+}
+.tbl-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ── Summary strip ────────────────────────────────────────────────── */
+.summary-strip {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding: 6px 0 8px;
+  margin-bottom: 8px;
+}
+.summary-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  flex: 1;
+  min-width: 120px;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+.summary-chip-icon {
+  font-size: 14px;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+.summary-chip-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.summary-chip-lbl {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.75;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+}
+.summary-chip-val {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.summary-chip-val small {
+  font-size: 10px;
+  font-weight: 500;
+  opacity: 0.75;
+  margin-left: 3px;
+}
+
+/* Gradient chips — mengikuti tema navy/slate */
+.gradient-primary {
+  background: linear-gradient(135deg, #dde8f4, #edf3fa);
+  border-color: #b2c8dd;
+  color: #162d4e;
+}
+.gradient-info {
+  background: linear-gradient(135deg, #d6e8f8, #e8f2fd);
+  border-color: #9fbfdf;
+  color: #1a3a5f;
+}
+.gradient-success {
+  background: linear-gradient(135deg, #daf0e6, #edf8f2);
+  border-color: #9ecfb8;
+  color: #1e5c38;
+}
+.gradient-warning {
+  background: linear-gradient(135deg, #fef0c8, #fef8e4);
+  border-color: #e8c96a;
+  color: #6a4a08;
+}
+.gradient-danger {
+  background: linear-gradient(135deg, #fde0e0, #fdeeed);
+  border-color: #e8a0a0;
+  color: #8a2020;
+}
+.gradient-secondary {
+  background: linear-gradient(135deg, #e8edf5, #f2f5fa);
+  border-color: #b8c8dc;
+  color: #2d4a6a;
+}
+.gradient-light {
+  background: linear-gradient(135deg, #f5f8fc, #fafcff);
+  border-color: #ccdaeb;
+  color: #3a5070;
+}
+
+/* ── Round button ─────────────────────────────────────────────────── */
+.round-button2 {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.8rem;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ── DataTable ────────────────────────────────────────────────────── */
 :deep(.p-datatable .p-datatable-tbody > tr > td) {
   padding: 0.1rem 0.5rem;
 }
-
 :deep(.p-datatable .p-datatable-thead > tr > th) {
   padding: 0.5rem 1rem;
+  background: #e6edf7;
+  color: #162d4e;
 }
 
-.stat-box {
-  color: #333;
-  border: none;
-  position: relative;
-  overflow: hidden;
-  transition: transform 0.1s ease;
-}
-
-.stat-box:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-}
-
-.stat-box::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
+/* ── Status cell ──────────────────────────────────────────────────── */
+.status-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
   width: 100%;
-  height: 100%;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.4) 1px, transparent 1px);
-  background-size: 20px 20px;
-  pointer-events: none;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.35rem;
+  text-transform: uppercase;
+  font-weight: 700;
 }
-.table-progress {
-  width: 100%;
-  border-collapse: collapse;
+.status-cell-success {
+  background: #dff0e8;
+  color: #1e5c38;
 }
-
-.table-progress th {
-  background: #f1f1f1;
-  border: 1px solid #ddd;
+.status-cell-warning {
+  background: #fef5dc;
+  color: #7a5a10;
 }
-
-.table-progress td {
-  border: 1px solid #ddd;
-}
-
-.gradient-primary {
-  background: linear-gradient(135deg, #cde5ff, #e7f0ff);
+.status-cell-danger {
+  background: #fde8e8;
+  color: #8a2020;
 }
 
-.gradient-info {
-  background: linear-gradient(135deg, #cce5ff, #e0ecff);
+/* ── Column menu ──────────────────────────────────────────────────── */
+.column-menu {
+  border: 1px solid #b2c8dd;
+  border-radius: 6px;
+  background: #f7fafd;
+  padding: 10px 12px;
 }
-
-.gradient-success {
-  background: linear-gradient(135deg, #d4f8e8, #e9fff5);
+.column-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #dde8f4;
 }
-
-.gradient-warning {
-  background: linear-gradient(135deg, #fff2cc, #fff8e1);
+.column-menu-header h6 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a3a5f;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
-
-.gradient-danger {
-  background: linear-gradient(135deg, #ffd9d9, #ffe8e8);
+.column-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-bottom: 8px;
 }
-
-.gradient-secondary {
-  background: linear-gradient(135deg, #f0f0f0, #f8f8f8);
+.column-item {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: #3a5070;
 }
-
-.gradient-light {
-  background: linear-gradient(135deg, #fafafa, #ffffff);
-}
-
-h5 {
-  color: #222;
-}
-
-.text-info {
-  color: #0066cc;
-}
-
-.text-success {
-  color: #28a745;
-}
-
-.text-warning {
-  color: #ffc107;
-}
-
-.text-danger {
-  color: #dc3545;
-}
-
 .column-item :deep(.p-checkbox) {
   margin-top: 0.25rem;
 }
-
 .column-menu-footer {
   display: flex;
   gap: 0.5rem;
   padding-top: 0.75rem;
-  border-top: 1px solid #dee2e6;
+  border-top: 1px solid #dde8f4;
   justify-content: flex-end;
 }
-
 .column-menu-footer :deep(.p-button) {
   font-size: 0.875rem;
+}
+
+/* ── Progress table ───────────────────────────────────────────────── */
+.table-progress {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table-progress th {
+  background: #e6edf7;
+  color: #162d4e;
+  border: 1px solid #b2c8dd;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.table-progress td {
+  border: 1px solid #dde5ee;
+  padding: 5px 10px;
+  font-size: 12px;
 }
 </style>

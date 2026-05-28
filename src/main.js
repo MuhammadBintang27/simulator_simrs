@@ -2,6 +2,8 @@ import ContentHeader from '@/components/ContentHeader.vue'
 
 import loading_overlay from '@/components/LoadingFormCompnent.vue'
 
+import '@fortawesome/fontawesome-free/css/all.min.css'
+
 import PrimeVue from 'primevue/config'
 
 import 'primeicons/primeicons.css'

@@ -4,31 +4,38 @@ import { ref } from 'vue'
 
 export const useConfigStore = defineStore('config', {
   state: () => {
-    const isProd = false // 'production' // import.meta.env.MODE === 'development'
+    const isProd = true // 'production' // import.meta.env.MODE === 'development'
 
     return {
       mode: isProd ? 'production' : 'development',
 
       apiBaseUrl:
         isProd == true
-          ? 'https://ws-simrs.link/ws_sim_v2'
-          : 'https://ws-simrs.link/ws_sim_v2_tester',
+          ? 'https://ws-simrs.net/ws_sim_v2/' //'https://ws-simrs.link/ws_sim_v2'
+          : 'https://ws-simrs.net/ws_sim_v2_tester',
 
       apiApotikUrl:
         isProd == true
-          ? 'https://ws-simrs.link/ws_posindo_v2.1'
-          : 'https://ws-simrs.link/ws_posindo_v2.1_tester',
+          ? 'https://ws-simrs.net/ws_posindo_v2.1' //'https://ws-simrs.link/ws_posindo_v2.1'
+          : 'https://ws-simrs.net/ws_posindo_v2.1_tester',
 
       simrs:
         isProd == true
-          ? 'https://ws-simrs.link/ws_sim_v2'
-          : 'https://ws-simrs.link/ws_sim_v2_tester',
+          ? 'https://ws-simrs.net/ws_sim_v2' //'https://ws-simrs.link/ws_sim_v2'
+          : 'https://ws-simrs.net/ws_sim_v2_tester',
 
       laravel: isProd == true ? 'https://simrs-link.site/api' : 'https://simrs-link.site/api',
+
+      sidebarCollapsed: localStorage.getItem('sb_collapsed') === '1',
     }
   },
 
-  //////TESTING UPDATE
+  actions: {
+    toggleSidebar() {
+      this.sidebarCollapsed = !this.sidebarCollapsed
+      localStorage.setItem('sb_collapsed', this.sidebarCollapsed ? '1' : '0')
+    },
+  },
 
   getters: {
     getApiUrl: (state) => state.apiBaseUrl,

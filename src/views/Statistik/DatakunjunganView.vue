@@ -1,10 +1,24 @@
 <template>
   <div class="content">
-    <div class="card elevation-0">
-      <div class="card-header">
-        <h4>Data kunjungan Pasien</h4>
+    <!-- ══ HERO SECTION ══ -->
+    <div class="hero-section">
+      <div class="hero-content">
+        <div class="hero-icon">
+          <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="hero-text">
+          <h1 class="hero-title">Data Kunjungan Pasien</h1>
+          <p class="hero-description">
+            Pantau dan analisa seluruh kunjungan pasien rawat jalan maupun rawat inap secara
+            menyeluruh. Filter berdasarkan tanggal, jenis rawat, poli, diagnosa, dan dokter. Ekspor
+            data ke Excel untuk keperluan laporan dan rekap manajemen rumah sakit.
+          </p>
+        </div>
       </div>
+    </div>
 
+    <div class="card elevation-0">
+      <div class="card-header"></div>
       <div class="card-body">
         <div class="row">
           <div class="col-md-2">
@@ -83,9 +97,9 @@
               v-model:filters="filters"
               :value="medicalData"
               paginator
-              :rows="20"
+              :rows="25"
               @filter="onFilter"
-              :rowsPerPageOptions="[5, 10, 20, 50, 100]"
+              :rowsPerPageOptions="[5, 10, 20, 25, 50, 100]"
               tableStyle="min-width: 50rem"
               filterDisplay="row"
               :globalFilterFields="[
@@ -96,6 +110,11 @@
                 'POLI_RUANG',
               ]"
               striped-rows
+              showGridlines
+              rowHover
+              scrollable
+              scrollHeight="70vh"
+              responsiveLayout="scroll"
             >
               <template #header>
                 <div class="flex justify-content-between align-items-center">
@@ -427,6 +446,9 @@
         tableStyle="min-width: 50rem"
         striped-rows
         showGridlines
+        rowHover
+        scrollable
+        scrollHeight="60vh"
       >
         <Column
           v-for="col in recapTableColumns"
@@ -616,7 +638,6 @@ const generateRecap = () => {
         grouped[key][col] = row[col]
       })
     }
-
     // Sum numeric fields
     grouped[key].JML_LAMA_L += Number(row.JML_LAMA_L) || 0
     grouped[key].JML_LAMA_P += Number(row.JML_LAMA_P) || 0
@@ -781,12 +802,8 @@ const CallDataRincian = async () => {
       mod: 'history20',
     }
 
-    console.log('Request payload:', payload)
-
     const url = configStore.apiBaseUrl
     const response = await axios.post(`${url}/index.php/api/transaksi_pasien/history3`, payload)
-
-    console.log(response.data)
 
     if (response.data && response.data.response) {
       listDataRincian.value = [...response.data.response]
@@ -910,3 +927,68 @@ onMounted(() => {
   updateFilterOptions()
 })
 </script>
+
+<style scoped>
+/* ── Hero Section ── */
+.hero-section {
+  background: linear-gradient(135deg, #134e5e 0%, #059669 100%);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  color: white;
+  box-shadow: 0 4px 20px rgba(6, 182, 212, 0.2);
+}
+
+.hero-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.hero-icon {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 1rem;
+  font-size: 2rem;
+  min-width: 60px;
+  text-align: center;
+}
+
+.hero-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.hero-description {
+  font-size: 0.91rem;
+  opacity: 0.9;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ── Filter label ── */
+.filter-label {
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #555;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+/* ── Button ── */
+.round-button2 {
+  border-radius: 8px;
+}
+
+/* ── Compact DataTable rows (sama persis KasirView) ── */
+:deep(.p-datatable .p-datatable-tbody > tr > td) {
+  padding: 0.1rem 0.5rem;
+}
+
+:deep(.p-datatable .p-datatable-thead > tr > th) {
+  padding: 0.5rem 0.5rem;
+}
+</style>

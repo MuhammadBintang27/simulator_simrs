@@ -895,7 +895,6 @@
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 
 import { useRouter } from 'vue-router'
-import Pusher from 'pusher-js'
 
 const router = useRouter()
 
@@ -988,7 +987,6 @@ const showPanggilanAntrian = ref(false)
 
 const messages = ref([])
 const connected = ref(false)
-let pusher = null
 let channel = null
 
 const JenisRawat = ref([
@@ -1127,6 +1125,7 @@ const funtionSendToPoli = async (status) => {
       noreg: status.NOPENDAFTARAN,
       noka: status.NOJAMINAN,
       nomr: status.NOMR,
+      kd_dokter: status.KDDOKTER,
       /* any query params */
     },
   })
@@ -1228,11 +1227,7 @@ const SetTaskID_4 = async (data) => {
 }
 
 onUnmounted(() => {
-  // Buat koneksi ke Pusher
-  pusher = new Pusher('2dfe2aa2404cb8b93954', {
-    cluster: 'ap1',
-    encrypted: true,
-  })
+  if (channel) channel.unbind_all()
 })
 
 onMounted(() => {
@@ -1463,11 +1458,16 @@ watch([startDate, endDate, JenisRawatSelected], () => {
 
 .hero-section {
   background: linear-gradient(135deg, #2d1b69 0%, #11998e 100%);
-  border-radius: 4px;
-  padding: 1.5rem;
-  margin-bottom: 0.5rem;
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 0.75rem;
   color: white;
-  box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  box-shadow: 0 4px 20px rgba(0, 139, 139, 0.25);
 }
 
 .hover-grow {
@@ -1490,7 +1490,6 @@ watch([startDate, endDate, JenisRawatSelected], () => {
   display: flex;
   align-items: center;
   gap: 1rem;
-  margin-bottom: 1.5rem;
 }
 
 .hero-icon {

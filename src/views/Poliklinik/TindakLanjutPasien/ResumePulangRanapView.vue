@@ -388,7 +388,7 @@ const getDataResume = async () => {
 
 .section-title {
   background-color: #f4f4f4;
-  border-left: 4px solid #04892c;
+  background: linear-gradient(135deg, #2d1b69 0%, #11998e 100%);
   padding: 8px 12px;
   margin-top: 20px;
   margin-bottom: 15px;

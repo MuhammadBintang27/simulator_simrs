@@ -683,7 +683,7 @@ const clearAllItems = () => {
 // API functions
 const get_item = async (mode, barcode) => {
   try {
-    if (searchQuery.value.length <= 3) {
+    if (searchQuery.value.length < 3) {
       return
     }
     const param = {
@@ -699,7 +699,6 @@ const get_item = async (mode, barcode) => {
     const url = configStore.apiApotikUrl
     const response = await axios.post(`${url}/index.php/api/barang/getdatabarang_v31`, param)
 
-    console.log(response.data)
     if (response.data?.metadata?.code == 200) {
       availableObat.value = response.data.response || []
     } else {

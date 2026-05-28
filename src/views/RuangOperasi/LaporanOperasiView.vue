@@ -1,180 +1,314 @@
 <template>
   <loading_overlay :is-loading="loading" message="Memuat data...." />
-  <section class="content">
-    <Panel>
-      <template #header>
-        <h5 class="mt-0"><b>LAPORAN OPERASI</b></h5>
-        Last update {{ formatDate(data_laporan?.created_at) }}
-      </template>
 
-      <div class="row">
-        <!-- Pemeriksaan PA -->
-        <div class="col-md-12 mb-3">
-          <label class="d-block mb-2">Pemeriksaan PA</label>
-          <div class="form-check form-check-inline">
-            <RadioButton inputId="paTidak" name="pa" value="Tidak" v-model="form.pa" />
-            <label for="paTidak" class="ml-2">Tidak</label>
-          </div>
-          <div class="form-check form-check-inline">
-            <RadioButton inputId="paYa" name="pa" value="Ya" v-model="form.pa" />
-            <label for="paYa" class="ml-2">Ya</label>
-          </div>
+  <!-- Banner -->
+  <div class="laporan-banner mb-3">
+    <div class="banner-icon">
+      <i class="pi pi-file-edit"></i>
+    </div>
+    <div class="banner-content">
+      <h4 class="banner-title">Laporan Operasi</h4>
+      <p class="banner-desc">
+        Dokumentasi hasil tindakan pembedahan meliputi diagnosa, uraian pembedahan, instruksi pasca
+        operasi, dan dokumentasi gambar medis.
+      </p>
+    </div>
+    <div v-if="data_laporan?.created_at" class="banner-meta">
+      <i class="pi pi-clock me-1"></i>
+      <span>Update: {{ formatDate(data_laporan.created_at) }}</span>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <!-- ===== INFORMASI OPERASI ===== -->
+    <div class="col-md-6">
+      <div class="laporan-card h-100">
+        <div class="laporan-card-header info-header">
+          <i class="pi pi-info-circle me-2"></i>
+          <span>INFORMASI OPERASI</span>
+          <small class="ms-auto">Diagnosa &amp; Anestesi</small>
         </div>
-
-        <!-- Jaringan yang Dieksisi -->
-        <div class="col-md-6 mb-3">
-          <label>Jaringan yang Dieksisi/Insisi</label>
-          <InputText
-            v-model="form.jaringan"
-            placeholder="Jaringan yang Dieksisi/Insisi"
-            class="w-100 form-control"
-          />
-        </div>
-
-        <!-- Jumlah Perdarahan -->
-        <div class="col-md-6 mb-3">
-          <label>Jumlah Perdarahan</label>
-          <div class="input-group">
-            <InputNumber v-model="form.perdarahan" placeholder="Jumlah Perdarahan" class="w-90" />
-            <span class="input-group-text">CC</span>
-          </div>
-        </div>
-
-        <!-- Jenis Anestesi -->
-        <div class="col-md-6 mb-3">
-          <label>Jenis Anestesi</label>
-          <InputText
-            v-model="form.anestesi"
-            placeholder="Jenis Anestesi"
-            class="w-100 form-control"
-          />
-        </div>
-
-        <!-- Diagnosa Pra Operasi -->
-        <div class="col-md-6 mb-3">
-          <label>Diagnosa Pra Operasi</label>
-          <InputText
-            v-model="form.diagnosaPra"
-            placeholder="Diagnosa Pra Operasi"
-            class="w-100 form-control"
-          />
-        </div>
-
-        <!-- Komplikasi Penyulit -->
-        <div class="col-md-6 mb-3">
-          <label>Komplikasi Penyulit</label>
-          <InputText
-            v-model="form.komplikasi"
-            placeholder="Komplikasi Penyulit"
-            class="w-100 form-control"
-          />
-        </div>
-
-        <!-- Diagnosa Pasca Operasi -->
-        <div class="col-md-6 mb-3">
-          <label>Diagnosa Pasca Operasi</label>
-          <InputText
-            v-model="form.diagnosaPasca"
-            placeholder="Diagnosa Pasca Operasi"
-            class="w-100 form-control"
-          />
-        </div>
-
-        <!-- Uraian Pembedahan -->
-        <div class="col-md-6 mb-3">
-          <label>Uraian Pembedahan</label>
-          <InputTextarea
-            v-model="form.uraian"
-            placeholder="Uraian Pembedahan"
-            class="w-100 form-control"
-            rows="5"
-          />
-        </div>
-
-        <!-- Instruksi Pasca Operasi -->
-        <div class="col-md-6 mb-3">
-          <label>Instruksi Pasca Operasi</label>
-          <InputTextarea
-            v-model="form.instruksi"
-            placeholder="Instruksi Pasca Operasi"
-            class="w-100 form-control"
-            rows="5"
-          />
-        </div>
-
-        <!-- Upload Multiple Images -->
-        <div class="col-md-6 mb-3">
-          <label>Gambar Medis</label>
-          <div class="custom-file-upload">
-            <input
-              ref="fileInputRef"
-              type="file"
-              multiple
-              accept="image/*"
-              @change="onFileChange"
-              class="file-input"
-              id="medical-images"
-            />
-            <label for="medical-images" class="file-upload-label">
-              <i class="pi pi-upload"></i>
-              Pilih Gambar (Multiple)
-            </label>
-            <div v-if="getTotalImageCount() > 0" class="file-count">
-              {{ getTotalImageCount() }} gambar total
+        <div class="laporan-card-body">
+          <div class="field-group">
+            <label class="field-label">Pemeriksaan PA</label>
+            <div class="radio-group">
+              <RadioButton inputId="paTidak" value="Tidak" v-model="form.pa" />
+              <label for="paTidak" class="radio-label">Tidak</label>
+              <RadioButton inputId="paYa" value="Ya" v-model="form.pa" />
+              <label for="paYa" class="radio-label">Ya</label>
             </div>
           </div>
 
-          <!-- Display all images (existing + newly uploaded) -->
-          <div v-if="allImages.length > 0" class="mt-3">
-            <div class="row">
-              <div v-for="(image, index) in allImages" :key="index" class="col-md-4 mb-2">
-                <div class="image-preview">
-                  <img :src="image.preview" :alt="`Preview ${index + 1}`" class="preview-img" />
-                  <button
-                    type="button"
-                    class="btn btn-danger btn-sm remove-btn"
-                    @click="removeImage(index)"
-                  >
+          <div class="section-divider"><span>Diagnosa</span></div>
+
+          <div class="field-group">
+            <label class="field-label">Diagnosa Pra Operasi <span class="required">*</span></label>
+            <InputText
+              v-model="form.diagnosaPra"
+              placeholder="Diagnosa pra operasi..."
+              class="w-100"
+            />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Diagnosa Pasca Operasi</label>
+            <InputText
+              v-model="form.diagnosaPasca"
+              placeholder="Diagnosa pasca operasi..."
+              class="w-100"
+            />
+          </div>
+
+          <div class="section-divider"><span>Anestesi &amp; Klinis</span></div>
+
+          <div class="field-group">
+            <label class="field-label">Jenis Anestesi</label>
+            <InputText
+              v-model="form.anestesi"
+              placeholder="Jenis anestesi yang digunakan..."
+              class="w-100"
+            />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Komplikasi Penyulit</label>
+            <InputText
+              v-model="form.komplikasi"
+              placeholder="Komplikasi penyulit..."
+              class="w-100"
+            />
+          </div>
+          <div class="field-group">
+            <label class="field-label"
+              >Jaringan yang Dieksisi/Insisi <span class="required">*</span></label
+            >
+            <InputText
+              v-model="form.jaringan"
+              placeholder="Jaringan yang dieksisi/insisi..."
+              class="w-100"
+            />
+          </div>
+          <div class="field-group mb-0">
+            <label class="field-label">Jumlah Perdarahan</label>
+            <div class="input-group input-group-sm">
+              <InputNumber v-model="form.perdarahan" placeholder="0" class="w-90" />
+              <span class="input-group-text">CC</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== WAKTU OPERASI ===== -->
+    <div class="col-md-6">
+      <div class="laporan-card h-100">
+        <div class="laporan-card-header waktu-header">
+          <i class="pi pi-clock me-2"></i>
+          <span>WAKTU OPERASI</span>
+          <small class="ms-auto">Durasi Tindakan</small>
+        </div>
+        <div class="laporan-card-body">
+          <div class="section-divider"><span>Jadwal Tindakan</span></div>
+
+          <div class="field-group">
+            <label class="field-label"
+              ><i class="pi pi-calendar me-1"></i>Tanggal &amp; Jam Mulai</label
+            >
+            <DatePicker
+              v-model="form.tanggal_jam_mulai"
+              placeholder="Pilih tanggal &amp; jam mulai"
+              class="w-100"
+              dateFormat="yy-mm-dd"
+              showTime
+              showIcon
+              hourFormat="24"
+            />
+          </div>
+          <div class="field-group">
+            <label class="field-label"
+              ><i class="pi pi-calendar me-1"></i>Tanggal &amp; Jam Selesai</label
+            >
+            <DatePicker
+              v-model="form.tanggal_jam_selesai"
+              placeholder="Pilih tanggal &amp; jam selesai"
+              class="w-100"
+              dateFormat="yy-mm-dd"
+              showTime
+              showIcon
+              hourFormat="24"
+            />
+          </div>
+
+          <div class="section-divider"><span>Durasi</span></div>
+
+          <div class="field-group mb-0">
+            <label class="field-label">Durasi Operasi</label>
+            <div class="durasi-display" v-if="form.durasi">
+              <i class="pi pi-stopwatch me-2" style="color: #d97706"></i>
+              <span class="durasi-value">{{ form.durasi }}</span>
+              <span class="durasi-unit">menit</span>
+            </div>
+            <InputText
+              v-else
+              v-model="form.durasi"
+              placeholder="Otomatis terisi..."
+              class="w-100"
+              disabled
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== URAIAN PEMBEDAHAN ===== -->
+    <div class="col-md-6">
+      <div class="laporan-card h-100">
+        <div class="laporan-card-header uraian-header">
+          <i class="pi pi-list me-2"></i>
+          <span>URAIAN PEMBEDAHAN</span>
+        </div>
+        <div class="laporan-card-body">
+          <div class="field-group mb-0">
+            <label class="field-label">Detail Prosedur Pembedahan</label>
+            <InputTextarea
+              v-model="form.uraian"
+              placeholder="Persiapan pasien, Insisi, Temuan selama operasi, Tindakan yang dilakukan, Penutupan luka..."
+              class="w-100"
+              rows="10"
+              autoResize
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== INSTRUKSI PASCA OPERASI ===== -->
+    <div class="col-md-6">
+      <div class="laporan-card h-100">
+        <div class="laporan-card-header instruksi-header">
+          <i class="pi pi-book me-2"></i>
+          <span>INSTRUKSI PASCA OPERASI</span>
+        </div>
+        <div class="laporan-card-body">
+          <div class="field-group mb-0">
+            <label class="field-label">Instruksi &amp; Catatan Pemulihan</label>
+            <InputTextarea
+              v-model="form.instruksi"
+              placeholder="Instruksi pasca operasi, perawatan luka, obat-obatan, jadwal kontrol..."
+              class="w-100"
+              rows="10"
+              autoResize
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== DOKUMENTASI GAMBAR ===== -->
+    <div class="col-12">
+      <div class="laporan-card">
+        <div class="laporan-card-header gambar-header">
+          <i class="pi pi-images me-2"></i>
+          <span>DOKUMENTASI GAMBAR MEDIS</span>
+          <div v-if="getTotalImageCount() > 0" class="ms-auto badge-count">
+            {{ getTotalImageCount() }} gambar
+          </div>
+        </div>
+        <div class="laporan-card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <!-- Upload Area -->
+              <div class="field-group">
+                <label class="field-label">Upload Gambar</label>
+                <div class="upload-zone">
+                  <input
+                    ref="fileInputRef"
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    @change="onFileChange"
+                    class="file-input"
+                    id="medical-images"
+                  />
+                  <label for="medical-images" class="upload-zone-label">
+                    <i class="pi pi-cloud-upload"></i>
+                    <span class="upload-text">Klik untuk pilih gambar</span>
+                    <span class="upload-hint">PNG, JPG, JPEG • Maks 5MB per file</span>
+                  </label>
+                </div>
+                <div v-if="getTotalImageCount() > 0" class="upload-count-badge">
+                  <i class="pi pi-images me-1"></i>
+                  {{ getTotalImageCount() }} gambar terpilih
+                </div>
+              </div>
+
+              <!-- Keterangan Gambar -->
+              <div class="field-group mb-0">
+                <label class="field-label">Keterangan Gambar</label>
+                <InputTextarea
+                  v-model="form.keterangan_gambar"
+                  placeholder="Keterangan gambar medis..."
+                  class="w-100"
+                  rows="5"
+                  autoResize
+                />
+              </div>
+            </div>
+
+            <div class="col-md-8">
+              <!-- Image Gallery -->
+              <label class="field-label mb-2">Pratinjau Gambar</label>
+              <div v-if="allImages.length === 0" class="gallery-empty">
+                <i class="pi pi-image"></i>
+                <span>Belum ada gambar</span>
+              </div>
+              <div v-else class="image-gallery">
+                <div v-for="(image, index) in allImages" :key="index" class="gallery-item">
+                  <img :src="image.preview" :alt="`Gambar ${index + 1}`" class="gallery-img" />
+                  <button type="button" class="gallery-remove" @click="removeImage(index)">
                     <i class="pi pi-times"></i>
                   </button>
-                  <div class="image-info">
-                    <small>{{ image.name }}</small>
-                    <div class="image-type">
-                      <span :class="image.isExisting ? 'badge-existing' : 'badge-new'">
-                        {{ image.isExisting ? 'Tersimpan' : 'Upload Baru' }}
-                      </span>
-                    </div>
+                  <div class="gallery-info">
+                    <span class="gallery-name">{{ image.name }}</span>
+                    <span :class="image.isExisting ? 'badge-existing' : 'badge-new'">
+                      {{ image.isExisting ? 'Tersimpan' : 'Baru' }}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
 
-        <!-- Keterangan Gambar -->
-        <div class="col-md-6 mb-3">
-          <label>Keterangan Gambar</label>
-          <InputTextarea
-            v-model="form.keterangan_gambar"
-            placeholder="Keterangan Gambar"
-            class="w-100 form-control"
-            rows="5"
-          />
-        </div>
+  <!-- Action Bar -->
+  <div class="laporan-action-bar mt-3">
+    <div class="action-inner">
+      <div class="action-info">
+        <i class="pi pi-info-circle me-2" style="color: #6c757d"></i>
+        <span>Field bertanda <span class="required">*</span> wajib diisi sebelum menyimpan.</span>
       </div>
-      <div class="row">
-        <div class="col-12 text-center">
-          <Button
-            label="Simpan"
-            class="round-button2"
-            icon="pi pi-save"
-            @click="saveForm"
-            :loading="loading"
-          />
-        </div>
+      <div class="action-buttons">
+        <Button
+          label="Reset"
+          icon="pi pi-refresh"
+          severity="secondary"
+          outlined
+          class="me-2"
+          @click="resetForm"
+        />
+        <Button
+          label="Simpan Laporan"
+          icon="pi pi-save"
+          class="btn-simpan-laporan"
+          :loading="loading"
+          @click="saveForm"
+        />
       </div>
-    </Panel>
-  </section>
+    </div>
+  </div>
+
+  <Toast />
 </template>
 
 <script setup>
@@ -183,6 +317,7 @@ import InputText from 'primevue/inputtext'
 import InputTextarea from 'primevue/textarea'
 import InputNumber from 'primevue/inputnumber'
 import RadioButton from 'primevue/radiobutton'
+import DatePicker from 'primevue/datepicker'
 
 import { useConfigStore } from '@/stores/config'
 import axios from 'axios'
@@ -213,44 +348,30 @@ const form = ref({
   komplikasi: '',
   uraian: '',
   instruksi: '',
+  durasi: '',
+  tanggal_jam_mulai: null,
+  tanggal_jam_selesai: null,
   keterangan_gambar: '',
   id_client: id_client.value,
 })
 
-// Separate arrays for different image types
-const existingImages = ref([]) // Images from database
-const uploadedImages = ref([]) // Newly uploaded images
+const existingImages = ref([])
+const uploadedImages = ref([])
 const fileInputRef = ref(null)
 
-// Computed property to combine all images for display
-const allImages = computed(() => {
-  return [
-    ...existingImages.value.map((img) => ({
-      ...img,
-      isExisting: true,
-    })),
-    ...uploadedImages.value.map((img) => ({
-      ...img,
-      isExisting: false,
-    })),
-  ]
-})
+const allImages = computed(() => [
+  ...existingImages.value.map((img) => ({ ...img, isExisting: true })),
+  ...uploadedImages.value.map((img) => ({ ...img, isExisting: false })),
+])
 
-// Function to get total image count
-const getTotalImageCount = () => {
-  return existingImages.value.length + uploadedImages.value.length
-}
+const getTotalImageCount = () => existingImages.value.length + uploadedImages.value.length
 
-// Function untuk menangani perubahan file input
 const onFileChange = (event) => {
   const files = Array.from(event.target.files)
-
   if (files.length === 0) return
 
   let successCount = 0
-
   files.forEach((file) => {
-    // Cek apakah file sudah ada (berdasarkan nama dan ukuran)
     const isDuplicate =
       uploadedImages.value.some((img) => img.name === file.name && img.size === file.size) ||
       existingImages.value.some((img) => img.name === file.name)
@@ -264,8 +385,6 @@ const onFileChange = (event) => {
       })
       return
     }
-
-    // Validasi tipe file
     if (!file.type.startsWith('image/')) {
       toast.add({
         severity: 'error',
@@ -275,8 +394,6 @@ const onFileChange = (event) => {
       })
       return
     }
-
-    // Validasi ukuran file (5MB max)
     if (file.size > 5000000) {
       toast.add({
         severity: 'error',
@@ -286,12 +403,10 @@ const onFileChange = (event) => {
       })
       return
     }
-
-    // Create preview
     const reader = new FileReader()
     reader.onload = (e) => {
       uploadedImages.value.push({
-        file: file,
+        file,
         name: file.name,
         size: file.size,
         preview: e.target.result,
@@ -301,11 +416,7 @@ const onFileChange = (event) => {
     successCount++
   })
 
-  // Reset input untuk memungkinkan upload file yang sama
-  if (fileInputRef.value) {
-    fileInputRef.value.value = ''
-  }
-
+  if (fileInputRef.value) fileInputRef.value.value = ''
   if (successCount > 0) {
     toast.add({
       severity: 'success',
@@ -323,39 +434,42 @@ const formatDate = (dateString) => {
   const yyyy = date.getFullYear()
   const hh = String(date.getHours()).padStart(2, '0')
   const min = String(date.getMinutes()).padStart(2, '0')
-
   return `${dd}/${mm}/${yyyy} ${hh}:${min}`
 }
 
-// Function untuk menghapus gambar dari preview
+const formatDateTimeLocal = (dateString) => {
+  if (!dateString) return null
+  const date = new Date(dateString)
+  const yyyy = date.getFullYear()
+  const MM = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  const HH = String(date.getHours()).padStart(2, '0')
+  const mm = String(date.getMinutes()).padStart(2, '0')
+  return `${yyyy}-${MM}-${dd}T${HH}:${mm}`
+}
+
 const removeImage = async (index) => {
   const totalExisting = existingImages.value.length
-
   if (index < totalExisting) {
-    // Removing existing image from database
     const removedImage = existingImages.value[index]
     const respons = await removeImageFromDB(removedImage.id)
     if (respons) {
-      console.log(removedImage)
       existingImages.value.splice(index, 1)
-
       toast.add({
         severity: 'info',
         summary: 'Info',
-        detail: `Gambar database "${removedImage.name}" berhasil dihapus`,
+        detail: `Gambar "${removedImage.name}" berhasil dihapus`,
         life: 3000,
       })
     }
   } else {
-    // Removing newly uploaded image
     const uploadIndex = index - totalExisting
     const removedImage = uploadedImages.value[uploadIndex]
     uploadedImages.value.splice(uploadIndex, 1)
-
     toast.add({
       severity: 'info',
       summary: 'Info',
-      detail: `Gambar upload "${removedImage.name}" berhasil dihapus`,
+      detail: `Gambar "${removedImage.name}" berhasil dihapus`,
       life: 3000,
     })
   }
@@ -364,31 +478,35 @@ const removeImage = async (index) => {
 const removeImageFromDB = async (id) => {
   try {
     loading.value = true
-
-    const param = {
-      id: id,
-      kodeboking: route.query.kodebooking,
-      id_client: id_client.value,
-    }
-
+    const param = { id, kodeboking: route.query.kodebooking, id_client: id_client.value }
     const url = configStore.apiBaseUrl
-    const response = await axios.post(`${url}/index.php/api/triaseigd/hapus_gambar_lampiran`, param) // ✅ Cleaner syntax
+    const response = await axios.post(`${url}/index.php/api/triaseigd/hapus_gambar_lampiran`, param)
     loading.value = false
-
-    console.log(response)
-
     return response
   } catch (error) {
     console.error('Error fetching data:', error)
+    loading.value = false
   }
 }
 
-// Function untuk menyimpan form
+const toLocalDateString = (date) => {
+  if (!date) return null
+  const d = new Date(date)
+  const yyyy = d.getFullYear()
+  const MM = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const HH = String(d.getHours()).padStart(2, '0')
+  const mm = String(d.getMinutes()).padStart(2, '0')
+  const ss = String(d.getSeconds()).padStart(2, '0')
+  return `${yyyy}-${MM}-${dd} ${HH}:${mm}:${ss}`
+}
+
 const saveForm = async () => {
   try {
     loading.value = true
+    form.value.tanggal_jam_mulai = toLocalDateString(form.value.tanggal_jam_mulai)
+    form.value.tanggal_jam_selesai = toLocalDateString(form.value.tanggal_jam_selesai)
 
-    // Validasi form
     if (!form.value.jaringan || !form.value.diagnosaPra) {
       toast.add({
         severity: 'error',
@@ -396,79 +514,52 @@ const saveForm = async () => {
         detail: 'Harap lengkapi field yang wajib diisi',
         life: 3000,
       })
+      loading.value = false
       return
     }
 
-    // Buat FormData untuk upload file
     const formData = new FormData()
-
-    // Append form data text fields
     Object.keys(form.value).forEach((key) => {
-      if (form.value[key] !== null && form.value[key] !== '') {
-        formData.append(key, form.value[key])
-      }
+      if (form.value[key] !== null && form.value[key] !== '') formData.append(key, form.value[key])
     })
-
-    // Append newly uploaded images
     if (uploadedImages.value.length > 0) {
-      uploadedImages.value.forEach((imageObj, index) => {
-        formData.append(`medical_images[${index}]`, imageObj.file)
-      })
+      uploadedImages.value.forEach((imageObj, index) =>
+        formData.append(`medical_images[${index}]`, imageObj.file),
+      )
     }
-
-    // Append existing images (as filenames/URLs to keep)
     if (existingImages.value.length > 0) {
-      const existingImageNames = existingImages.value.map((img) => img.name)
-      formData.append('existing_images', JSON.stringify(existingImageNames))
+      formData.append(
+        'existing_images',
+        JSON.stringify(existingImages.value.map((img) => img.name)),
+      )
     }
-
     formData.append('data', JSON.stringify(form.value))
 
-    // Send request
     const url = configStore.apiBaseUrl
-
     const response = await axios.post(
       `${url}/index.php/api/triaseigd/insert_laporan_operasi`,
       formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        timeout: 30000, // 30 detik timeout untuk upload gambar
-      },
+      { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 30000 },
     )
 
     if (response.status == 200) {
       toast.add({
         severity: 'success',
-        summary: 'Success',
+        summary: 'Berhasil',
         detail: 'Laporan operasi berhasil disimpan',
         life: 3000,
       })
-
-      // Refresh data after successful save
       await getdata_laporan()
     } else {
       throw new Error(response.data.message || 'Gagal menyimpan data')
     }
   } catch (error) {
     console.error('Error saving form:', error)
-
     let errorMessage = 'Gagal menyimpan laporan operasi'
-    if (error.response) {
-      // Server responded with error status
+    if (error.response)
       errorMessage = error.response.data?.message || `Server error: ${error.response.status}`
-    } else if (error.request) {
-      // Network error
-      errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda.'
-    }
-
-    toast.add({
-      severity: 'error',
-      summary: 'Error',
-      detail: errorMessage,
-      life: 5000,
-    })
+    else if (error.request) errorMessage = 'Gagal terhubung ke server. Periksa koneksi Anda.'
+    toast.add({ severity: 'error', summary: 'Error', detail: errorMessage, life: 5000 })
   } finally {
     loading.value = false
   }
@@ -479,48 +570,38 @@ const data_laporan = ref(null)
 const getdata_laporan = async () => {
   try {
     loading.value = true
-
-    const param = {
-      kodeboking: route.query.kodebooking,
-      id_client: id_client.value,
-      mode: 1,
-    }
-
+    const param = { kodeboking: route.query.kodebooking, id_client: id_client.value, mode: 1 }
     const url = configStore.apiBaseUrl
     const response = await axios.post(`${url}/index.php/api/triaseigd/get_laporan_operasi`, param)
 
     if (response.data.metadata?.code == '200') {
       data_laporan.value = response.data?.response
+      const d = data_laporan.value
+      form.value.pa = d?.pa || 'Tidak'
+      form.value.jaringan = d?.jaringan || ''
+      form.value.perdarahan = d?.perdarahan || 0
+      form.value.anestesi = d?.anestesi || ''
+      form.value.diagnosaPra = d?.diagnosaPra || ''
+      form.value.diagnosaPasca = d?.diagnosaPasca || ''
+      form.value.komplikasi = d?.komplikasi || ''
+      form.value.uraian = d?.uraian || ''
+      form.value.instruksi = d?.instruksi || ''
+      form.value.keterangan_gambar = d?.keterangan_gambar || ''
+      form.value.durasi = d?.durasi || ''
+      form.value.tanggal_jam_mulai = d?.tanggal_jam_mulai
+      form.value.tanggal_jam_selesai = d?.tanggal_jam_selesai
 
-      // Populate form fields
-      form.value.pa = data_laporan.value?.pa || 'Tidak'
-      form.value.jaringan = data_laporan.value?.jaringan || ''
-      form.value.perdarahan = data_laporan.value?.perdarahan || 0
-      form.value.anestesi = data_laporan.value?.anestesi || ''
-      form.value.diagnosaPra = data_laporan.value?.diagnosaPra || ''
-      form.value.diagnosaPasca = data_laporan.value?.diagnosaPasca || ''
-      form.value.komplikasi = data_laporan.value?.komplikasi || ''
-      form.value.uraian = data_laporan.value?.uraian || ''
-      form.value.instruksi = data_laporan.value?.instruksi || ''
-      form.value.keterangan_gambar = data_laporan.value?.keterangan_gambar || ''
-
-      // Clear existing images and populate with database images
       existingImages.value = []
       uploadedImages.value = []
-
       if (response.data?.lampiran) {
         existingImages.value = response.data.lampiran.map((item) => ({
           name: item.filename,
-          preview: item.filename, // Assuming this is a URL or path to the image
+          preview: item.filename,
           id: item.id,
           isExisting: true,
         }))
       }
-
-      console.log('Existing images loaded:', existingImages.value.length)
-      console.log('Form data loaded successfully')
     }
-
     loading.value = false
   } catch (error) {
     console.error('Error fetching data:', error)
@@ -534,9 +615,7 @@ const getdata_laporan = async () => {
   }
 }
 
-// Function untuk reset form
 const resetForm = () => {
-  // Reset form data
   form.value = {
     pa: 'Tidak',
     noregister: route.query.noreg,
@@ -552,15 +631,9 @@ const resetForm = () => {
     keterangan_gambar: '',
     id_client: id_client.value,
   }
-
-  // Reset images
   existingImages.value = []
   uploadedImages.value = []
-
-  // Reset file input
-  if (fileInputRef.value) {
-    fileInputRef.value.value = ''
-  }
+  if (fileInputRef.value) fileInputRef.value.value = ''
 }
 
 onMounted(() => {
@@ -569,143 +642,348 @@ onMounted(() => {
 </script>
 
 <style scoped>
-label {
+/* ====== Banner ====== */
+.laporan-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 100%);
+  border-radius: 10px;
+  padding: 1rem 1.5rem;
+  color: #fff;
+}
+.banner-icon {
+  flex-shrink: 0;
+  font-size: 2rem;
+  opacity: 0.9;
+}
+.banner-title {
+  margin: 0 0 0.2rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.banner-desc {
+  margin: 0;
+  font-size: 0.78rem;
+  opacity: 0.85;
+  line-height: 1.4;
+}
+.banner-meta {
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 20px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+/* ====== Cards ====== */
+.laporan-card {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  background: #fff;
+  border: 1px solid #e9ecef;
+}
+.laporan-card-header {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.1rem;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #fff;
+  letter-spacing: 0.04em;
+}
+.laporan-card-header small {
+  font-size: 0.7rem;
+  font-weight: 400;
+  opacity: 0.88;
+}
+.laporan-card-header .badge-count {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.72rem;
   font-weight: 600;
 }
-
-.input-group {
-  display: flex;
-  align-items: center;
+.info-header {
+  background: linear-gradient(135deg, #1a3a5c, #2563a8);
+}
+.waktu-header {
+  background: linear-gradient(135deg, #78350f, #d97706);
+}
+.uraian-header {
+  background: linear-gradient(135deg, #14532d, #16a34a);
+}
+.instruksi-header {
+  background: linear-gradient(135deg, #7f1d1d, #dc2626);
+}
+.gambar-header {
+  background: linear-gradient(135deg, #4a1259, #7c3aed);
+}
+.laporan-card-body {
+  padding: 1rem 1.1rem;
 }
 
-.input-group-text {
-  background: #f4f6f9;
-  border: 1px solid #ced4da;
-  padding: 0.375rem 0.75rem;
+/* ====== Fields ====== */
+.field-group {
+  margin-bottom: 0.9rem;
 }
-
-.image-preview {
-  position: relative;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  overflow: hidden;
-  background: #f8f9fa;
-}
-
-.preview-img {
-  width: 100%;
-  height: 120px;
-  object-fit: cover;
+.field-label {
   display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.3rem;
 }
-
-.remove-btn {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 25px;
-  height: 25px;
-  border-radius: 50%;
-  padding: 0;
+.required {
+  color: #dc2626;
+}
+.radio-group {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 12px;
+  gap: 0.3rem 0.6rem;
+  flex-wrap: wrap;
+}
+.radio-label {
+  font-size: 0.82rem;
+  color: #374151;
+  cursor: pointer;
 }
 
-.image-info {
-  padding: 8px;
-  background: white;
-  text-align: center;
+/* ====== Section Divider ====== */
+.section-divider {
+  display: flex;
+  align-items: center;
+  margin: 0.6rem 0;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.section-divider::before,
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e5e7eb;
 }
 
-.image-info small {
-  color: #666;
-  word-break: break-all;
+/* ====== Durasi Display ====== */
+.durasi-display {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.85rem;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  gap: 0.4rem;
+}
+.durasi-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #92400e;
+}
+.durasi-unit {
+  font-size: 0.78rem;
+  color: #92400e;
+  opacity: 0.75;
 }
 
-.image-type {
-  margin-top: 4px;
+/* ====== Upload Zone ====== */
+.upload-zone {
+  border: 2px dashed #d1d5db;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+  margin-bottom: 0.5rem;
 }
-
-.badge-existing {
-  background: #28a745;
-  color: white;
-  padding: 2px 6px;
-  border-radius: 12px;
-  font-size: 10px;
-  font-weight: 500;
+.upload-zone:hover {
+  border-color: #7c3aed;
 }
-
-.badge-new {
-  background: #007bff;
-  color: white;
-  padding: 2px 6px;
-  border-radius: 12px;
-  font-size: 10px;
-  font-weight: 500;
-}
-
-/* Custom file upload styling */
-.custom-file-upload {
-  position: relative;
-  width: 100%;
-}
-
 .file-input {
   display: none;
 }
-
-.file-upload-label {
-  display: block;
-  width: 100%;
-  padding: 0.5rem 1rem;
-  background: #38a3a5;
-  color: white;
-  border: 1px solid #38a3a5;
-  border-radius: 4px;
+.upload-zone-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 1.5rem 1rem;
   cursor: pointer;
-  text-align: center;
-  transition: all 0.3s ease;
-  margin-bottom: 0;
+  transition: background 0.15s;
+}
+.upload-zone-label:hover {
+  background: #f5f3ff;
+}
+.upload-zone-label .pi {
+  font-size: 1.8rem;
+  color: #7c3aed;
+  opacity: 0.7;
+}
+.upload-text {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #374151;
+}
+.upload-hint {
+  font-size: 0.72rem;
+  color: #9ca3af;
+}
+.upload-count-badge {
+  padding: 0.3rem 0.75rem;
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  color: #6d28d9;
+  font-weight: 600;
 }
 
-.file-upload-label:hover {
-  background: #43aa8b;
-  border-color: #43aa8b;
+/* ====== Image Gallery ====== */
+.gallery-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  background: #f9fafb;
+  border: 2px dashed #e5e7eb;
+  border-radius: 10px;
+  color: #9ca3af;
+  font-size: 0.82rem;
 }
-
-.file-upload-label i {
-  margin-right: 8px;
+.gallery-empty .pi {
+  font-size: 2rem;
 }
-
-.file-count {
-  margin-top: 5px;
-  padding: 5px 10px;
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  color: #495057;
-  text-align: center;
+.image-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.6rem;
 }
-
-/* Custom FileUpload styling */
-:deep(.p-fileupload-basic) {
+.gallery-item {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+.gallery-img {
   width: 100%;
+  height: 110px;
+  object-fit: cover;
+  display: block;
+}
+.gallery-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  background: rgba(220, 38, 38, 0.9);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.65rem;
+  transition: background 0.15s;
+}
+.gallery-remove:hover {
+  background: #dc2626;
+}
+.gallery-info {
+  padding: 0.3rem 0.4rem;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.3rem;
+}
+.gallery-name {
+  font-size: 0.65rem;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+.badge-existing {
+  background: #16a34a;
+  color: #fff;
+  padding: 1px 5px;
+  border-radius: 10px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.badge-new {
+  background: #2563a8;
+  color: #fff;
+  padding: 1px 5px;
+  border-radius: 10px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  flex-shrink: 0;
 }
 
-:deep(.p-fileupload-choose) {
+/* ====== Action Bar ====== */
+.laporan-action-bar {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  padding: 0.8rem 1.2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+.action-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.action-info {
+  display: flex;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+.action-buttons {
+  display: flex;
+  align-items: center;
+}
+.btn-simpan-laporan {
+  background: linear-gradient(135deg, #1e1b4b, #4338ca) !important;
+  border: none !important;
+  font-weight: 600;
+}
+
+/* ====== PrimeVue overrides ====== */
+:deep(.p-inputtext),
+:deep(.p-textarea),
+:deep(.p-inputnumber-input) {
+  font-size: 0.83rem;
+}
+:deep(.p-datepicker) {
   width: 100%;
-  background: #007bff;
-  border-color: #007bff;
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  font-size: 0.83rem;
 }
 
-:deep(.p-fileupload-choose:hover) {
-  background: #0056b3;
-  border-color: #0056b3;
+/* ====== Responsive ====== */
+@media (max-width: 768px) {
+  .action-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .image-gallery {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 </style>

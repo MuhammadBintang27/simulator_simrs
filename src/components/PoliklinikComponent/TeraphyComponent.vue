@@ -3,6 +3,7 @@
   <Toast />
 
   <!-- Dialog List Obat -->
+
   <Dialog
     v-model:visible="listObat"
     modal
@@ -133,6 +134,13 @@
 
   <!-- Main Panel -->
   <Panel style="padding: 0; margin: 0">
+    <template #header>
+      <div class="flex justify-content-between align-items-center">
+        <div class="flex align-items-center gap-2">
+          <span class="font-bold text-sm">Terapi Obat</span>
+        </div>
+      </div>
+    </template>
     <div class="row">
       <!-- Left Panel - History -->
       <ScrollPanel class="col-md-2" style="height: 500px; padding-right: 4px">
@@ -265,6 +273,17 @@
               </div>
             </template>
 
+            <Column field="PILIH" header="OBT RUTIN" style="width: 1px">
+              <template #body="slotProps">
+                <Checkbox
+                  v-if="slotProps.data.JENIS_R == 'R/'"
+                  v-model="slotProps.data.obat_rutin"
+                  :value="slotProps.data.obat_rutin"
+                  @change="onCheckObat(slotProps.data)"
+                  :binary="true"
+                />
+              </template>
+            </Column>
             <Column field="BARCODE" header="BARCODE" style="min-width: 10px"></Column>
             <Column field="NAMA" header="NAMA"></Column>
 
@@ -596,6 +615,7 @@ import Dialog from 'primevue/dialog'
 import Tag from 'primevue/tag'
 import Toast from 'primevue/toast'
 import Card from 'primevue/card'
+import Chip from 'primevue/chip'
 
 import { useConfigStore } from '@/stores/config'
 import axios from 'axios'
@@ -635,6 +655,8 @@ const searchValue = ref('')
 const showCaraPakaiObat = ref(false)
 const currentObatIndex = ref(null)
 
+// Methods
+
 // Handle quantity input properly
 const handleQuantityInput = () => {
   jumlQtyResepRacikan.value = parseInt(jumlQtyResepRacikan.value || 0)
@@ -668,6 +690,23 @@ const totalAmount = computed(() => {
 
   return totalObat + biayaObatan
 })
+
+const onCheckObat = async (item) => {
+  try {
+    const param = {
+      mode: 1,
+      no_transaksi: route.query.noreg,
+      id_client: id_client.value,
+      nomr: props.datapasien?.NOMR,
+      ...item,
+    }
+
+    const url = configStore.apiBaseUrl
+    await axios.post(`${url}/index.php/api/penunjang/update_obat_rutin`, param)
+  } catch (error) {
+    console.error(error)
+  }
+}
 
 const calculatePercentage = () => {
   if (!biayaPelayanan.value.PLAFON_OBAT || biayaPelayanan.value.PLAFON_OBAT === 0) {
@@ -878,6 +917,11 @@ const getdetail_sales = async (no_receipt) => {
     if (response.data.response && response.data.response.length > 0) {
       jamSelesai.value = response.data.response[0].SELESAI
       progress.value = response.data.response[0].STATUS_PROGRESS
+
+      detils_obat.value = {
+        ...detils_obat.value,
+        obat_rutin: false, // default tercentang
+      }
     }
 
     detailsResep.value = true
@@ -1100,7 +1144,7 @@ const getDataHistori = async (data) => {
     const plain = data._rawValue || data.value || data
     datafromCopyResep.value = plain
 
-    console.log('datafromCopyResep', datafromCopyResep.value)
+    console.log('datafromCopyResep', plain)
 
     if (Array.isArray(datafromCopyResep.value)) {
       datafromCopyResep.value.forEach((item) => {
@@ -1352,6 +1396,79 @@ onMounted(() => {
 
 .round-button2 {
   border-radius: 6px;
+}
+/* Obat Picker */
+.obat-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+
+  min-height: 400px;
+}
+.picker-panel {
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 8px;
+  display: flex;
+
+  background-color: #10b981;
+  flex-direction: column;
+  overflow: hidden;
+}
+.picker-search {
+  padding: 10px;
+  border-bottom: 1px solid var(--p-content-border-color);
+
+  background-color: #10b981;
+}
+.picker-filter-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--p-content-border-color);
+}
+.filter-tag {
+  font-size: 11px;
+  padding: 3px 10px;
+  background-color: #10b981;
+  border-radius: 20px;
+  border: 1px solid var(--p-content-border-color);
+  background: transparent;
+  color: white;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  background-color: #10b981;
+  font-family: inherit;
+}
+.filter-tag:hover {
+  border-color: var(--p-primary-color);
+  color: var(--p-primary-color);
+}
+.filter-tag.active {
+  background: var(--p-primary-color);
+  border-color: var(--p-primary-color);
+  color: #fff;
+}
+.picker-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.picker-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 100%;
+  min-height: 100px;
+  color: var(--p-text-muted-color);
+  font-size: 0.85rem;
 }
 
 /* Responsive */

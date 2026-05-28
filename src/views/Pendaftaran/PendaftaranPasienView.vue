@@ -36,69 +36,111 @@
     <div class="row">
       <div class="col-md-3">
         <!-- Patient Information Panel -->
-        <div class="card patient-info-card elevation-0">
-          <div class="card-header">
-            <h6 class="mb-0"><i class="pi pi-user mr-2"></i>Informasi Pasien</h6>
+        <div class="pi-card">
+          <!-- Header -->
+          <div class="pi-card-header">
+            <i class="pi pi-user-circle" style="font-size: 13px"></i>
+            <span>Informasi Pasien</span>
           </div>
-          <div class="card-body">
-            <div class="text-center mb-4">
-              <img
-                class="patient-illustration"
-                width="300"
-                height="150"
-                src="https://ws-simrs.link/ilustration/ilustrasi1.png"
-                alt="Patient Illustration"
-              />
+
+          <!-- Avatar + Nama + Status -->
+          <div
+            class="pi-identity"
+            :class="peserta.nama ? 'pi-identity-active' : 'pi-identity-empty'"
+          >
+            <div class="pi-avatar">
+              <span v-if="peserta.nama">{{ peserta.nama?.charAt(0)?.toUpperCase() }}</span>
+              <i v-else class="pi pi-user" style="font-size: 1.4rem"></i>
             </div>
-            <hr />
-            <div class="patient-details">
-              <div class="detail-item">
-                <label>Nama Pasien</label>
-                <div class="detail-value">{{ peserta.nama || '-' }}</div>
-              </div>
+            <div class="pi-identity-info">
+              <div class="pi-name">{{ peserta.nama || 'Belum ada data' }}</div>
+              <div class="pi-nokartu" v-if="peserta.noKartu">{{ peserta.noKartu }}</div>
+              <span
+                v-if="peserta.noKartu"
+                class="pi-status-badge"
+                :class="
+                  peserta.statusPeserta?.keterangan === 'AKTIF'
+                    ? 'pi-status-aktif'
+                    : 'pi-status-nonaktif'
+                "
+              >
+                <i
+                  :class="
+                    peserta.statusPeserta?.keterangan === 'AKTIF'
+                      ? 'pi pi-check-circle'
+                      : 'pi pi-times-circle'
+                  "
+                ></i>
+                {{ peserta.statusPeserta?.keterangan || 'TIDAK AKTIF' }}
+              </span>
+            </div>
+          </div>
 
-              <div class="detail-item">
-                <label>Nomor BPJS</label>
-                <div class="detail-value">{{ peserta.noKartu || '-' }}</div>
-              </div>
+          <Divider style="margin: 0" />
 
-              <div class="detail-item">
-                <label>NIK</label>
-                <div class="detail-value">{{ peserta.nik || '-' }}</div>
+          <!-- Info Rows -->
+          <div class="pi-info-list" v-if="peserta.nama">
+            <div class="pi-info-row">
+              <div class="pi-info-icon" style="background: #eff6ff; color: #1d4ed8">
+                <i class="pi pi-id-card"></i>
               </div>
-
-              <div class="detail-item">
-                <label>Status</label>
-                <div class="detail-value">
-                  <span
-                    v-if="peserta.noKartu"
-                    :class="['badge', getStatusBadgeClass(peserta.statusPeserta?.keterangan)]"
-                  >
-                    {{ peserta.statusPeserta?.keterangan || 'TIDAK AKTIF' }}
-                  </span>
-                </div>
-              </div>
-
-              <div class="detail-item">
-                <label>Jenis Kelamin</label>
-                <div class="detail-value">{{ getGenderText(peserta.sex) }}</div>
-              </div>
-
-              <div class="detail-item">
-                <label>Tanggal Lahir</label>
-                <div class="detail-value">{{ peserta.tglLahir || '-' }}</div>
-              </div>
-
-              <div class="detail-item">
-                <label>Faskes Tingkat I</label>
-                <div class="detail-value">{{ peserta.provUmum?.nmProvider || '-' }}</div>
-              </div>
-
-              <div class="detail-item">
-                <label>Hak Kelas</label>
-                <div class="detail-value">{{ peserta.hakKelas?.keterangan || '-' }}</div>
+              <div class="pi-info-body">
+                <div class="pi-info-lbl">NIK</div>
+                <div class="pi-info-val">{{ peserta.nik || '—' }}</div>
               </div>
             </div>
+
+            <div class="pi-info-row">
+              <div class="pi-info-icon" style="background: #f0fdf4; color: #15803d">
+                <i class="pi pi-mars" v-if="peserta.sex == 'L'"></i>
+                <i class="pi pi-venus" v-else-if="peserta.sex == 'P'"></i>
+                <i class="pi pi-user" v-else></i>
+              </div>
+              <div class="pi-info-body">
+                <div class="pi-info-lbl">Jenis Kelamin</div>
+                <div class="pi-info-val">{{ getGenderText(peserta.sex) || '—' }}</div>
+              </div>
+            </div>
+
+            <div class="pi-info-row">
+              <div class="pi-info-icon" style="background: #fef9c3; color: #b45309">
+                <i class="pi pi-calendar"></i>
+              </div>
+              <div class="pi-info-body">
+                <div class="pi-info-lbl">Tanggal Lahir</div>
+                <div class="pi-info-val">{{ peserta.tglLahir || '—' }}</div>
+              </div>
+            </div>
+
+            <div class="pi-info-row">
+              <div class="pi-info-icon" style="background: #f5f3ff; color: #6d28d9">
+                <i class="pi pi-building"></i>
+              </div>
+              <div class="pi-info-body">
+                <div class="pi-info-lbl">Faskes Tingkat I</div>
+                <div class="pi-info-val">{{ peserta.provUmum?.nmProvider || '—' }}</div>
+              </div>
+            </div>
+
+            <div class="pi-info-row">
+              <div class="pi-info-icon" style="background: #fff1f2; color: #be123c">
+                <i class="pi pi-star"></i>
+              </div>
+              <div class="pi-info-body">
+                <div class="pi-info-lbl">Hak Kelas</div>
+                <div class="pi-info-val">{{ peserta.hakKelas?.keterangan || '—' }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty state -->
+          <div class="pi-empty" v-else>
+            <img
+              src="https://ws-simrs.net/ilustration/ilustrasi1.png"
+              alt="Ilustrasi"
+              style="width: 100%; max-width: 200px; opacity: 0.6"
+            />
+            <p>Cari pasien untuk menampilkan informasi</p>
           </div>
         </div>
       </div>
@@ -484,7 +526,6 @@ const peserta = ref({
   cob: { noAsuransi: null, nmAsuransi: null, tglTMT: null, tglTAT: null },
 })
 
-const getStatusBadgeClass = (status) => (status === 'AKTIF' ? 'badge-success' : 'badge-danger')
 const getGenderText = (sex) => (sex === 'P' ? 'Perempuan' : sex === 'L' ? 'Laki-laki' : '-')
 
 function resetPeserta() {
@@ -698,6 +739,147 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* ── Informasi Pasien Card ── */
+.pi-card {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+.pi-card-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 14px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  font-size: 12px;
+  font-weight: 600;
+  color: #495057;
+}
+
+.pi-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+}
+.pi-identity-empty {
+  opacity: 0.5;
+}
+
+.pi-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--p-primary-500, #3b82f6), var(--p-primary-700, #1d4ed8));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.pi-identity-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.pi-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #212529;
+  line-height: 1.2;
+}
+.pi-nokartu {
+  font-size: 11px;
+  color: #6c757d;
+  font-family: monospace;
+}
+
+.pi-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  width: fit-content;
+}
+.pi-status-aktif {
+  background: #dcfce7;
+  color: #15803d;
+}
+.pi-status-nonaktif {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Info list */
+.pi-info-list {
+  padding: 8px 0;
+}
+.pi-info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 14px;
+  border-bottom: 1px solid #f8f9fa;
+  transition: background 0.1s;
+}
+.pi-info-row:last-child {
+  border-bottom: none;
+}
+.pi-info-row:hover {
+  background: #f8f9fa;
+}
+
+.pi-info-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.pi-info-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.pi-info-lbl {
+  font-size: 10px;
+  color: #adb5bd;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.pi-info-val {
+  font-size: 12px;
+  font-weight: 500;
+  color: #343a40;
+  word-break: break-word;
+}
+
+/* Empty state */
+.pi-empty {
+  text-align: center;
+  padding: 20px 14px;
+  color: #adb5bd;
+}
+.pi-empty p {
+  font-size: 12px;
+  margin-top: 10px;
+}
+
 /* Hero Section */
 .hero-section {
   background: linear-gradient(135deg, #2d1b69 0%, #11998e 100%);

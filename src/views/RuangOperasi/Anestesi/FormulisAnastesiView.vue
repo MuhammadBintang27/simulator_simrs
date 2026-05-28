@@ -1,517 +1,759 @@
 <template>
-  <Panel>
-    <template #header>
-      <h5><strong>FORMULIR ANASTESI</strong></h5>
-    </template>
-    <!-- Table Monitoring -->
+  <!-- Banner -->
+  <div class="anestesi-banner mb-3">
+    <div class="banner-icon"><i class="fa-solid fa-clipboard-list"></i></div>
+    <div class="banner-content">
+      <h4 class="banner-title">Formulir Monitoring Anestesi</h4>
+      <p class="banner-desc">
+        Monitoring kondisi pasien setiap 5 menit. Navigasi: Panah/Enter pindah sel &middot; Space
+        centang waktu
+      </p>
+    </div>
+    <div class="banner-status-wrap">
+      <div class="save-status" :class="saveStatus.type">
+        <i :class="saveStatus.icon"></i>
+        <span>{{ saveStatus.message }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="anestesi-card">
+    <div class="anestesi-toolbar">
+      <div class="toolbar-legend">
+        <span
+          v-for="(cfg, type) in typeGroupConfig"
+          :key="type"
+          class="legend-chip"
+          :style="{ background: cfg.bg, color: cfg.color, borderColor: cfg.color + '55' }"
+        >
+          {{ cfg.label }}
+        </span>
+      </div>
+      <div class="toolbar-actions">
+        <span v-if="pendingSaves.size > 0" class="pending-badge">
+          <i class="fa-solid fa-clock me-1"></i>{{ pendingSaves.size }} belum tersimpan
+        </span>
+        <button class="tool-action-btn" @click="showDebug = !showDebug">
+          <i class="fa-solid fa-code me-1"></i>{{ showDebug ? 'Sembunyikan' : 'JSON' }}
+        </button>
+        <button class="tool-action-btn tool-clear" @click="clearData">
+          <i class="fa-solid fa-trash me-1"></i>Clear
+        </button>
+        <button class="tool-action-btn tool-save" :disabled="isSavingAll" @click="saveAllData">
+          <i
+            :class="isSavingAll ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-floppy-disk'"
+            class="me-1"
+          ></i>
+          {{ isSavingAll ? 'Menyimpan...' : 'Simpan Semua' }}
+        </button>
+      </div>
+    </div>
+
     <div class="table-responsive">
       <table class="table table-bordered table-sm excel-table">
         <thead>
           <tr>
-            <th class="align-middle" style="min-width: 120px">Kondisi \ Waktu</th>
-            <!-- 3 Jam -->
-            <th colspan="12" class="text-center">1 Jam Pertama</th>
-            <th colspan="12" class="text-center">1 Jam Kedua</th>
-            <th colspan="12" class="text-center">1 Jam Ketiga</th>
+            <th class="sticky-col header-corner">Parameter \ Waktu</th>
+            <th
+              v-for="hour in TOTAL_HOURS"
+              :key="'hour-' + hour"
+              :colspan="SLOTS_PER_HOUR"
+              class="text-center hour-header"
+              :class="'hour-' + hour"
+            >
+              <i class="fa-regular fa-clock me-1"></i> Jam ke-{{ hour }}
+            </th>
           </tr>
           <tr>
-            <th></th>
-            <template v-for="hour in 3" :key="`hour-${hour}`">
-              <th v-for="minute in 12" :key="`${hour}-${minute}`" class="text-center">
-                {{ (minute - 1) * 5 }}
-              </th>
-            </template>
+            <th class="sticky-col sub-header-corner"></th>
+            <th
+              v-for="slot in timeSlots"
+              :key="slot.id"
+              class="text-center slot-header"
+              :class="'hour-' + slot.hour + '-sub'"
+            >
+              {{ slot.minute }}'
+            </th>
           </tr>
         </thead>
         <tbody>
-          <!-- Kondisi Pasien -->
-          <tr v-for="kondisi in masterData" :key="kondisi.id">
-            <td class="text-start fw-bold"><i :class="kondisi.icon"></i> {{ kondisi.name }}</td>
-            <!-- :placeholder="getPlaceholder(kondisi.type)" -->
-            <td
-              v-for="timeSlot in timeSlots"
-              :key="`${kondisi.id}-${timeSlot.id}`"
-              style="border-left: 3px solid red"
-            >
-              <!-- Checkbox untuk time fields -->
-              <input
-                v-if="kondisi.type === 'time'"
-                type="checkbox"
-                :checked="
-                  kondisi.values[timeSlot.id] === 'true' || kondisi.values[timeSlot.id] === true
-                "
-                @change="updateCheckboxValue(kondisi.id, timeSlot.id, $event.target.checked)"
-                @focus="setActiveCell(kondisi.id, timeSlot.id)"
-                @blur="clearActiveCell"
-                @keydown="handleKeyNavigation($event, kondisi.id, timeSlot.id)"
-                :ref="(el) => setCellRef(el, kondisi.id, timeSlot.id)"
-                class="cell-checkbox"
-                tabindex="0"
-              />
-              <!-- Input text untuk fields lainnya -->
-              <InputText
-                v-else
-                v-model="kondisi.values[timeSlot.id]"
-                class="cell-input p-inputtext-sm"
-                placeholder=""
-                @input="updateValue(kondisi.id, timeSlot.id, $event.target.value)"
-                @focus="setActiveCell(kondisi.id, timeSlot.id)"
-                @blur="clearActiveCell"
-                @keydown="handleKeyNavigation($event, kondisi.id, timeSlot.id)"
-                :ref="(el) => setCellRef(el, kondisi.id, timeSlot.id)"
-                tabindex="0"
-              />
-            </td>
-          </tr>
+          <template v-for="row in displayRows" :key="row.isGroupHeader ? 'gh-' + row.type : row.id">
+            <tr v-if="row.isGroupHeader" class="group-header-row">
+              <td
+                class="sticky-col group-header-cell"
+                :style="{
+                  background: row.config.bg,
+                  color: row.config.color,
+                  borderLeft: '4px solid ' + row.config.color,
+                }"
+              >
+                {{ row.config.label }}
+              </td>
+              <td
+                v-for="slot in timeSlots"
+                :key="slot.id"
+                class="group-filler"
+                :style="{ background: row.config.bg }"
+              ></td>
+            </tr>
+            <tr v-else :data-type="row.type">
+              <td class="sticky-col text-start kondisi-label">
+                <i :class="row.icon" class="me-1"></i>
+                <span>{{ row.name }}</span>
+                <span v-if="row.unit" class="unit-badge">{{ row.unit }}</span>
+              </td>
+              <td
+                v-for="slot in timeSlots"
+                :key="row.id + '-' + slot.id"
+                class="cell-td"
+                :class="getCellClass(row.id, slot.id)"
+              >
+                <input
+                  v-if="row.type === 'time'"
+                  type="checkbox"
+                  :checked="row.values[slot.id] === true"
+                  class="cell-checkbox"
+                  tabindex="0"
+                  :ref="(el) => setCellRef(el, row.id, slot.id)"
+                  @change="onCheckboxChange(row.id, slot.id, $event.target.checked)"
+                  @keydown="handleKeydown($event, row.id, slot.id)"
+                  @focus="activeCell = { kondisiId: row.id, slotId: slot.id }"
+                />
+                <InputText
+                  v-else
+                  v-model="row.values[slot.id]"
+                  class="cell-input p-inputtext-sm"
+                  tabindex="0"
+                  :ref="(el) => setCellRef(el, row.id, slot.id)"
+                  @input="onInput(row.id, slot.id)"
+                  @blur="onBlur(row.id, slot.id)"
+                  @keydown="handleKeydown($event, row.id, slot.id)"
+                  @focus="activeCell = { kondisiId: row.id, slotId: slot.id }"
+                />
+              </td>
+            </tr>
+          </template>
         </tbody>
       </table>
     </div>
 
-    <!-- Debug Panel (Optional - untuk melihat data JSON) -->
-    <div class="mt-3" v-if="showDebug">
-      <h5>Data JSON:</h5>
-      <pre class="bg-light p-3 rounded">{{ JSON.stringify(getFormattedData(), null, 2) }}</pre>
+    <div v-if="showDebug" class="debug-panel mt-2">
+      <div class="debug-header"><i class="fa-solid fa-code me-1"></i> JSON Output</div>
+      <pre class="debug-body">{{ JSON.stringify(getFormattedData(), null, 2) }}</pre>
     </div>
-
-    <!-- Toggle Debug Button -->
-    <div class="mt-2">
-      <button @click="showDebug = !showDebug" class="btn btn-sm btn-outline-info">
-        {{ showDebug ? 'Hide' : 'Show' }} JSON Data
-      </button>
-      <button @click="exportData" class="btn btn-sm btn-outline-success ms-2">Export JSON</button>
-      <button @click="clearData" class="btn btn-sm btn-outline-warning ms-2">Clear All Data</button>
-    </div>
-  </Panel>
+  </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, nextTick } from 'vue'
+import { ref, reactive, computed, nextTick, onMounted } from 'vue'
 import InputText from 'primevue/inputtext'
+import axios from 'axios'
+import { useToast } from 'primevue/usetoast'
+import { useRoute } from 'vue-router'
+import { storeToRefs } from 'pinia'
+import { useConfigStore } from '@/stores/config'
+import { useAuthStore } from '@/stores/config'
 
-// Master Data - Struktur kondisi dengan metadata
+const toast = useToast()
+const route = useRoute()
+const configStore = useConfigStore()
+const authStore = useAuthStore()
+const { id_client } = storeToRefs(authStore)
+
+const TOTAL_HOURS = 3
+const SLOTS_PER_HOUR = 12
+const MINUTES_PER_SLOT = 5
+
 const masterData = reactive([
   {
     id: 'im',
     name: 'i.m',
     type: 'medication',
     unit: 'ml',
+    icon: 'fa-solid fa-arrow-down',
     values: {},
-    icon: 'fa-solid fa-arraw-down',
-  }, // icon font awesome },
+  },
   {
     id: 'iv',
     name: 'i.v',
     type: 'medication',
     unit: 'ml',
-    values: {},
     icon: 'fa-solid fa-syringe',
+    values: {},
   },
-  { id: 'nadi', name: 'Nadi', type: 'vital', unit: 'bpm', values: {}, icon: 'fa-solid fa-circle' },
-  { id: 'suhu', name: 'Suhu', type: 'vital', unit: '°C', values: {}, icon: 'fa-solid fa-syringe' },
+  {
+    id: 'nadi',
+    name: 'Nadi',
+    type: 'vital',
+    unit: 'bpm',
+    icon: 'fa-solid fa-heart-pulse',
+    values: {},
+  },
+  {
+    id: 'suhu',
+    name: 'Suhu',
+    type: 'vital',
+    unit: '\u00b0C',
+    icon: 'fa-solid fa-temperature-half',
+    values: {},
+  },
   {
     id: 'sistolik',
     name: 'Sistolik',
     type: 'pressure',
     unit: 'mmHg',
+    icon: 'fa-solid fa-gauge-high',
     values: {},
-    icon: 'fa-solid fa-circle',
   },
   {
     id: 'diastolik',
     name: 'Diastolik',
     type: 'pressure',
     unit: 'mmHg',
+    icon: 'fa-solid fa-gauge',
     values: {},
-    icon: 'fa-solid fa-syringe',
   },
   {
     id: 'resp_spontan',
     name: 'Resp. Spontan',
     type: 'respiratory',
     unit: '/min',
+    icon: 'fa-solid fa-lungs',
     values: {},
-    icon: 'fa-solid fa-syringe',
   },
   {
     id: 'resp_kontrol',
     name: 'Resp. Kontrol',
     type: 'respiratory',
     unit: '/min',
+    icon: 'fa-solid fa-lungs-virus',
     values: {},
-    icon: 'fa-solid fa-syringe',
   },
   {
     id: 'anestesi',
     name: 'Anestesi',
     type: 'procedure',
     unit: '',
+    icon: 'fa-solid fa-pills',
     values: {},
-    icon: 'fa-solid fa-syringe',
   },
   {
     id: 'operasi',
     name: 'Operasi',
     type: 'procedure',
     unit: '',
+    icon: 'fa-solid fa-scalpel',
     values: {},
-    icon: 'fa-solid fa-syringe',
-  },
-  {
-    id: 'intubasi',
-    name: 'Intubasi',
-    type: 'airway',
-    unit: '',
-    values: {},
-    icon: 'fa-solid fa-syringe',
-  },
-  {
-    id: 'ekstubasi',
-    name: 'Ekstubasi',
-    type: 'airway',
-    unit: '',
-    values: {},
-    icon: 'fa-solid fa-syringe',
   },
   {
     id: 'kateter_epidural',
     name: 'Kateter Epidural',
     type: 'procedure',
     unit: '',
+    icon: 'fa-solid fa-pills',
     values: {},
-    icon: 'fa-solid fa-syringe',
+  },
+  {
+    id: 'intubasi',
+    name: 'Intubasi',
+    type: 'airway',
+    unit: '',
+    icon: 'fa-solid fa-wind',
+    values: {},
+  },
+  {
+    id: 'ekstubasi',
+    name: 'Ekstubasi',
+    type: 'airway',
+    unit: '',
+    icon: 'fa-solid fa-wind',
+    values: {},
   },
   {
     id: 'mulai_anestesi',
     name: 'Mulai Anestesi',
     type: 'time',
     unit: '',
+    icon: 'fa-solid fa-clock',
     values: {},
-    icon: 'fa-solid fa-syringe',
   },
   {
     id: 'selesai_anestesi',
     name: 'Selesai Anestesi',
     type: 'time',
     unit: '',
+    icon: 'fa-solid fa-clock',
     values: {},
-    icon: 'fa-solid fa-syringe',
   },
   {
     id: 'mulai_operasi',
     name: 'Mulai Operasi',
     type: 'time',
     unit: '',
+    icon: 'fa-solid fa-clock',
     values: {},
-    icon: 'fa-solid fa-syringe',
   },
 ])
 
-// Detail Data - Struktur waktu (36 time slots untuk 3 jam)
-const timeSlots = reactive(
-  Array.from({ length: 36 }, (_, index) => {
-    const hour = Math.floor(index / 12) + 1
-    const minute = (index % 12) * 5
-    return {
-      id: `h${hour}_m${minute}`,
-      hour: hour,
-      minute: minute,
-      label: `Jam ${hour} - ${minute} menit`,
-    }
-  }),
-)
+const timeSlots = Array.from({ length: TOTAL_HOURS * SLOTS_PER_HOUR }, (_, i) => {
+  const hour = Math.floor(i / SLOTS_PER_HOUR) + 1
+  const minute = (i % SLOTS_PER_HOUR) * MINUTES_PER_SLOT
+  return { id: `h${hour}_m${minute}`, hour, minute, label: `Jam ${hour} - ${minute} menit` }
+})
 
-// State untuk debug panel
-const showDebug = ref(false)
+const kondisiMap = new Map(masterData.map((k) => [k.id, k]))
+const timeSlotMap = new Map(timeSlots.map((t) => [t.id, t]))
 
-// State untuk active cell dan navigation
-const activeCell = ref({ kondisiId: null, timeSlotId: null })
-const cellRefs = reactive({})
-
-// Inisialisasi values untuk setiap kondisi dan time slot
 masterData.forEach((kondisi) => {
-  timeSlots.forEach((timeSlot) => {
-    kondisi.values[timeSlot.id] = kondisi.type === 'time' ? false : ''
+  timeSlots.forEach((slot) => {
+    kondisi.values[slot.id] = kondisi.type === 'time' ? false : ''
   })
 })
 
-// Set cell reference untuk navigasi keyboard
-const setCellRef = (el, kondisiId, timeSlotId) => {
-  if (el) {
-    const key = `${kondisiId}-${timeSlotId}`
-    cellRefs[key] = el.$el || el // Handle PrimeVue component or native element
-  }
-}
+const showDebug = ref(false)
+const isSavingAll = ref(false)
+const activeCell = ref({ kondisiId: null, slotId: null })
+const cellState = reactive({})
+const pendingSaves = reactive(new Set())
 
-// Set active cell
-const setActiveCell = (kondisiId, timeSlotId) => {
-  activeCell.value = { kondisiId, timeSlotId }
-}
-
-// Clear active cell
-const clearActiveCell = () => {
-  // Delay untuk mencegah flicker saat pindah antar cell
-  setTimeout(() => {
-    if (
-      !document.activeElement?.classList.contains('cell-input') &&
-      !document.activeElement?.classList.contains('cell-checkbox')
-    ) {
-      activeCell.value = { kondisiId: null, timeSlotId: null }
-    }
-  }, 50)
-}
-
-// Handle keyboard navigation
-const handleKeyNavigation = async (event, kondisiId, timeSlotId) => {
-  const currentKondisiIndex = masterData.findIndex((k) => k.id === kondisiId)
-  const currentTimeIndex = timeSlots.findIndex((t) => t.id === timeSlotId)
-
-  let nextKondisiIndex = currentKondisiIndex
-  let nextTimeIndex = currentTimeIndex
-  let shouldPreventDefault = false
-
-  switch (event.key) {
-    case 'ArrowUp':
-      nextKondisiIndex = Math.max(0, currentKondisiIndex - 1)
-      shouldPreventDefault = true
-      break
-    case 'ArrowDown':
-      nextKondisiIndex = Math.min(masterData.length - 1, currentKondisiIndex + 1)
-      shouldPreventDefault = true
-      break
-    case 'ArrowLeft':
-      nextTimeIndex = Math.max(0, currentTimeIndex - 1)
-      shouldPreventDefault = true
-      break
-    case 'ArrowRight':
-      nextTimeIndex = Math.min(timeSlots.length - 1, currentTimeIndex + 1)
-      shouldPreventDefault = true
-      break
-    case 'Tab':
-      // Tab akan menggunakan navigasi natural browser
-      return
-    case 'Enter':
-      // Enter pindah ke baris berikutnya
-      nextKondisiIndex = Math.min(masterData.length - 1, currentKondisiIndex + 1)
-      shouldPreventDefault = true
-      break
-    case 'Escape':
-      event.target.blur()
-      shouldPreventDefault = true
-      break
-    case ' ':
-    case 'Space':
-      // Untuk checkbox, space akan toggle
-      const kondisi = masterData.find((k) => k.id === kondisiId)
-      if (kondisi && kondisi.type === 'time') {
-        event.preventDefault()
-        const currentValue = kondisi.values[timeSlotId]
-        updateCheckboxValue(kondisiId, timeSlotId, !currentValue)
-      }
-      break
-  }
-
-  if (shouldPreventDefault) {
-    event.preventDefault()
-
-    const nextKondisiId = masterData[nextKondisiIndex]?.id
-    const nextTimeSlotId = timeSlots[nextTimeIndex]?.id
-
-    if (nextKondisiId && nextTimeSlotId) {
-      await nextTick()
-      const nextCellKey = `${nextKondisiId}-${nextTimeSlotId}`
-      const nextCell = cellRefs[nextCellKey]
-
-      if (nextCell) {
-        // Focus untuk PrimeVue InputText atau native checkbox
-        if (nextCell.$el) {
-          const input = nextCell.$el.querySelector('input') || nextCell.$el
-          input.focus()
-        } else {
-          nextCell.focus()
-        }
-        setActiveCell(nextKondisiId, nextTimeSlotId)
-      }
-    }
-  }
-}
-
-// Focus ke cell tertentu (helper function)
-const focusCell = async (kondisiId, timeSlotId) => {
-  await nextTick()
-  const cellKey = `${kondisiId}-${timeSlotId}`
-  const cell = cellRefs[cellKey]
-
-  if (cell) {
-    if (cell.$el) {
-      const input = cell.$el.querySelector('input') || cell.$el
-      input.focus()
-    } else {
-      cell.focus()
-    }
-    setActiveCell(kondisiId, timeSlotId)
-  }
-}
-
-// Helper function untuk placeholder berdasarkan tipe
-const getPlaceholder = (type) => {
-  const placeholders = {
-    vital: '80',
-    pressure: '120',
-    respiratory: '20',
-    medication: '10',
-    procedure: '✓',
-    airway: '✓',
-    time: '✓',
-  }
-  return placeholders[type] || ''
-}
-
-// Update value dengan validation
-const updateValue = (kondisiId, timeSlotId, value) => {
-  const kondisi = masterData.find((k) => k.id === kondisiId)
-  if (kondisi) {
-    kondisi.values[timeSlotId] = value
-
-    // Optional: Add validation logic here
-    console.log(`Updated ${kondisi.name} at ${timeSlotId}: ${value}`)
-  }
-}
-
-// Update checkbox value
-const updateCheckboxValue = (kondisiId, timeSlotId, checked) => {
-  const kondisi = masterData.find((k) => k.id === kondisiId)
-  if (kondisi) {
-    kondisi.values[timeSlotId] = checked
-
-    console.log(`Updated ${kondisi.name} checkbox at ${timeSlotId}: ${checked}`)
-  }
-}
-
-// Get formatted data untuk export
-const getFormattedData = () => {
+const getCellClass = (kondisiId, slotId) => {
+  const key = `${kondisiId}-${slotId}`
   return {
+    'cell-saving': cellState[key] === 'saving',
+    'cell-saved': cellState[key] === 'saved',
+    'cell-error': cellState[key] === 'error',
+  }
+}
+
+const saveStatus = computed(() => {
+  const errors = Object.values(cellState).filter((s) => s === 'error').length
+  if (isSavingAll.value)
+    return { type: 'status-saving', icon: 'fa-solid fa-spinner fa-spin', message: 'Menyimpan...' }
+  if (errors > 0)
+    return {
+      type: 'status-error',
+      icon: 'fa-solid fa-triangle-exclamation',
+      message: `${errors} gagal disimpan`,
+    }
+  if (pendingSaves.size > 0)
+    return {
+      type: 'status-pending',
+      icon: 'fa-solid fa-circle-dot',
+      message: 'Ada perubahan belum tersimpan',
+    }
+  return { type: 'status-ok', icon: 'fa-solid fa-circle-check', message: 'Tersimpan' }
+})
+
+const typeGroupConfig = {
+  medication: { label: 'MEDIKASI', color: '#1d4ed8', bg: '#eff6ff' },
+  vital: { label: 'TANDA VITAL', color: '#dc2626', bg: '#fff1f2' },
+  pressure: { label: 'TEKANAN DARAH', color: '#9333ea', bg: '#faf5ff' },
+  respiratory: { label: 'RESPIRASI', color: '#16a34a', bg: '#f0fdf4' },
+  procedure: { label: 'PROSEDUR', color: '#d97706', bg: '#fffbeb' },
+  airway: { label: 'JALAN NAFAS', color: '#0891b2', bg: '#ecfeff' },
+  time: { label: 'PENANDA WAKTU', color: '#6b7280', bg: '#f9fafb' },
+}
+
+const displayRows = computed(() => {
+  const result = []
+  let lastType = null
+  masterData.forEach((kondisi) => {
+    if (kondisi.type !== lastType) {
+      result.push({
+        isGroupHeader: true,
+        type: kondisi.type,
+        config: typeGroupConfig[kondisi.type] ?? {
+          label: kondisi.type,
+          color: '#6b7280',
+          bg: '#f9fafb',
+        },
+      })
+      lastType = kondisi.type
+    }
+    result.push({ isGroupHeader: false, ...kondisi })
+  })
+  return result
+})
+
+const cellRefs = {}
+const setCellRef = (el, kondisiId, slotId) => {
+  const key = `${kondisiId}-${slotId}`
+  if (el) cellRefs[key] = el.$el ? (el.$el.querySelector('input') ?? el.$el) : el
+  else delete cellRefs[key]
+}
+const focusCell = async (kondisiId, slotId) => {
+  await nextTick()
+  cellRefs[`${kondisiId}-${slotId}`]?.focus()
+  activeCell.value = { kondisiId, slotId }
+}
+
+const getIdentitas = () => ({
+  kode_booking: route.query.kodebooking ?? '',
+  no_register: route.query.noreg ?? '',
+  id_client: id_client.value ?? '',
+})
+
+const getFormattedData = () => ({
+  metadata: {
+    ...getIdentitas(),
+    created_at: new Date().toISOString(),
+    total_kondisi: masterData.length,
+    total_timeSlots: timeSlots.length,
+    duration_hours: TOTAL_HOURS,
+  },
+  master: masterData.map(({ id, name, type, unit }) => ({ id, name, type, unit })),
+  detail: masterData
+    .map((k) => ({
+      kondisi_id: k.id,
+      kondisi_name: k.name,
+      measurements: Object.entries(k.values)
+        .filter(([, v]) => (k.type === 'time' ? v === true : v !== ''))
+        .map(([timeId, v]) => {
+          const slot = timeSlotMap.get(timeId)
+          return {
+            time_id: timeId,
+            hour: slot?.hour,
+            minute: slot?.minute,
+            value: k.type === 'time' ? 'checked' : v,
+            timestamp: slot?.label,
+          }
+        }),
+    }))
+    .filter((d) => d.measurements.length > 0),
+})
+
+const saveCellToApi = async (kondisiId, slotId) => {
+  const kondisi = kondisiMap.get(kondisiId)
+  const slot = timeSlotMap.get(slotId)
+  if (!kondisi || !slot) return
+  const rawValue = kondisi.values[slotId]
+  const isEmpty = kondisi.type === 'time' ? rawValue === false : rawValue === ''
+  if (isEmpty) {
+    pendingSaves.delete(`${kondisiId}-${slotId}`)
+    return
+  }
+  const key = `${kondisiId}-${slotId}`
+  cellState[key] = 'saving'
+  pendingSaves.delete(key)
+  const payload = {
+    kondisi_id: kondisiId,
+    time_id: slotId,
+    value: kondisi.type === 'time' ? 'checked' : String(rawValue),
+    hour: slot.hour,
+    minute: slot.minute,
+    kode_booking: route.query.kodebooking ?? '',
+    no_register: route.query.noreg ?? '',
+    id_client: id_client.value ?? '',
     metadata: {
+      kode_booking: route.query.kodebooking ?? '',
+      no_register: route.query.noreg ?? '',
+      id_client: id_client.value ?? '',
       created_at: new Date().toISOString(),
       total_kondisi: masterData.length,
       total_timeSlots: timeSlots.length,
-      duration_hours: 3,
+      duration_hours: TOTAL_HOURS,
     },
-    master: masterData.map((kondisi) => ({
-      id: kondisi.id,
-      name: kondisi.name,
-      type: kondisi.type,
-      unit: kondisi.unit,
-    })),
-    detail: masterData
-      .map((kondisi) => ({
-        kondisi_id: kondisi.id,
-        kondisi_name: kondisi.name,
-        measurements: Object.entries(kondisi.values)
-          .filter(([_, value]) => {
-            // Untuk checkbox (time type), filter yang true
-            if (kondisi.type === 'time') {
-              return value === true || value === 'true'
-            }
-            // Untuk text input, filter yang tidak kosong
-            return value !== ''
-          })
-          .map(([timeId, value]) => {
-            const timeSlot = timeSlots.find((t) => t.id === timeId)
-            return {
-              time_id: timeId,
-              hour: timeSlot?.hour,
-              minute: timeSlot?.minute,
-              value: kondisi.type === 'time' ? (value ? 'checked' : 'unchecked') : value,
-              timestamp: timeSlot?.label,
-            }
-          }),
-      }))
-      .filter((detail) => detail.measurements.length > 0),
   }
-}
-
-// Export data sebagai JSON
-const exportData = () => {
-  const data = getFormattedData()
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `monitoring-data-${new Date().toISOString().split('T')[0]}.json`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
-}
-
-// Clear semua data
-const clearData = () => {
-  if (confirm('Apakah Anda yakin ingin menghapus semua data?')) {
-    masterData.forEach((kondisi) => {
-      Object.keys(kondisi.values).forEach((key) => {
-        kondisi.values[key] = kondisi.type === 'time' ? false : ''
-      })
+  try {
+    const { data } = await axios.post(
+      `${configStore.apiBaseUrl}/index.php/api/triaseigd/save_cell`,
+      payload,
+    )
+    console.log('[Response lengkap]:', JSON.stringify(data))
+    if (data.code === 200) {
+      cellState[key] = 'saved'
+      setTimeout(() => {
+        if (cellState[key] === 'saved') delete cellState[key]
+      }, 3000)
+    } else throw new Error(data.message ?? 'Respon tidak dikenali')
+  } catch (err) {
+    cellState[key] = 'error'
+    pendingSaves.add(key)
+    console.error(`[save_cell] ${key}:`, err)
+    toast.add({
+      severity: 'error',
+      summary: 'Gagal Menyimpan',
+      detail: `${kondisi.name} - Jam ${slot.hour} menit ${slot.minute}`,
+      life: 3000,
     })
   }
 }
 
-// Load data dari JSON (untuk import)
-const loadData = (jsonData) => {
+const get_data = async () => {
   try {
-    if (jsonData.detail) {
-      jsonData.detail.forEach((detail) => {
-        const kondisi = masterData.find((k) => k.id === detail.kondisi_id)
-        if (kondisi) {
-          detail.measurements.forEach((measurement) => {
-            if (kondisi.type === 'time') {
-              kondisi.values[measurement.time_id] = measurement.value === 'checked'
-            } else {
-              kondisi.values[measurement.time_id] = measurement.value
-            }
-          })
-        }
-      })
-    }
-  } catch (error) {
-    console.error('Error loading data:', error)
+    const url = configStore.apiBaseUrl
+    const response = await axios.post(
+      `${url}/index.php/api/triaseigd/get_cell/${route.query.kodebooking}`,
+    )
+    console.log('[get_data] Response:', response.data)
+    if (response.data.code === 200) loadData(response.data)
+    else throw new Error(response.message ?? 'Gagal memuat data')
+  } catch (err) {
+    console.error('[get_data]', err)
+    toast.add({
+      severity: 'error',
+      summary: 'Gagal Memuat',
+      detail: 'Tidak dapat memuat data formulir anestesi',
+      life: 3000,
+    })
   }
 }
 
-// Computed property untuk summary data
-const summary = computed(() => {
-  const totalEntries = masterData.reduce((total, kondisi) => {
-    if (kondisi.type === 'time') {
-      return total + Object.values(kondisi.values).filter((v) => v === true).length
-    } else {
-      return total + Object.values(kondisi.values).filter((v) => v !== '').length
-    }
-  }, 0)
-
-  return {
-    totalEntries,
-    completionPercentage: Math.round((totalEntries / (masterData.length * timeSlots.length)) * 100),
+const saveAllData = async () => {
+  isSavingAll.value = true
+  try {
+    const { data } = await axios.post(
+      `${configStore.apiBaseUrl}/index.php/api/triaseigd/form_anestesi`,
+      { ...getIdentitas(), ...getFormattedData() },
+    )
+    if (data.code === 200) {
+      Object.keys(cellState).forEach((key) => {
+        cellState[key] = 'saved'
+        setTimeout(() => {
+          if (cellState[key] === 'saved') delete cellState[key]
+        }, 3000)
+      })
+      pendingSaves.clear()
+      toast.add({
+        severity: 'success',
+        summary: 'Tersimpan',
+        detail: 'Semua data berhasil disimpan',
+        life: 3000,
+      })
+    } else throw new Error(data.message ?? 'Gagal menyimpan')
+  } catch (err) {
+    console.error('[saveAllData]', err)
+    pendingSaves.forEach((key) => {
+      cellState[key] = 'error'
+    })
+    toast.add({
+      severity: 'error',
+      summary: 'Gagal',
+      detail: 'Gagal menyimpan semua data',
+      life: 3000,
+    })
+  } finally {
+    isSavingAll.value = false
   }
-})
+}
 
-// Expose untuk parent component
-defineExpose({
-  masterData,
-  timeSlots,
-  getFormattedData,
-  loadData,
-  clearData,
-  exportData,
-  summary,
-  focusCell,
-  activeCell,
+const onInput = (kondisiId, slotId) => {
+  pendingSaves.add(`${kondisiId}-${slotId}`)
+}
+const onBlur = (kondisiId, slotId) => {
+  if (pendingSaves.has(`${kondisiId}-${slotId}`)) saveCellToApi(kondisiId, slotId)
+}
+const onCheckboxChange = (kondisiId, slotId, checked) => {
+  const kondisi = kondisiMap.get(kondisiId)
+  if (!kondisi) return
+  kondisi.values[slotId] = Boolean(checked)
+  saveCellToApi(kondisiId, slotId)
+}
+
+const handleKeydown = (event, kondisiId, slotId) => {
+  const ki = masterData.findIndex((k) => k.id === kondisiId)
+  const ti = timeSlots.findIndex((t) => t.id === slotId)
+  const moves = {
+    ArrowUp: [ki - 1, ti],
+    ArrowDown: [ki + 1, ti],
+    Enter: [ki + 1, ti],
+    ArrowLeft: [ki, ti - 1],
+    ArrowRight: [ki, ti + 1],
+  }
+  if (event.key === 'Escape') {
+    event.target.blur()
+    return
+  }
+  if ((event.key === ' ' || event.key === 'Space') && kondisiMap.get(kondisiId)?.type === 'time') {
+    event.preventDefault()
+    const kondisi = kondisiMap.get(kondisiId)
+    kondisi.values[slotId] = !kondisi.values[slotId]
+    saveCellToApi(kondisiId, slotId)
+    return
+  }
+  if (!moves[event.key]) return
+  event.preventDefault()
+  cellRefs[`${kondisiId}-${slotId}`]?.blur()
+  const [nextKi, nextTi] = moves[event.key]
+  const nextKondisiId = masterData[Math.max(0, Math.min(masterData.length - 1, nextKi))]?.id
+  const nextSlotId = timeSlots[Math.max(0, Math.min(timeSlots.length - 1, nextTi))]?.id
+  if (nextKondisiId && nextSlotId) focusCell(nextKondisiId, nextSlotId)
+}
+
+const loadData = (jsonData) => {
+  try {
+    jsonData.detail?.forEach(({ kondisi_id, measurements }) => {
+      const kondisi = kondisiMap.get(kondisi_id)
+      if (!kondisi) return
+      measurements.forEach(({ time_id, value }) => {
+        kondisi.values[time_id] = kondisi.type === 'time' ? value === 'checked' : value
+      })
+    })
+  } catch (err) {
+    console.error('[loadData]', err)
+  }
+}
+
+const clearData = () => {
+  if (!confirm('Hapus semua data?')) return
+  masterData.forEach((k) => {
+    Object.keys(k.values).forEach((key) => {
+      k.values[key] = k.type === 'time' ? false : ''
+    })
+  })
+  Object.keys(cellState).forEach((k) => delete cellState[k])
+  pendingSaves.clear()
+}
+
+onMounted(() => {
+  get_data()
 })
+defineExpose({ masterData, timeSlots, getFormattedData, loadData, clearData, saveAllData })
 </script>
 
 <style scoped>
+.anestesi-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: linear-gradient(135deg, #0f172a 0%, #1e40af 100%);
+  border-radius: 10px;
+  padding: 0.9rem 1.4rem;
+  color: #fff;
+}
+.banner-icon {
+  flex-shrink: 0;
+  font-size: 1.8rem;
+  opacity: 0.85;
+}
+.banner-title {
+  margin: 0 0 0.15rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.banner-desc {
+  margin: 0;
+  font-size: 0.76rem;
+  opacity: 0.82;
+  line-height: 1.45;
+}
+.banner-status-wrap {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.save-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.status-ok {
+  background: #d1fae5;
+  color: #065f46;
+}
+.status-saving {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.status-pending {
+  background: #fef9c3;
+  color: #854d0e;
+}
+.status-error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.anestesi-card {
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+}
+.anestesi-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.toolbar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  flex: 1;
+}
+.legend-chip {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  border: 1px solid;
+  letter-spacing: 0.03em;
+}
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+.pending-badge {
+  font-size: 0.72rem;
+  color: #92400e;
+  background: #fef3c7;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+}
+.tool-action-btn {
+  display: flex;
+  align-items: center;
+  padding: 0.3rem 0.7rem;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #fff;
+  color: #374151;
+}
+.tool-action-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #9ca3af;
+}
+.tool-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.tool-clear:hover:not(:disabled) {
+  background: #fef3c7;
+  border-color: #d97706;
+  color: #92400e;
+}
+.tool-save {
+  background: linear-gradient(135deg, #0f172a, #1e40af);
+  color: #fff;
+  border: none;
+}
+.tool-save:hover:not(:disabled) {
+  opacity: 0.9;
+}
+.table-responsive {
+  overflow-x: auto;
+  max-height: 72vh;
+}
 .excel-table {
   border-collapse: collapse;
+  font-size: 12px;
 }
-
 .excel-table th,
 .excel-table td {
   border: 1px solid #dee2e6 !important;
@@ -519,154 +761,216 @@ defineExpose({
   text-align: center;
   vertical-align: middle;
 }
-
-.cell-input {
-  border: none;
-  width: 40px;
-  height: 38px;
-  text-align: center;
-  background: transparent;
-  font-size: 12px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.cell-input:focus {
-  outline: none;
-  box-shadow: none;
-  border: 2px solid #007bff;
-  background: #f8f9fa;
-}
-
-.cell-checkbox {
-  width: 15px;
-  height: 20px;
-  cursor: pointer;
-  transform: scale(1.2);
-  accent-color: #38a3a5;
-  transition: all 0.2s ease;
-}
-
-.cell-checkbox:focus {
-  outline: 2px solid #38a3a5;
-  outline-offset: 2px;
-  transform: scale(1.3);
-}
-
-.cell-checkbox:hover {
-  transform: scale(1.4);
-  accent-color: #0056b3;
-}
-
-.table-responsive {
-  overflow-x: auto;
-  max-height: 70vh;
-}
-
-/* Styling untuk header table */
 .excel-table thead th {
-  background-color: #f8f9fa;
-  font-weight: 600;
   position: sticky;
   top: 0;
   z-index: 10;
+  font-size: 11px;
 }
-
-/* Styling untuk kolom pertama (kondisi) */
-.excel-table tbody td:first-child {
-  background-color: #f8f9fa;
+.excel-table thead tr:nth-child(2) th {
+  top: 28px;
+}
+.sticky-col {
   position: sticky;
   left: 0;
   z-index: 5;
-  min-width: 120px;
+  background: #f8f9fa;
+}
+.header-corner {
+  background: #1e293b !important;
+  color: #fff;
+  font-size: 10px;
+  min-width: 150px;
+  padding: 4px 8px !important;
+  z-index: 15 !important;
+}
+.sub-header-corner {
+  background: #f8f9fa;
+  z-index: 15 !important;
+}
+.hour-header {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px !important;
+}
+.hour-1 {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.hour-2 {
+  background: #dcfce7;
+  color: #14532d;
+}
+.hour-3 {
+  background: #fef3c7;
+  color: #78350f;
+}
+.hour-1-sub {
+  background: #eff6ff;
+  font-size: 10px;
+  color: #1d4ed8;
+}
+.hour-2-sub {
+  background: #f0fdf4;
+  font-size: 10px;
+  color: #15803d;
+}
+.hour-3-sub {
+  background: #fffbeb;
+  font-size: 10px;
+  color: #b45309;
+}
+.slot-header {
+  min-width: 38px;
   font-weight: 500;
-  padding: 8px !important;
 }
-
-/* Row hover effects - Soft highlight */
-.excel-table tbody tr {
-  transition: all 0.15s ease;
+.group-header-row td {
+  padding: 3px 8px !important;
 }
-
-.excel-table tbody tr:hover {
-  background-color: rgba(255, 243, 205, 0.3) !important;
+.group-header-cell {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  min-width: 150px;
+  padding: 3px 8px !important;
 }
-
-.excel-table tbody tr:hover td {
-  background-color: rgba(255, 243, 205, 0.3) !important;
+.group-filler {
+  height: 18px;
+  opacity: 0.35;
 }
-
-.excel-table tbody tr:hover td:first-child {
-  background-color: rgba(255, 234, 167, 0.5) !important;
+.kondisi-label {
+  min-width: 150px;
   font-weight: 500;
+  padding: 4px 8px !important;
+  white-space: nowrap;
+  font-size: 12px;
+  color: #374151;
 }
-
-/* Column hover effects - Soft highlight */
-.excel-table td:hover {
-  background-color: rgba(0, 123, 255, 0.1) !important;
+.unit-badge {
+  font-size: 9px;
+  color: #9ca3af;
+  margin-left: 3px;
 }
-
-/* Cell input hover - Strong highlight for cursor focus */
+.cell-td {
+  padding: 0 !important;
+}
+.cell-input {
+  border: none !important;
+  width: 38px;
+  height: 32px;
+  text-align: center;
+  background: transparent;
+  font-size: 11px;
+}
 .cell-input:hover {
-  background-color: #ffffff !important;
-  border: 2px solid #007bff !important;
-  box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
-  transform: scale(1.02);
-  z-index: 20;
+  background: #eff6ff !important;
+  border: 2px solid #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
   position: relative;
+  z-index: 20;
 }
-
 .cell-input:focus {
   outline: none;
-  box-shadow: 0 0 12px rgba(0, 123, 255, 0.5) !important;
-  border: 2px solid #007bff !important;
-  background: #f8f9fa !important;
-  transform: scale(1.05);
-  z-index: 30;
+  border: 2px solid #1d4ed8 !important;
+  background: #dbeafe !important;
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.25) !important;
   position: relative;
+  z-index: 30;
 }
-
-/* Color coding berdasarkan tipe kondisi */
-.excel-table tbody tr:nth-child(1) td:first-child,
-.excel-table tbody tr:nth-child(2) td:first-child {
-  background-color: #e3f2fd; /* medication - biru muda */
+.cell-checkbox {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  transform: scale(1.2);
+  accent-color: #1d4ed8;
 }
-
-.excel-table tbody tr:nth-child(3) td:first-child,
-.excel-table tbody tr:nth-child(4) td:first-child {
-  background-color: #f3e5f5; /* vital - ungu muda */
+.cell-checkbox:hover {
+  transform: scale(1.4);
 }
-
-.excel-table tbody tr:nth-child(5) td:first-child,
-.excel-table tbody tr:nth-child(6) td:first-child {
-  background-color: #ffebee; /* pressure - merah muda */
+.cell-checkbox:focus {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 2px;
 }
-
-.excel-table tbody tr:nth-child(7) td:first-child,
-.excel-table tbody tr:nth-child(8) td:first-child {
-  background-color: #e8f5e8; /* respiratory - hijau muda */
+.cell-saving {
+  background: rgba(219, 234, 254, 0.7) !important;
 }
-
-.excel-table tbody tr:nth-child(9) td:first-child,
-.excel-table tbody tr:nth-child(10) td:first-child,
-.excel-table tbody tr:nth-child(13) td:first-child {
-  background-color: #fff8e1; /* procedure - kuning muda */
+.cell-saved {
+  background: rgba(209, 250, 229, 0.7) !important;
+  transition: background 0.5s;
 }
-
-.excel-table tbody tr:nth-child(11) td:first-child,
-.excel-table tbody tr:nth-child(12) td:first-child {
-  background-color: #fce4ec; /* airway - pink muda */
+.cell-error {
+  background: rgba(254, 202, 202, 0.9) !important;
+  outline: 2px solid #ef4444;
 }
-
-.excel-table tbody tr:nth-child(14) td:first-child,
-.excel-table tbody tr:nth-child(15) td:first-child,
-.excel-table tbody tr:nth-child(16) td:first-child {
-  background-color: #f1f8e9; /* time - hijau sangat muda */
+.excel-table tbody tr:hover td {
+  background: rgba(255, 251, 235, 0.5) !important;
 }
-
-pre {
-  font-size: 12px;
+.excel-table tbody tr:hover .sticky-col {
+  background: rgba(254, 243, 199, 0.7) !important;
+}
+.excel-table td:hover {
+  background: rgba(59, 130, 246, 0.07) !important;
+}
+tr[data-type='medication'] .sticky-col {
+  background: #eff6ff;
+  border-left: 3px solid #3b82f6 !important;
+}
+tr[data-type='vital'] .sticky-col {
+  background: #fff1f2;
+  border-left: 3px solid #f43f5e !important;
+}
+tr[data-type='pressure'] .sticky-col {
+  background: #faf5ff;
+  border-left: 3px solid #a855f7 !important;
+}
+tr[data-type='respiratory'] .sticky-col {
+  background: #f0fdf4;
+  border-left: 3px solid #22c55e !important;
+}
+tr[data-type='procedure'] .sticky-col {
+  background: #fffbeb;
+  border-left: 3px solid #f59e0b !important;
+}
+tr[data-type='airway'] .sticky-col {
+  background: #ecfeff;
+  border-left: 3px solid #06b6d4 !important;
+}
+tr[data-type='time'] .sticky-col {
+  background: #f9fafb;
+  border-left: 3px solid #94a3b8 !important;
+}
+.debug-panel {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+.debug-header {
+  padding: 0.4rem 0.75rem;
+  background: #1e293b;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.debug-body {
+  font-size: 11px;
   max-height: 300px;
   overflow-y: auto;
+  background: #0f172a;
+  color: #94a3b8;
+  padding: 0.75rem;
+  margin: 0;
+}
+@media (max-width: 768px) {
+  .anestesi-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .banner-status-wrap {
+    margin-left: 0;
+  }
+  .toolbar-legend {
+    display: none;
+  }
 }
 </style>
