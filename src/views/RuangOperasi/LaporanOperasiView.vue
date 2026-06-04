@@ -647,8 +647,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 100%);
-  border-radius: 10px;
+  background: linear-gradient(135deg, #1a3a5c 0%, #2563a8 100%);
+  border-radius: 4px;
   padding: 1rem 1.5rem;
   color: #fff;
 }
@@ -672,7 +672,7 @@ onMounted(() => {
   flex-shrink: 0;
   background: rgba(255, 255, 255, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 20px;
+  border-radius: 4px;
   padding: 0.25rem 0.75rem;
   font-size: 0.75rem;
   white-space: nowrap;
@@ -680,7 +680,7 @@ onMounted(() => {
 
 /* ====== Cards ====== */
 .laporan-card {
-  border-radius: 10px;
+  border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   background: #fff;
@@ -702,25 +702,17 @@ onMounted(() => {
 }
 .laporan-card-header .badge-count {
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 20px;
+  border-radius: 4px;
   padding: 0.15rem 0.6rem;
   font-size: 0.72rem;
   font-weight: 600;
 }
-.info-header {
-  background: linear-gradient(135deg, #1a3a5c, #2563a8);
-}
-.waktu-header {
-  background: linear-gradient(135deg, #78350f, #d97706);
-}
-.uraian-header {
-  background: linear-gradient(135deg, #14532d, #16a34a);
-}
-.instruksi-header {
-  background: linear-gradient(135deg, #7f1d1d, #dc2626);
-}
+.info-header,
+.waktu-header,
+.uraian-header,
+.instruksi-header,
 .gambar-header {
-  background: linear-gradient(135deg, #4a1259, #7c3aed);
+  background: linear-gradient(135deg, #1a3a5c, #2563a8);
 }
 .laporan-card-body {
   padding: 1rem 1.1rem;
@@ -802,7 +794,7 @@ onMounted(() => {
   margin-bottom: 0.5rem;
 }
 .upload-zone:hover {
-  border-color: #7c3aed;
+  border-color: #2563a8;
 }
 .file-input {
   display: none;
@@ -818,11 +810,11 @@ onMounted(() => {
   transition: background 0.15s;
 }
 .upload-zone-label:hover {
-  background: #f5f3ff;
+  background: #eff6ff;
 }
 .upload-zone-label .pi {
   font-size: 1.8rem;
-  color: #7c3aed;
+  color: #2563a8;
   opacity: 0.7;
 }
 .upload-text {
@@ -836,11 +828,11 @@ onMounted(() => {
 }
 .upload-count-badge {
   padding: 0.3rem 0.75rem;
-  background: #f5f3ff;
-  border: 1px solid #ddd6fe;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
   border-radius: 6px;
   font-size: 0.78rem;
-  color: #6d28d9;
+  color: #1a3a5c;
   font-weight: 600;
 }
 
@@ -960,7 +952,7 @@ onMounted(() => {
   align-items: center;
 }
 .btn-simpan-laporan {
-  background: linear-gradient(135deg, #1e1b4b, #4338ca) !important;
+  background: linear-gradient(135deg, #1a3a5c, #2563a8) !important;
   border: none !important;
   font-weight: 600;
 }

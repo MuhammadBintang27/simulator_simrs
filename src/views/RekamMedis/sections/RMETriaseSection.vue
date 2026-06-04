@@ -46,62 +46,66 @@
       <div class="rme-info-grid">
         <div class="rme-info-col">
           <table class="rme-tbl-info">
-            <tr>
-              <td class="rme-td-lbl">Waktu Masuk</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val">{{ header.waktu || '-' }}</td>
-            </tr>
-            <tr>
-              <td class="rme-td-lbl">Diantar Oleh</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val">{{ header.diantar_oleh || '-' }}</td>
-            </tr>
-            <tr>
-              <td class="rme-td-lbl">Transportasi</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val">{{ header.transportasi || '-' }}</td>
-            </tr>
-            <tr>
-              <td class="rme-td-lbl">DPJP</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val">{{ header.namadokter_sp || '-' }}</td>
-            </tr>
+            <tbody>
+              <tr>
+                <td class="rme-td-lbl">Waktu Masuk</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ header.waktu || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">Diantar Oleh</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ header.diantar_oleh || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">Transportasi</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ header.transportasi || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">DPJP</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ header.namadokter_sp || '-' }}</td>
+              </tr>
+            </tbody>
           </table>
         </div>
         <div class="rme-info-col">
           <table class="rme-tbl-info">
-            <tr>
-              <td class="rme-td-lbl">Kesadaran</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val">{{ header.kesadaran || '-' }}</td>
-            </tr>
-            <tr>
-              <td class="rme-td-lbl">Status Psikologi</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val">{{ header.status_psikologi || '-' }}</td>
-            </tr>
-            <tr>
-              <td class="rme-td-lbl">Resiko Jatuh</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val">
-                <span
-                  :class="[
-                    'rme-badge',
-                    header.resiko_jatuh === 'YA' ? 'rme-badge-danger' : 'rme-badge-success',
-                  ]"
-                >
-                  {{ header.resiko_jatuh || '-' }}
-                </span>
-              </td>
-            </tr>
-            <tr v-if="header.telah_verif">
-              <td class="rme-td-lbl">Verifikasi</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val" style="color: #2e7d32">
-                {{ header.telah_verif }}
-                <span v-if="header.jam_verif"> — {{ header.jam_verif }}</span>
-              </td>
-            </tr>
+            <tbody>
+              <tr>
+                <td class="rme-td-lbl">Kesadaran</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ header.kesadaran || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">Status Psikologi</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ header.status_psikologi || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">Resiko Jatuh</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">
+                  <span
+                    :class="[
+                      'rme-badge',
+                      header.resiko_jatuh === 'YA' ? 'rme-badge-danger' : 'rme-badge-success',
+                    ]"
+                  >
+                    {{ header.resiko_jatuh || '-' }}
+                  </span>
+                </td>
+              </tr>
+              <tr v-if="header.telah_verif">
+                <td class="rme-td-lbl">Verifikasi</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val" style="color: #2e7d32">
+                  {{ header.telah_verif }}
+                  <span v-if="header.jam_verif"> — {{ header.jam_verif }}</span>
+                </td>
+              </tr>
+            </tbody>
           </table>
         </div>
       </div>
@@ -430,7 +434,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, inject } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConfigStore, useAuthStore } from '@/stores/config'
 import axios from 'axios'
@@ -444,6 +448,9 @@ const props = defineProps({
 const configStore = useConfigStore()
 const authStore = useAuthStore()
 const { id_client } = storeToRefs(authStore)
+
+const reportSectionData = inject('reportSectionData', () => {})
+const addTimelineEvent = inject('addTimelineEvent', () => {})
 
 const loading = ref(true)
 const error = ref(null)
@@ -597,6 +604,18 @@ const fetchData = async () => {
     console.error(e)
   } finally {
     loading.value = false
+    const hasTriase = header.value?.code === 200
+    reportSectionData('triase', hasTriase)
+    if (hasTriase) {
+      addTimelineEvent('triase', {
+        key: 'triase',
+        label: 'Triase IGD',
+        icon: '🚨',
+        color: '#b71c1c',
+        datetime: header.value?.waktu || '',
+        meta: kesimpulanTriase.value !== 'BELUM DITENTUKAN' ? kesimpulanTriase.value : '',
+      })
+    }
   }
 }
 

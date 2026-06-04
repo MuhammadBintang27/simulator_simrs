@@ -97,6 +97,14 @@ const FormIGDView = () => import('@/views/IGD/FormIGDView.vue')
 const TindakLanjutPasienView = () => import('@/views/TindakLanjut/TindakLanjutPasienView.vue')
 const ResumeRanapView = () => import('@/views/keuangan/ResumeRanapView.vue')
 
+// Manajemen
+const MenuItemsView = () => import('@/views/Manajemen/MenuItemsView.vue')
+
+// Rawat Inap
+const MonitoringPasienRanapView = () => import('@/views/RawatInap/MonitoringPasienRanapView.vue')
+const KajianAwalDPJPView = () => import('@/views/RawatInap/KajianAwalDPJPView.vue')
+const CPPTView = () => import('@/views/RawatInap/CPPTView.vue')
+
 // Fisioterapi
 const HomeFisioterapiView = () => import('@/views/Poliklinik/Fisioteraphi/HomeFisioterapiView.vue')
 const ProsesFisioteraphiView = () =>
@@ -111,6 +119,9 @@ const PrintOutsesiDonor = () => import('@/views/UTD/PrintOutsesiDonor.vue')
 // Rekam Medis Elektronik - Viewer & KCO
 const RMEViewer = () => import('@/views/RekamMedis/RMEViewer.vue')
 const KartuCatatanObatView = () => import('@/views/RekamMedis/KartuCatatanObatView.vue')
+
+// Persalinan
+const PartografView = () => import('@/views/Persalinan/PartografView.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -460,6 +471,24 @@ const router = createRouter({
           component: ResumeRanapView,
         },
         {
+          path: 'rawat-inap/monitoring-pasien',
+          name: 'MonitoringPasienRanapView',
+          meta: { requiresAuth: true },
+          component: MonitoringPasienRanapView,
+        },
+        {
+          path: 'rawat-inap/kajian-awal-dpjp/:noregister',
+          name: 'KajianAwalDPJPView',
+          meta: { requiresAuth: true },
+          component: KajianAwalDPJPView,
+        },
+        {
+          path: 'rawat-inap/cppt/:noregister',
+          name: 'CPPTView',
+          meta: { requiresAuth: true },
+          component: CPPTView,
+        },
+        {
           path: 'fisioterapi/home',
           name: 'HomeFisioterapiView',
           meta: { requiresAuth: true },
@@ -470,6 +499,22 @@ const router = createRouter({
           name: 'ProsesFisioterapiView',
           meta: { requiresAuth: true },
           component: ProsesFisioteraphiView,
+        },
+
+        // Persalinan
+        {
+          path: 'persalinan/partograf',
+          name: 'PartografView',
+          meta: { requiresAuth: true },
+          component: PartografView,
+        },
+
+        // Manajemen
+        {
+          path: 'manajemen/menu-items',
+          name: 'MenuItemsView',
+          meta: { requiresAuth: true },
+          component: MenuItemsView,
         },
 
         // UTD
@@ -490,59 +535,25 @@ const router = createRouter({
   ],
 })
 
-let idleTimeout
-
-const resetIdleTimer = () => {
-  clearTimeout(idleTimeout) // Clear previous timer
-
-  idleTimeout = setTimeout(
-    () => {
-      console.log('User idle, logging out...')
-      localStorage.removeItem('loggedIn')
-      localStorage.removeItem('token')
-      localStorage.removeItem('token_expires_at')
-      window.location.href = '/login' // Redirect to login
-    },
-    5 * 60 * 60 * 1000,
-  ) // 🔥 Set to 5 minutes (adjust as needed)
-}
-
-// Attach event listeners for user activity
-const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart']
-
-events.forEach((event) => window.addEventListener(event, resetIdleTimer))
-
-// Start idle timer on page load
-resetIdleTimer()
-
 router.beforeEach((to, _from, next) => {
-  // Ambil status login dari localStorage
   const loggedIn = localStorage.getItem('loggedIn') === 'true'
-
-  // Cek route apakah butuh login
   const isAuthRoute = to.meta.requiresAuth
   const isLoginPage = to.path === '/login'
 
-  // Kalau route butuh login
   if (isAuthRoute) {
     if (!loggedIn) {
-      // Simpan tujuan supaya bisa diarahkan lagi setelah login
       sessionStorage.setItem('redirectAfterLogin', to.fullPath)
       return next('/login')
     }
-
-    resetIdleTimer()
     return next()
   }
 
-  // Kalau user sudah login, cegah akses halaman login
   if (isLoginPage && loggedIn) {
     const redirectPath = sessionStorage.getItem('redirectAfterLogin') || '/'
     sessionStorage.removeItem('redirectAfterLogin')
     return next(redirectPath)
   }
 
-  // Route publik
   next()
 })
 

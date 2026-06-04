@@ -1014,8 +1014,8 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: linear-gradient(135deg, #4a1259 0%, #7c3aed 100%);
-  border-radius: 10px;
+  background: linear-gradient(135deg, #1a3a5c 0%, #2563a8 100%);
+  border-radius: 4px;
   padding: 1rem 1.5rem;
   color: #fff;
 }
@@ -1033,7 +1033,7 @@ onMounted(async () => {
 
 /* ====== Cards ====== */
 .pra-card {
-  border-radius: 10px;
+  border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   background: #fff;
@@ -1053,17 +1053,11 @@ onMounted(async () => {
   font-weight: 400;
   opacity: 0.88;
 }
-.anamnesa-header {
-  background: linear-gradient(135deg, #1a3a5c, #2563a8);
-}
-.fisik-header {
-  background: linear-gradient(135deg, #14532d, #16a34a);
-}
-.vital-header {
-  background: linear-gradient(135deg, #7f1d1d, #dc2626);
-}
+.anamnesa-header,
+.fisik-header,
+.vital-header,
 .rencana-header {
-  background: linear-gradient(135deg, #78350f, #d97706);
+  background: linear-gradient(135deg, #1a3a5c, #2563a8);
 }
 .card-section-body {
   padding: 1rem 1.1rem;
@@ -1151,7 +1145,7 @@ onMounted(async () => {
   flex-direction: column;
   gap: 0.5rem;
   background: #f9fafb;
-  border-radius: 8px;
+  border-radius: 4px;
   padding: 0.75rem;
   border: 1px solid #e5e7eb;
 }
@@ -1187,12 +1181,12 @@ onMounted(async () => {
   user-select: none;
 }
 .penyakit-item:hover {
-  border-color: #7c3aed;
-  background: #f5f3ff;
+  border-color: #2563a8;
+  background: #eff6ff;
 }
 .penyakit-active {
-  border-color: #7c3aed !important;
-  background: #f5f3ff !important;
+  border-color: #2563a8 !important;
+  background: #eff6ff !important;
 }
 .penyakit-label {
   font-size: 0.8rem;
@@ -1251,7 +1245,7 @@ onMounted(async () => {
 
 /* ====== Otorisasi / TTE ====== */
 .otorisasi-header {
-  background: linear-gradient(135deg, #1e3a5f, #1d4ed8);
+  background: linear-gradient(135deg, #1a3a5c, #2563a8);
 }
 .tte-verified-badge {
   display: flex;
@@ -1269,7 +1263,7 @@ onMounted(async () => {
 .otorisasi-verified {
   background: #eff6ff;
   border: 1px solid #bfdbfe;
-  color: #1d4ed8;
+  color: #2563a8;
 }
 .tte-info {
   display: flex;
@@ -1314,7 +1308,7 @@ onMounted(async () => {
   flex-shrink: 0;
   width: 56px;
   height: 56px;
-  background: linear-gradient(135deg, #1e3a5f, #1d4ed8);
+  background: linear-gradient(135deg, #1a3a5c, #2563a8);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -1338,7 +1332,7 @@ onMounted(async () => {
   line-height: 1.5;
 }
 .btn-tte {
-  background: linear-gradient(135deg, #1e3a5f, #1d4ed8) !important;
+  background: linear-gradient(135deg, #1a3a5c, #2563a8) !important;
   border: none !important;
   font-weight: 600;
 }
@@ -1368,7 +1362,7 @@ onMounted(async () => {
 }
 .tte-meta-item .pi {
   font-size: 0.75rem;
-  color: #1d4ed8;
+  color: #2563a8;
 }
 .tte-qr-wrapper {
   display: flex;
@@ -1387,7 +1381,7 @@ onMounted(async () => {
 .qr-box {
   padding: 0.6rem;
   background: #fff;
-  border: 2px solid #1d4ed8;
+  border: 2px solid #2563a8;
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -1436,7 +1430,7 @@ onMounted(async () => {
   align-items: center;
 }
 .btn-save-pra {
-  background: linear-gradient(135deg, #4a1259, #7c3aed) !important;
+  background: linear-gradient(135deg, #1a3a5c, #2563a8) !important;
   border: none !important;
   font-weight: 600;
 }

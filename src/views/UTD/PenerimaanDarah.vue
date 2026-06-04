@@ -4,6 +4,9 @@
     <Toast />
     <ConfirmDialog />
 
+    <!-- ══ LIST SESI DONOR DIALOG ══ -->
+    <ListPasienSesiDonor v-model:visible="showListSesiDonor" />
+
     <!-- ══ HERO HEADER ══ -->
     <div class="utd-header">
       <div class="utd-header-left">
@@ -11,7 +14,7 @@
           <i class="fas fa-tint"></i>
         </div>
         <div>
-          <div class="utd-header-title">Penerimaan Darah dari PMI</div>
+          <div class="utd-header-title">Penerimaan Darah/Stock Darah</div>
           <div class="utd-header-sub">
             Unit Transfusi Darah — Manajemen Penerimaan Kantong Darah
           </div>
@@ -23,6 +26,14 @@
           :value="`${dataList.length} data`"
           severity="info"
           style="font-size: 11px"
+        />
+        <Button
+          label="Daftar Sesi Donor"
+          icon="fas fa-hand-holding-heart"
+          severity="secondary"
+          outlined
+          class="round-button2 btn-primary-utd"
+          @click="showListSesiDonor = true"
         />
         <Button
           v-if="viewMode === 'penerimaan'"
@@ -874,6 +885,8 @@ import { useConfirm } from 'primevue/useconfirm'
 import axios from 'axios'
 import DatePicker from 'primevue/datepicker'
 
+import ListPasienSesiDonor from '@/views/UTD/ListPasienSesiDonor.vue'
+
 const configStore = useConfigStore()
 const authStore = useAuthStore()
 const { id_client, user_id } = storeToRefs(authStore)
@@ -884,6 +897,7 @@ const confirm = useConfirm()
 const loading = ref(false)
 const loadingForm = ref(false)
 const showForm = ref(false)
+const showListSesiDonor = ref(false)
 const isEdit = ref(false)
 const dataList = ref([])
 const filterTglAwal = ref(new Date())
@@ -998,15 +1012,20 @@ const validate = () => {
 const fetchData = async () => {
   try {
     loading.value = true
+
+    const payload = {
+      mode: 'list',
+      id_client: id_client.value,
+      tgl_dari: formatDateForApi(filterTglAwal.value),
+      tgl_sampai: formatDateForApi(filterTglAkhir.value),
+    }
+
+    console.log('data donor', JSON.stringify(payload))
     const res = await axios.post(
       `${configStore.apiBaseUrl}/index.php/api/utd/get_penerimaan_darah`,
-      {
-        mode: 'list',
-        id_client: id_client.value,
-        tgl_dari: formatDateForApi(filterTglAwal.value),
-        tgl_sampai: formatDateForApi(filterTglAkhir.value),
-      },
+      payload,
     )
+
     dataList.value = res.data.data ?? []
   } catch {
     showError('Gagal memuat data penerimaan')
@@ -1049,14 +1068,14 @@ const submitForm = async () => {
   }
 }
 
-const deleteData = async (id) => {
+const deleteData = async (no_penerimaan) => {
   try {
     loading.value = true
     const res = await axios.post(
       `${configStore.apiBaseUrl}/index.php/api/utd/simpan_penerimaan_darah`,
       {
         mode: 'delete',
-        id,
+        no_penerimaan,
         id_client: id_client.value,
         user_id: user_id.value,
       },
@@ -1066,7 +1085,7 @@ const deleteData = async (id) => {
       showSuccess('Data berhasil dihapus')
       await fetchData()
     } else {
-      showError(res.data?.metadata?.message ?? 'Gagal menghapus data')
+      showError(res.data?.metadata?.message ?? res.data?.message ?? 'Gagal menghapus data')
     }
   } catch {
     showError('Terjadi kesalahan saat menghapus')
@@ -1101,7 +1120,7 @@ const confirmDelete = (data) => {
     acceptLabel: 'Hapus',
     rejectClass: 'p-button-secondary p-button-outlined round-button2',
     acceptClass: 'p-button-danger round-button2',
-    accept: () => deleteData(data.id),
+    accept: () => deleteData(data.no_penerimaan),
   })
 }
 
@@ -1138,7 +1157,7 @@ const fetchAllStok = async () => {
       tgl_sampai: formatDateForApi(filterTglAkhir.value),
     })
 
-    console.log(res.data)
+    console.lo
     const raw = res.data?.data ?? []
     allStokList.value = raw.map((item) => ({
       ...item,
@@ -1458,6 +1477,7 @@ onMounted(() => {
 .btn-primary-utd {
   background: darkcyan !important;
   border-color: darkcyan !important;
+  color: gainsboro;
 }
 .btn-primary-utd:hover {
   background: #00838f !important;

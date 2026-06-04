@@ -1,7 +1,14 @@
 <template>
+  <!-- Mobile backdrop -->
+  <div
+    v-if="mobileSidebarOpen"
+    class="sb__mobile-backdrop"
+    @click="configStore.closeMobileSidebar()"
+  ></div>
+
   <aside
     class="sb"
-    :class="{ 'sb--collapsed': isCollapsedView }"
+    :class="{ 'sb--collapsed': isCollapsedView, 'sb--mobile-open': mobileSidebarOpen }"
     @mouseenter="sidebarHovered = true"
     @mouseleave="sidebarHovered = false"
   >
@@ -173,8 +180,7 @@ const configStore = useConfigStore()
 const authStore = useAuthStore()
 const { id_client, user_id, LINK_LOGO } = storeToRefs(authStore)
 
-// storeToRefs membuat sidebarCollapsed sebagai reactive ref langsung dari store
-const { sidebarCollapsed: collapsed } = storeToRefs(configStore)
+const { sidebarCollapsed: collapsed, mobileSidebarOpen } = storeToRefs(configStore)
 
 const router = useRouter()
 
@@ -187,6 +193,12 @@ const showSearchResults = ref(false)
 const filteredMenuItems = ref([])
 const openGroups = ref([])
 let searchDebounceTimer = null
+
+// Tutup mobile sidebar ketika navigasi
+watch(
+  () => router.currentRoute.value.path,
+  () => configStore.closeMobileSidebar(),
+)
 
 // Sinkronisasi body class (sb-collapsed = CSS kita, sidebar-collapse = AdminLTE)
 watch(
@@ -372,6 +384,19 @@ const mainMenuItems = ref([
         icon: 'fas fa-file-invoice-dollar',
       },
       { id: 'kasir', title: 'Kasir', path: '/keuangan/kasir', icon: 'fas fa-money-bill-wave' },
+    ],
+  },
+  {
+    id: 'manajemen',
+    title: 'Manajemen',
+    icon: 'fas fa-cogs',
+    children: [
+      {
+        id: 'manajemen-menu-items',
+        title: 'Manajemen Menu',
+        path: '/manajemen/menu-items',
+        icon: 'fas fa-bars',
+      },
     ],
   },
 ])
@@ -917,6 +942,14 @@ onUnmounted(() => {
 </style>
 
 <style>
+/* Global: backdrop mobile sidebar */
+.sb__mobile-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1037;
+}
+
 /* Global: adjust content-wrapper when sidebar collapses */
 body .content-wrapper,
 body .main-footer {
@@ -935,10 +968,17 @@ body.sb-collapsed .main-header.navbar {
   margin-left: 64px;
 }
 
-/* ── Mobile: sembunyikan sidebar ── */
+/* ── Mobile: sidebar sebagai drawer dari kiri ── */
 @media (max-width: 768px) {
   .sb {
-    display: none !important;
+    transform: translateX(-100%);
+    width: 250px !important;
+    transition:
+      transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+      width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .sb--mobile-open {
+    transform: translateX(0);
   }
   body .content-wrapper,
   body .main-footer,

@@ -1,6 +1,8 @@
 import ContentHeader from '@/components/ContentHeader.vue'
 
 import loading_overlay from '@/components/LoadingFormCompnent.vue'
+import CardPasienRanapComponent from '@/components/RawatInap/CardPasienRanapComponent.vue'
+import BannerTransaksiRanapComponent from '@/components/RawatInap/BannerTransaksiRanapComponent.vue'
 
 import '@fortawesome/fontawesome-free/css/all.min.css'
 
@@ -327,11 +329,11 @@ import StepPanel from 'primevue/steppanel'
 app.component('StepPanel', StepPanel)
 
 app.component('loading_overlay', loading_overlay)
+app.component('CardPasienRanap', CardPasienRanapComponent)
+app.component('BannerTransaksiRanap', BannerTransaksiRanapComponent)
 
 app.use(router)
 
 app.config.globalProperties.$configStore = useConfigStore()
-
-app.use(axios)
 
 app.mount('#app')

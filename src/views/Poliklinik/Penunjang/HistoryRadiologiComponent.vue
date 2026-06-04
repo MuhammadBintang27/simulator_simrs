@@ -35,6 +35,9 @@
       </div>
     </template>
 
+    <!-- Loading bar -->
+    <ProgressBar v-if="loading" mode="indeterminate" style="height: 3px; border-radius: 0" />
+
     <!-- Stats Row -->
     <div class="rad-stats">
       <div class="rad-stat-card">
@@ -100,17 +103,37 @@
       </div>
     </div>
 
+    <!-- Search Toolbar -->
+    <div class="rad-toolbar">
+      <div class="rad-toolbar__left">
+        <span class="rad-toolbar__title">Daftar Pemeriksaan</span>
+        <Tag :value="`${filteredFact.length} data`" severity="secondary" class="rad-toolbar__tag" />
+      </div>
+      <div class="rad-toolbar__right">
+        <div class="rad-search-wrap">
+          <i class="pi pi-search rad-search-icon" />
+          <InputText
+            v-model="searchQuery"
+            placeholder="Cari pemeriksaan, dokter..."
+            class="rad-search-input"
+          />
+          <button v-if="searchQuery" class="rad-search-clear" @click="searchQuery = ''">
+            <i class="pi pi-times" />
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Table -->
     <div class="rad-table-wrap">
       <DataTable
-        :value="fact"
+        :value="filteredFact"
         paginator
         :rows="10"
         stripedRows
         removableSort
         responsiveLayout="scroll"
         class="rad-datatable"
-        :globalFilterFields="['NAMA', 'DPJP', 'STATUS_PROGRESS', 'NO_REG']"
       >
         <template #empty>
           <div class="rad-empty">
@@ -202,25 +225,16 @@
 
         <Column header="" style="width: 60px; text-align: center">
           <template #body="{ data }">
-            <button
-              class="rad-btn-action"
-              @click="get_details_radiologi(data.TRANS)"
+            <Button
+              icon="pi pi-file-edit"
+              size="small"
+              text
+              rounded
+              severity="info"
               title="Lihat Detail"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                <line x1="11" y1="8" x2="11" y2="14" />
-                <line x1="8" y1="11" x2="14" y2="11" />
-              </svg>
-            </button>
+              @click="get_details_radiologi(data.TRANS)"
+              class="rad-action-btn"
+            />
           </template>
         </Column>
       </DataTable>
@@ -231,20 +245,14 @@
         <span class="rad-dlg-footer__note"
           >Data bersumber dari sistem informasi radiologi rumah sakit.</span
         >
-        <button class="rad-btn-close" @click="visible = false">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-          Keluar
-        </button>
+        <Button
+          label="Keluar"
+          icon="pi pi-times"
+          severity="danger"
+          outlined
+          size="small"
+          @click="visible = false"
+        />
       </div>
     </template>
   </Dialog>
@@ -312,18 +320,21 @@
           :key="index"
           class="rad-result-card"
         >
-          <!-- Card Header -->
           <div class="rad-result-card__header">
             <div class="rad-result-card__title-row">
               <div class="rad-result-card__num">{{ String(index + 1).padStart(2, '0') }}</div>
-              <div>
+              <div class="rad-result-card__title-info">
                 <div class="rad-result-card__name">{{ item.NAMA }}</div>
                 <div class="rad-result-card__date">Permintaan: {{ item.TANGGAL_REQ }}</div>
               </div>
+              <Tag
+                :value="item.STATUS_PROGRESS || 'Proses'"
+                :severity="item.STATUS_PROGRESS?.toLowerCase().includes('c') ? 'success' : 'warn'"
+                class="rad-result-card__status"
+              />
             </div>
           </div>
 
-          <!-- Card Body -->
           <div class="rad-result-card__body">
             <!-- Expertise -->
             <div class="rad-expertise">
@@ -341,7 +352,12 @@
                 </svg>
                 Ekspertise / Hasil Bacaan
               </div>
-              <div class="rad-expertise__content" v-html="item.HASIL_BACA"></div>
+              <div
+                class="rad-expertise__content"
+                v-html="
+                  item.HASIL_BACA || '<em style=\'color:#9ca3af\'>Hasil bacaan belum tersedia.</em>'
+                "
+              ></div>
             </div>
 
             <!-- Attachments -->
@@ -375,6 +391,11 @@
                 </div>
               </div>
             </div>
+
+            <div v-if="!item.attachment?.length" class="rad-no-attachment">
+              <i class="pi pi-image" style="font-size: 1.5rem; color: var(--surface-300)" />
+              <span>Tidak ada lampiran gambar.</span>
+            </div>
           </div>
         </div>
       </div>
@@ -397,19 +418,14 @@
           </svg>
           Data bersifat konfidensial — hanya untuk keperluan klinis.
         </span>
-        <button class="rad-btn-done" @click="showDetails = false">
-          <svg
-            width="13"
-            height="13"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-          >
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-          Selesai
-        </button>
+        <Button
+          label="Selesai"
+          icon="pi pi-check"
+          severity="success"
+          outlined
+          size="small"
+          @click="showDetails = false"
+        />
       </div>
     </template>
   </Dialog>
@@ -443,9 +459,25 @@ const loading = ref(false)
 const fact = ref([])
 const showDetails = ref(false)
 const details_radiologi = ref(null)
+const searchQuery = ref('')
+
+const filteredFact = computed(() => {
+  if (!searchQuery.value.trim()) return fact.value
+  const q = searchQuery.value.toLowerCase()
+  return fact.value.filter(
+    (f) =>
+      f.NAMA?.toLowerCase().includes(q) ||
+      f.DPJP?.toLowerCase().includes(q) ||
+      f.STATUS_PROGRESS?.toLowerCase().includes(q) ||
+      f.TRANS?.toLowerCase().includes(q) ||
+      f.POLI_RUANG?.toLowerCase().includes(q),
+  )
+})
 
 watch(visible, (val) => {
-  if (val) fetchData()
+  if (val) {
+    fetchData()
+  }
 })
 
 const fetchData = async () => {
@@ -505,6 +537,7 @@ const getBadgeClass = (status) => {
 
 const onHide = () => {
   fact.value = []
+  searchQuery.value = ''
 }
 
 const formatDisplayDate = (date) => {
@@ -551,7 +584,7 @@ const showWarning = (msg) =>
   padding: 1.125rem 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 .rad-dialog :deep(.p-dialog-footer) {
   background: var(--surface-card);
@@ -648,6 +681,75 @@ const showWarning = (msg) =>
   letter-spacing: -0.02em;
 }
 
+/* Search Toolbar */
+.rad-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.rad-toolbar__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rad-toolbar__title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-color);
+  letter-spacing: -0.01em;
+}
+.rad-toolbar__tag :deep(.p-tag) {
+  font-size: 10px;
+  padding: 2px 7px;
+}
+.rad-toolbar__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rad-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.rad-search-icon {
+  position: absolute;
+  left: 9px;
+  font-size: 11px;
+  color: var(--text-color-secondary);
+  pointer-events: none;
+  z-index: 1;
+}
+.rad-search-input {
+  padding-left: 28px !important;
+  padding-right: 28px !important;
+  height: 32px;
+  font-size: 12px;
+  width: 220px;
+  border-radius: 7px;
+}
+.rad-search-clear {
+  position: absolute;
+  right: 7px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-color-secondary);
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  line-height: 1;
+}
+.rad-search-clear:hover {
+  color: var(--text-color);
+}
+
 /* Table */
 .rad-table-wrap {
   background: var(--surface-card);
@@ -656,14 +758,14 @@ const showWarning = (msg) =>
   overflow: hidden;
 }
 .rad-datatable :deep(.p-datatable-thead > tr > th) {
-  background: var(--surface-ground) !important;
-  color: var(--text-color-secondary);
+  background: #eef2fb !important;
+  color: #374151;
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
   padding: 10px 14px;
-  border-bottom: 1px solid var(--surface-border);
+  border-bottom: 1px solid #dce6f8 !important;
 }
 .rad-datatable :deep(.p-datatable-tbody > tr > td) {
   padding: 11px 14px;
@@ -673,8 +775,11 @@ const showWarning = (msg) =>
 .rad-datatable :deep(.p-datatable-tbody > tr:last-child > td) {
   border-bottom: none !important;
 }
+.rad-datatable :deep(.p-datatable-tbody > tr.p-row-odd > td) {
+  background: #f8faff;
+}
 .rad-datatable :deep(.p-datatable-tbody > tr:hover > td) {
-  background: var(--surface-hover) !important;
+  background: #eef2fb !important;
 }
 .rad-datatable :deep(.p-paginator) {
   background: var(--surface-ground) !important;
@@ -800,24 +905,9 @@ const showWarning = (msg) =>
 }
 
 /* Action button */
-.rad-btn-action {
+.rad-action-btn :deep(.p-button) {
   width: 30px;
   height: 30px;
-  border: 1px solid var(--surface-border);
-  border-radius: 7px;
-  background: transparent;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-color-secondary);
-  margin: 0 auto;
-  transition: all 0.14s;
-}
-.rad-btn-action:hover {
-  background: #1a56db10;
-  border-color: #1a56db60;
-  color: #1a56db;
 }
 
 /* Empty */
@@ -848,23 +938,6 @@ const showWarning = (msg) =>
   font-size: 10.5px;
   color: var(--text-color-secondary);
   font-style: italic;
-}
-.rad-btn-close {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border: 1px solid #f87171;
-  border-radius: 7px;
-  background: transparent;
-  color: #dc2626;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.14s;
-}
-.rad-btn-close:hover {
-  background: #fef2f2;
 }
 
 /* ===========================
@@ -1014,6 +1087,12 @@ const showWarning = (msg) =>
   align-items: center;
   gap: 12px;
 }
+.rad-result-card__title-info {
+  flex: 1;
+}
+.rad-result-card__status {
+  margin-left: auto;
+}
 .rad-result-card__num {
   font-size: 24px;
   font-weight: 800;
@@ -1065,6 +1144,7 @@ const showWarning = (msg) =>
   border-radius: 0 7px 7px 0;
   padding: 12px 14px;
   white-space: pre-line;
+  min-height: 60px;
 }
 
 /* Attachments */
@@ -1117,6 +1197,17 @@ const showWarning = (msg) =>
   border-top: 1px solid #1f2937;
 }
 
+/* No attachment placeholder */
+.rad-no-attachment {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 1.5rem 0;
+  color: var(--text-color-secondary);
+  font-size: 11px;
+}
+
 /* Detail footer */
 .rad-detail-footer {
   display: flex;
@@ -1132,23 +1223,5 @@ const showWarning = (msg) =>
   font-size: 10.5px;
   color: var(--text-color-secondary);
   font-style: italic;
-}
-.rad-btn-done {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 16px;
-  border: 1px solid #6ee7b7;
-  border-radius: 7px;
-  background: #f0fdf4;
-  color: #065f46;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.14s;
-}
-.rad-btn-done:hover {
-  background: #d1fae5;
-  border-color: #34d399;
 }
 </style>

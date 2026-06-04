@@ -1,363 +1,452 @@
 <template>
-  <loading_overlay :is-loading="loading" message="Memuat data...." />
+  <!-- <loading_overlay :is-loading="loading" message="Memuat data...." /> -->
   <Toast />
 
+  <!-- ══════════════════════ Dialog: Cari Pemeriksaan ══════════════════ -->
   <Dialog
     v-model:visible="listObat"
     modal
-    header="PERIKSAAN RADIOLOGI"
-    :style="{ width: '1200px' }"
-    class="patient-detail-dialog"
+    header="Cari Pemeriksaan Radiologi"
+    :style="{ width: '1100px', maxWidth: '96vw' }"
     :closable="false"
   >
-    <div>
-      <DataTable
-        :value="availableObat"
-        :paginator="true"
-        :rows="10"
-        :rowsPerPageOptions="[5, 10, 20, 50]"
-        :scrollable="true"
-        scrollHeight="700px"
-        class="p-datatable-sm"
-        :rowHover="true"
-        :showGridlines="true"
-      >
-        <!-- Header with search -->
-        <template #header>
-          <div class="flex justify-content-between align-items-center">
-            <div class="flex align-items-center gap-2 mr-2">
-              <span class="p-input-icon-left">
-                <i class="pi pi-search mr-2" />
-                <InputText
-                  v-model="searchQuery"
-                  @keyup.enter="get_item(11, '')"
-                  style="font-size: 12px"
-                  placeholder="Cari item pemeriksaan..."
-                />
-              </span>
-            </div>
-          </div>
-        </template>
-
-        <!-- Empty state -->
-        <template #empty>
-          <div class="text-center p-4">
-            <i class="pi pi-info-circle text-4xl text-blue-400 mb-3"></i>
-            <p class="text-gray-600 m-0">Tidak ada data pemeriksaan yang tersedia</p>
-          </div>
-        </template>
-
-        <!-- Loading template -->
-        <template #loading>
-          <div class="text-center p-4">
-            <i class="pi pi-spin pi-spinner text-2xl text-blue-500"></i>
-            <p class="mt-2 text-gray-600">Memuat data...</p>
-          </div>
-        </template>
-
-        <!-- Columns -->
-
-        <Column
-          field="CAPTION"
-          header="Nama Pemeriksaan"
-          :sortable="true"
-          :showFilterMenuOptions="false"
-          style="min-width: 200px"
-        >
-          <template #body="slotProps">
-            <div class="flex align-items-center gap-2">
-              <span class="font-semibold">
-                {{ slotProps.data.CAPTION }}
-                <span v-if="slotProps.data.QUANTITY" class="ml-2">
-                  <Tag severity="warn" :value="slotProps.data.QUANTITY"></Tag>
-                  <small>tersedia</small>
-                </span>
-              </span>
-            </div>
-          </template>
-        </Column>
-
-        <Column
-          field="KATEGORI"
-          header="Kategori"
-          :sortable="true"
-          :showFilterMenuOptions="false"
-          style="min-width: 150px"
-        >
-          <template #body="slotProps">
-            <span class="badge badge-success">{{ slotProps.data.KATEGORI }}</span>
-          </template>
-        </Column>
-
-        <Column
-          field="HARGAJUAL"
-          header="Harga"
-          :sortable="true"
-          dataType="numeric"
-          style="min-width: 120px"
-        >
-          <template #body="slotProps">
-            <div class="text-right font-semibold text-green-600">
-              {{ formatCurrency(slotProps.data.HARGAJUAL) }}
-            </div>
-          </template>
-        </Column>
-
-        <!-- Action column -->
-        <Column header="Aksi" :exportable="false" style="min-width: 120px">
-          <template #body="slotProps">
-            <div class="flex gap-1">
-              <Button
-                icon="pi pi-plus"
-                class="p-button-rounded p-button-success round-button2 p-button-sm"
-                @click="addItem(slotProps.data)"
-              />
-            </div>
-          </template>
-        </Column>
-      </DataTable>
+    <div class="radio-dialog-search">
+      <span class="radio-search-wrap">
+        <i class="pi pi-search search-icon" />
+        <InputText
+          v-model="searchQuery"
+          @input="get_item(11, '')"
+          placeholder="Ketik nama pemeriksaan lalu tekan Enter…"
+          class="radio-search-input"
+          autofocus
+        />
+        <Button
+          icon="pi pi-search"
+          label="Cari"
+          size="small"
+          severity="info"
+          class="radio-search-btn"
+          @click="get_item(11, '')"
+        />
+      </span>
+      <Tag
+        :value="`${availableObat.length} item ditemukan`"
+        severity="info"
+        class="radio-found-tag"
+      />
     </div>
 
-    <!-- Footer template -->
-    <template #footer>
-      <div class="dialog-footer">
-        <Button label="Close" icon="pi pi-times" @click="listObat = false" class="p-button-text" />
+    <!-- Sering Diminta (tampil saat belum ada pencarian) -->
+    <div v-if="searchQuery.length <= 2" class="radio-recent-section">
+      <div class="radio-recent-hdr">
+        <span class="radio-recent-hdr-left">
+          <i class="pi pi-star-fill"></i>
+          Sering Diminta di Poli Ini
+        </span>
+        <span v-if="loadingRecent" class="radio-recent-loading">
+          <i class="pi pi-spin pi-spinner"></i> Memuat…
+        </span>
       </div>
+
+      <div v-if="!loadingRecent && recentRadiologi.length === 0" class="radio-recent-empty">
+        <i class="pi pi-inbox"></i> Belum ada data
+      </div>
+
+      <div class="radio-recent-grid">
+        <div
+          v-for="item in recentRadiologi"
+          :key="item.KODE || item.BARCODE"
+          class="radio-recent-chip"
+          @click="addRecentItem(item)"
+          v-tooltip.bottom="'Klik untuk tambah ke permintaan'"
+        >
+          <div class="radio-recent-chip-name">{{ item.NAMABARANG || item.NAMA }}</div>
+          <div v-if="item.HARGA > 0" class="radio-recent-chip-price">
+            {{ formatCurrency(item.HARGA) }}
+            <span class="radio-recent-chip-per">/ {{ item.SATUAN }}</span>
+          </div>
+          <div class="radio-recent-chip-footer">
+            <span class="radio-recent-chip-satuan">{{ item.SATUAN }}</span>
+            <span class="radio-recent-chip-count">
+              <i class="pi pi-chart-bar"></i>{{ item.JML }}x
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <DataTable
+      :value="availableObat"
+      :paginator="true"
+      :rows="10"
+      :rowsPerPageOptions="[5, 10, 20, 50]"
+      :scrollable="true"
+      scrollHeight="380px"
+      class="p-datatable-sm radio-list-table"
+      :rowHover="true"
+      :showGridlines="false"
+      stripedRows
+    >
+      <template #empty>
+        <div class="tbl-empty">
+          <i class="pi pi-desktop"></i>
+          <p>Ketik nama pemeriksaan dan tekan Cari</p>
+        </div>
+      </template>
+      <template #loading>
+        <div class="tbl-empty">
+          <i class="pi pi-spin pi-spinner"></i>
+          <p>Memuat data…</p>
+        </div>
+      </template>
+
+      <Column field="CAPTION" header="Nama Pemeriksaan" :sortable="true" style="min-width: 240px">
+        <template #body="slotProps">
+          <div class="item-name">{{ slotProps.data.CAPTION }}</div>
+          <span v-if="slotProps.data.QUANTITY" class="item-qty-badge">
+            {{ slotProps.data.QUANTITY }} tersedia
+          </span>
+        </template>
+      </Column>
+
+      <Column field="KATEGORI" header="Kategori" :sortable="true" style="min-width: 140px">
+        <template #body="slotProps">
+          <Tag :value="slotProps.data.KATEGORI" severity="info" class="text-xs" />
+        </template>
+      </Column>
+
+      <Column
+        field="HARGAJUAL"
+        header="Harga"
+        :sortable="true"
+        dataType="numeric"
+        style="min-width: 130px"
+      >
+        <template #body="slotProps">
+          <span class="price-text">{{ formatCurrency(slotProps.data.HARGAJUAL) }}</span>
+        </template>
+      </Column>
+
+      <Column style="width: 70px; text-align: center">
+        <template #body="slotProps">
+          <Button
+            icon="pi pi-plus"
+            rounded
+            size="small"
+            severity="success"
+            @click="addItem(slotProps.data)"
+            v-tooltip.left="'Tambah ke permintaan'"
+          />
+        </template>
+      </Column>
+    </DataTable>
+
+    <template #footer>
+      <Button
+        label="Tutup"
+        icon="pi pi-times"
+        @click="listObat = false"
+        severity="secondary"
+        outlined
+      />
     </template>
   </Dialog>
 
-  <Panel>
-    <template #header>
-      <h6 style="color: darkcyan">
-        <strong>PEMERIKSAAN RADIOLOGI</strong>
-        <Button @click="get_riwayat" text class="round-button" icon="pi pi-refresh" />
-      </h6>
-    </template>
+  <!-- ══════════════════════ Main Layout ═══════════════════════════════ -->
+  <div class="radio-wrapper">
+    <!-- ── Sidebar: Riwayat ── -->
+    <div class="radio-sidebar">
+      <div class="sidebar-hdr">
+        <i class="pi pi-history sidebar-hdr-icon"></i>
+        <span class="sidebar-hdr-title">Riwayat Radiologi</span>
+        <Tag :value="String(riwayat_radiologi.length)" severity="secondary" class="sidebar-count" />
+      </div>
 
-    <div class="row">
-      <ScrollPanel class="col-md-2" style="height: 500px; padding-right: 4px">
-        <Panel v-for="(data, index) in riwayat_radiologi" :key="index" class="mb-1">
-          <!-- Header -->
-          <template #header>
-            <div>
-              <Tag severity="info" class="ml-0 text-xs mb-1">
-                <i class="pi pi-calendar text-blue-500"></i>{{ data.SHORTDATE }} -
-                {{ data.JAM }}
-              </Tag>
-            </div>
-          </template>
+      <div class="sidebar-list">
+        <div v-if="riwayat_radiologi.length === 0" class="sidebar-empty">
+          <i class="pi pi-inbox"></i>
+          <p>Belum ada permintaan</p>
+        </div>
 
-          <Tag v-if="data.TELAH_DIKIRIM == 1" severity="success" style="font-size: 10px">
-            Dikirim
-            {{ data.TANGGAL_KIRIM }} - {{ data.JAM_KIRIM }}
-          </Tag>
-          <Tag v-else severity="danger" value="Belum Terkirim" class="text-xs" />
+        <div
+          v-for="(data, index) in riwayat_radiologi"
+          :key="index"
+          class="resep-card"
+          :class="data.TELAH_DIKIRIM == 1 ? 'resep-sent' : 'resep-pending'"
+        >
+          <div class="resep-card-top">
+            <span class="resep-date">
+              <i class="pi pi-calendar"></i>
+              {{ data.SHORTDATE }}
+            </span>
+            <span class="resep-time">{{ data.JAM }}</span>
+          </div>
 
-          <template #footer>
-            <div class="flex flex-wrap items-center justify-between gap-4">
-              <div class="flex items-center gap-2">
-                <Button
-                  icon="pi pi-times"
-                  severity="warn"
-                  @click="ConfirmVoidResep(data.RECEIPT_NO, index)"
-                  class="round-button2"
-                  text
-                />
-                <Button
-                  icon="pi pi-eye"
-                  label="lihat"
-                  class="round-button2"
-                  @click="getHasil_pemeriksaan_radiologi(data.RECEIPT_NO)"
-                  rounded
-                  text
-                />
-                <button
-                  v-if="data.TELAH_DIKIRIM == 0"
-                  type="button"
-                  @click="kirim_resep(data.RECEIPT_NO)"
-                  class="btn btn-block btn-danger btn-xs"
-                >
-                  Kirim
-                  <i class="pi pi-send" style="font-size: 10px; margin-right: 4px"></i>
-                </button>
-                <!-- <span style="color: gray">{{ data.RECEIPT_NO }}</span> -->
-              </div>
-            </div>
-          </template>
-        </Panel>
-      </ScrollPanel>
-      <div class="col-md-10">
-        <Panel>
-          <template #header>
-            <div class="panel-header-content">
-              <!-- Tombol -->
-              <div class="button-section">
-                <Button
-                  class="p-button-success"
-                  icon="pi pi-plus"
-                  label="Pilih Item Pemeriksaan"
-                  size="small"
-                  @click="listObat = true"
-                />
-              </div>
+          <div class="resep-status-row">
+            <Tag v-if="data.TELAH_DIKIRIM == 1" severity="success" class="resep-tag">
+              <i class="pi pi-check-circle"></i>&nbsp;Terkirim
+            </Tag>
+            <Tag v-else severity="danger" class="resep-tag">
+              <i class="pi pi-hourglass"></i>&nbsp;Pending
+            </Tag>
+          </div>
 
-              <!-- Input Klinis & Catatan -->
-              <div class="input-section">
-                <div class="input-group">
-                  <div class="input-field">
-                    <label for="klinis" class="input-label">Klinis:</label>
-                    <InputText
-                      id="klinis"
-                      v-model="klinis"
-                      size="small"
-                      placeholder="Masukkan diagnosa klinis"
-                      class="input-control"
-                    />
-                  </div>
-                  <div class="input-field">
-                    <label for="catatan" class="input-label">Catatan:</label>
-                    <InputText
-                      id="catatan"
-                      v-model="catatan"
-                      size="small"
-                      placeholder="Catatan tambahan"
-                      class="input-control"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </template>
-          <DataTable
-            :value="selectedObatObatan"
-            :paginator="false"
-            :scrollable="true"
-            scrollHeight="400px"
-            :breakpoints="{ '1100px': '75vw', '575px': '90vw' }"
-            class="p-datatable-sm"
-            :rowHover="true"
-            :showGridlines="true"
-          >
-            <!-- Empty state -->
-            <template #empty>
-              <div class="text-center p-4">
-                <i class="pi pi-info-circle text-4xl text-blue-400 mb-3"></i>
-                <p class="text-gray-600 m-0">Tidak ada pemeriksaan yang dipilih</p>
-              </div>
-            </template>
+          <div v-if="data.TELAH_DIKIRIM == 1" class="resep-sent-time">
+            {{ data.TANGGAL_KIRIM }} {{ data.JAM_KIRIM }}
+          </div>
 
-            <!-- Loading template -->
-            <template #loading>
-              <div class="text-center p-4">
-                <i class="pi pi-spin pi-spinner text-2xl text-blue-500"></i>
-                <p class="mt-2 text-gray-600">Memuat data...</p>
-              </div>
-            </template>
-
-            <!-- Columns -->
-            <Column field="BARCODE" header="BARCODE" style="min-width: 10px"></Column>
-            <Column field="NAMA" header="NAMA"></Column>
-
-            <Column field="QTY" header="QTY">
-              <template #body="slotProps">
-                <InputNumber v-model="slotProps.data.QTY" style="width: 9em" :min="1" />
-              </template>
-            </Column>
-            <Column field="AKSI" header="AKSI">
-              <template #body="slotProps">
-                <Button
-                  icon="pi pi-times"
-                  severity="danger"
-                  class="p-button-text round-button2"
-                  @click.stop.prevent="confirmRemoveItemObat(slotProps.index)"
-                />
-              </template>
-            </Column>
-          </DataTable>
-
-          <!-- Add Footer Template -->
-          <template #footer>
-            <div class="panel-footer">
-              <div class="flex justify-content-between align-items-center">
-                <div class="flex align-items-center gap-2">
-                  <small>Total Items: {{ selectedObatObatan.length }}</small>
-                </div>
-                <div class="flex gap-2">
-                  <Button
-                    label="Clear All"
-                    icon="pi pi-trash"
-                    severity="danger"
-                    class="p-button-outlined round-button2"
-                    @click="clearAllItems"
-                    :disabled="selectedObatObatan.length === 0"
-                  />
-                  <Button
-                    label="Save"
-                    icon="pi pi-save"
-                    class="p-button-success round-button2 ml-1"
-                    @click="saveItems"
-                    :disabled="selectedObatObatan.length === 0"
-                  />
-                  <Button
-                    label="Histori"
-                    icon="pi pi-history"
-                    @click="showRadiologi = true"
-                    class="p-button-info round-button2 ml-1"
-                  />
-                </div>
-              </div>
-            </div>
-          </template>
-        </Panel>
+          <div class="resep-actions">
+            <Button
+              icon="pi pi-eye"
+              label="Lihat"
+              size="small"
+              text
+              severity="info"
+              class="resep-btn"
+              @click="getHasil_pemeriksaan_radiologi(data.RECEIPT_NO)"
+            />
+            <Button
+              v-if="data.TELAH_DIKIRIM == 0"
+              icon="pi pi-send"
+              label="Kirim"
+              size="small"
+              severity="success"
+              class="resep-btn"
+              @click="kirim_resep(data.RECEIPT_NO)"
+            />
+            <Button
+              icon="pi pi-trash"
+              size="small"
+              text
+              severity="danger"
+              class="resep-btn-del"
+              @click="ConfirmVoidResep(data.RECEIPT_NO, index)"
+              v-tooltip.right="'Batalkan permintaan'"
+            />
+          </div>
+        </div>
       </div>
     </div>
-  </Panel>
+
+    <!-- ── Main Content ── -->
+    <div class="radio-main">
+      <!-- Toolbar -->
+      <div class="radio-toolbar">
+        <div class="toolbar-left">
+          <i class="pi pi-desktop toolbar-icon"></i>
+          <span class="toolbar-title">Item Pemeriksaan Radiologi</span>
+          <Tag
+            :value="`${selectedObatObatan.length} item`"
+            severity="secondary"
+            class="toolbar-count"
+          />
+        </div>
+        <div class="toolbar-right">
+          <Button
+            icon="pi pi-search"
+            label="Pilih Pemeriksaan"
+            size="small"
+            severity="success"
+            @click="listObat = true"
+          />
+          <Button
+            icon="pi pi-history"
+            label="Histori"
+            size="small"
+            severity="info"
+            outlined
+            @click="showRadiologi = true"
+          />
+          <Button
+            icon="pi pi-refresh"
+            size="small"
+            severity="secondary"
+            text
+            @click="get_riwayat"
+            v-tooltip.bottom="'Refresh riwayat'"
+          />
+        </div>
+      </div>
+
+      <!-- Klinis & Catatan bar -->
+      <div class="klinis-bar">
+        <div class="klinis-field">
+          <label class="klinis-label">
+            <i class="pi pi-heart-fill"></i> Klinis <span class="required">*</span>
+          </label>
+          <InputText
+            v-model="klinis"
+            placeholder="Diagnosa klinis…"
+            class="klinis-input"
+            size="small"
+          />
+        </div>
+        <div class="klinis-field">
+          <label class="klinis-label"> <i class="pi pi-pencil"></i> Catatan </label>
+          <InputText
+            v-model="catatan"
+            placeholder="Catatan tambahan…"
+            class="klinis-input"
+            size="small"
+          />
+        </div>
+      </div>
+
+      <!-- Table -->
+      <DataTable
+        :value="selectedObatObatan"
+        :scrollable="true"
+        scrollHeight="340px"
+        class="p-datatable-sm radio-table"
+        :rowHover="true"
+        :showGridlines="false"
+        stripedRows
+      >
+        <template #empty>
+          <div class="tbl-empty">
+            <i class="pi pi-desktop"></i>
+            <p>Belum ada pemeriksaan dipilih</p>
+            <Button
+              label="Pilih Pemeriksaan"
+              icon="pi pi-search"
+              size="small"
+              severity="success"
+              @click="listObat = true"
+            />
+          </div>
+        </template>
+        <template #loading>
+          <div class="tbl-empty">
+            <i class="pi pi-spin pi-spinner"></i>
+            <p>Memuat data…</p>
+          </div>
+        </template>
+
+        <Column field="BARCODE" header="Kode" style="width: 100px">
+          <template #body="slotProps">
+            <span class="barcode-text">{{ slotProps.data.BARCODE }}</span>
+          </template>
+        </Column>
+
+        <Column field="NAMA" header="Nama Pemeriksaan" style="min-width: 200px">
+          <template #body="slotProps">
+            <span class="item-cell-name">{{ slotProps.data.NAMA }}</span>
+          </template>
+        </Column>
+
+        <Column field="QTY" header="Qty" style="width: 130px">
+          <template #body="slotProps">
+            <InputNumber
+              v-model="slotProps.data.QTY"
+              class="qty-number"
+              :min="1"
+              showButtons
+              buttonLayout="horizontal"
+              incrementButtonIcon="pi pi-plus"
+              decrementButtonIcon="pi pi-minus"
+              :inputStyle="{ width: '50px', textAlign: 'center', fontSize: '12px' }"
+            />
+          </template>
+        </Column>
+
+        <Column field="HARGA" header="Harga" style="width: 130px">
+          <template #body="slotProps">
+            <span class="price-text">{{ formatCurrency(slotProps.data.HARGA) }}</span>
+          </template>
+        </Column>
+
+        <Column style="width: 48px; text-align: center">
+          <template #body="slotProps">
+            <Button
+              icon="pi pi-times"
+              severity="danger"
+              text
+              rounded
+              size="small"
+              @click.stop.prevent="confirmRemoveItemObat(slotProps.index)"
+              v-tooltip.left="'Hapus item'"
+            />
+          </template>
+        </Column>
+      </DataTable>
+
+      <!-- Footer -->
+      <div class="radio-footer">
+        <div class="footer-info">
+          <span class="footer-total-lbl">Total Item</span>
+          <span class="footer-total-count">{{ selectedObatObatan.length }}</span>
+        </div>
+        <div class="footer-actions">
+          <Button
+            label="Hapus Semua"
+            icon="pi pi-trash"
+            size="small"
+            severity="danger"
+            outlined
+            @click="clearAllItems"
+            :disabled="selectedObatObatan.length === 0"
+          />
+          <Button
+            label="Simpan Permintaan"
+            icon="pi pi-save"
+            size="small"
+            severity="success"
+            @click="saveItems"
+            :disabled="selectedObatObatan.length === 0"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
 
   <HistoryRadiologiComponent v-model="showRadiologi" :datapasien="props.datapasien" />
 
-  <Drawer
-    v-model:visible="hasilLab"
-    modal
-    class="patient-detail-dialog"
-    :closable="true"
-    position="bottom"
-    style="height: 90%; width: 90%"
-  >
-    <div>
-      <Tag :severity="progress == 'C' ? 'success' : 'warn'">
-        {{ progress === 'C' ? 'Selesai Pada Pukul' : 'Menunggu' }} {{ jamSelesai }}
-      </Tag>
-    </div>
+  <!-- ══════════════════════ Drawer: Hasil Radiologi ════════════════════ -->
+  <Drawer v-model:visible="hasilLab" :closable="true" position="bottom" style="height: 88vh">
+    <template #header>
+      <div class="hasil-drawer-hdr">
+        <span class="hasil-drawer-title">
+          <i class="pi pi-desktop"></i>
+          Hasil Pemeriksaan Radiologi
+        </span>
+        <Tag :severity="progress == 'C' ? 'success' : 'warn'" class="hasil-status-tag">
+          <i
+            :class="progress == 'C' ? 'pi pi-check-circle' : 'pi pi-clock'"
+            style="margin-right: 4px"
+          ></i>
+          {{ progress === 'C' ? 'Selesai' : 'Menunggu' }}
+          <span v-if="jamSelesai">&nbsp;· {{ jamSelesai }}</span>
+        </Tag>
+      </div>
+    </template>
 
-    <div>
-      <table class="table table-sm tb-sm table-bordered table-striped small-table">
+    <div class="hasil-table-wrap">
+      <table class="hasil-table">
         <thead>
           <tr>
-            <th>PEMERIKSAAN</th>
-            <th>ITEM PEMERIKSAAN</th>
-            <th>LAMPIRAN</th>
+            <th style="width: 20%">Pemeriksaan</th>
+            <th>Hasil / Bacaan</th>
+            <th style="width: 30%">Lampiran</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="(hasil, index) in processedResults" :key="hasil.originalIndex || index">
-            <td
-              v-if="hasil.showCategory"
-              :rowspan="hasil.categoryRowspan"
-              class="merged-category align-middle text-center font-weight-bold"
-              style="background-color: #f8f9fa; vertical-align: middle"
-            >
+            <td v-if="hasil.showCategory" :rowspan="hasil.categoryRowspan" class="merged-category">
               <span v-html="hasil.NAMA"></span>
             </td>
             <td><span v-html="hasil.HASIL_BACA"></span></td>
             <td>
-              <Image
-                v-for="(image, index) in hasil.attachment"
-                :key="index"
-                :src="image.link_img"
-                alt="Image"
-                width="250"
-                preview
-              />
+              <div class="attachment-row">
+                <Image
+                  v-for="(image, idx) in hasil.attachment"
+                  :key="idx"
+                  :src="image.link_img"
+                  alt="Lampiran"
+                  width="180"
+                  preview
+                  class="attachment-img"
+                />
+              </div>
             </td>
           </tr>
         </tbody>
@@ -367,7 +456,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import HistoryRadiologiComponent from '@/views/Poliklinik/Penunjang/HistoryRadiologiComponent.vue'
 
 import ScrollPanel from 'primevue/scrollpanel'
@@ -418,6 +507,10 @@ const riwayat_radiologi = ref([])
 const detils_obat = ref([])
 const datafromCopyResep = ref(null)
 
+watch(listObat, (val) => {
+  if (val && recentRadiologi.value.length === 0) getRecentRadiologi()
+})
+
 const searchQuery = ref('')
 const currentDateTime = ref('')
 const progress = ref(null)
@@ -453,7 +546,6 @@ const datalab_pasien = ref(null)
 const catatan_kesan = ref(null)
 
 const getHasil_pemeriksaan_radiologi = async (no_receipt) => {
-  // $url = $this->ws_inv.'index.php/api/sales/get_item_lab_master_detail/'.$request->receipt.'/'.Session::get('id_client'); // Replace this with the API endpoint URL
   try {
     hasilLab.value = true
     loading.value = true
@@ -484,6 +576,43 @@ const getHasil_pemeriksaan_radiologi = async (no_receipt) => {
   } finally {
     loading.value = false
   }
+}
+
+/* ── Sering Diminta (Radiologi) ───────────────────────── */
+const recentRadiologi = ref([])
+const loadingRecent = ref(false)
+
+const getRecentRadiologi = async () => {
+  try {
+    loadingRecent.value = true
+    const url = configStore.apiApotikUrl
+    const response = await axios.post(`${url}/index.php/api/data_referensi/get_recent_obat_poly`, {
+      mode: 'insert',
+      id_client: id_client.value,
+      kode_poli: props.datapasien?.KODERUANGAN || '',
+      kategori: ['RADIOLOGI'],
+      limit: '10',
+    })
+    if (response.data?.code === 200) {
+      recentRadiologi.value = response.data.result || []
+    }
+  } catch (error) {
+    console.error('Gagal memuat sering diminta radiologi:', error)
+  } finally {
+    loadingRecent.value = false
+  }
+}
+
+const addRecentItem = (item) => {
+  addItem({
+    BARCODE: item.KODE || item.BARCODE,
+    CAPTION: item.NAMABARANG || item.NAMA,
+    NAMA: item.NAMABARANG || item.NAMA,
+    SATUAN: item.SATUAN || '',
+    HARGAJUAL: item.HARGA || 0,
+    QUANTITY: 0,
+    QTY: 1,
+  })
 }
 
 // Format specific date to Indonesian format: DD/MM/YYYY HH:MM
@@ -518,8 +647,8 @@ const processedResults = computed(() => {
     categoryItems.forEach((item, index) => {
       results.push({
         ...item,
-        showCategory: index === 0, // Only show category cell on first item
-        categoryRowspan: categoryItems.length, // Number of rows to span
+        showCategory: index === 0,
+        categoryRowspan: categoryItems.length,
       })
     })
   })
@@ -531,7 +660,7 @@ const processedResults = computed(() => {
 const showSuccess = (message = 'Operation successful') => {
   toast.add({
     severity: 'success',
-    summary: 'Success Message',
+    summary: 'Berhasil',
     detail: message,
     life: 3000,
   })
@@ -549,7 +678,7 @@ const showError = (message = 'An error occurred') => {
 const showWarning = (message) => {
   toast.add({
     severity: 'warn',
-    summary: 'Warning',
+    summary: 'Perhatian',
     detail: message,
     life: 4000,
   })
@@ -562,25 +691,25 @@ const confirmRemoveItemObat = (index) => {
 
   confirm.require({
     message: `Anda ingin menghapus item "${namaObat}"?`,
-    header: 'Konfirmasi hapus',
+    header: 'Konfirmasi Hapus',
     icon: 'pi pi-exclamation-triangle',
     rejectLabel: 'Batal',
     acceptLabel: 'Hapus',
-    rejectClass: 'p-button-secondary p-button-outlined round-button2',
-    acceptClass: 'p-button-danger round-button2',
+    rejectClass: 'p-button-secondary p-button-outlined',
+    acceptClass: 'p-button-danger',
     accept: () => removeItem(index),
   })
 }
 
 const ConfirmVoidResep = (RECEIPT_NO, index) => {
   confirm.require({
-    message: `Anda ingin menghapus resep "${RECEIPT_NO}"?`,
-    header: 'Konfirmasi hapus',
+    message: `Anda ingin membatalkan permintaan "${RECEIPT_NO}"?`,
+    header: 'Konfirmasi Batal',
     icon: 'pi pi-exclamation-triangle',
-    rejectLabel: 'Batal',
-    acceptLabel: 'Hapus',
-    rejectClass: 'p-button-secondary p-button-outlined round-button2',
-    acceptClass: 'p-button-danger round-button2',
+    rejectLabel: 'Tidak',
+    acceptLabel: 'Batalkan',
+    rejectClass: 'p-button-secondary p-button-outlined',
+    acceptClass: 'p-button-danger',
     accept: () => RemoveResep(RECEIPT_NO, index),
   })
 }
@@ -645,6 +774,10 @@ const clearAllItems = () => {
 // API functions
 const get_item = async (mode, barcode) => {
   try {
+    if (searchQuery.value.length < 3) {
+      availableObat.value = []
+      return
+    }
     const param = {
       barcode: barcode,
       mode: mode,
@@ -849,10 +982,8 @@ const saveItems = async () => {
 const getDataHistori = async (data) => {
   const plain = data._rawValue || data.value || data
 
-  // Store the actual data (not stringified)
   datafromCopyResep.value = plain
 
-  // Iterate over the data
   datafromCopyResep.value.forEach((item) => {
     console.log(item)
     const setItem = {
@@ -879,232 +1010,609 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.patient-detail-dialog {
-  border-radius: 8px;
-}
-
-.dialog-footer {
+/* ═══════════════════════════════════════════════
+   Layout utama
+═══════════════════════════════════════════════ */
+.radio-wrapper {
   display: flex;
-  justify-content: flex-end;
-  gap: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f8fafc;
+  min-height: 520px;
 }
 
-.patient-name {
-  margin: 0 0 1rem 0;
-  color: brown;
+/* ── Sidebar ─────────────────────────────────── */
+.radio-sidebar {
+  width: 188px;
+  flex-shrink: 0;
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
 }
 
-.patient-details {
+.sidebar-hdr {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f1f5f9;
+}
+.sidebar-hdr-icon {
+  color: #64748b;
+  font-size: 13px;
+}
+.sidebar-hdr-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  flex: 1;
+}
+.sidebar-count {
+  font-size: 10px !important;
+}
+
+.sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px 8px;
+  color: #94a3b8;
+  font-size: 11px;
+  text-align: center;
+}
+.sidebar-empty i {
+  font-size: 22px;
+}
+.sidebar-empty p {
   margin: 0;
 }
 
-.patient-details dt {
-  color: #6b7280;
-  font-size: 12px;
-  font-weight: normal;
+/* Riwayat card */
+.resep-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  padding: 8px 9px;
+  background: #fff;
+  transition: box-shadow 0.15s;
+}
+.resep-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.resep-sent {
+  border-left: 3px solid #22c55e;
+}
+.resep-pending {
+  border-left: 3px solid #f97316;
 }
 
-.patient-details dd {
-  margin: 0 0 1rem 0;
-  font-size: 14px;
+.resep-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.resep-date {
+  font-size: 10px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.resep-time {
+  font-size: 10px;
+  color: #94a3b8;
 }
 
-.panel-footer {
-  border-top: 1px solid #e5e7eb;
-  padding-top: 16px;
-  margin-top: 16px;
+.resep-status-row {
+  margin-bottom: 3px;
+}
+.resep-tag {
+  font-size: 10px !important;
+  padding: 2px 6px !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.resep-sent-time {
+  font-size: 9px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+.resep-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.resep-btn {
+  font-size: 10px !important;
+  padding: 2px 6px !important;
+  height: 24px !important;
+}
+.resep-btn-del {
+  margin-left: auto;
 }
 
-.round-button2 {
-  border-radius: 6px;
-}
-
-.badge-success {
-  background-color: #10b981;
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-/* Panel header styling */
-.panel-header-content {
+/* ── Main ────────────────────────────────────── */
+.radio-main {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  width: 100%;
+  overflow: hidden;
+  background: #fff;
 }
 
-.button-section {
+/* Toolbar */
+.radio-toolbar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+  flex-wrap: wrap;
+  gap: 8px;
 }
-
-.input-section {
-  width: 100%;
-}
-
-.input-group {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-  align-items: center;
-}
-
-.input-field {
+.toolbar-left {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
+}
+.toolbar-icon {
+  color: #64748b;
+  font-size: 14px;
+}
+.toolbar-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+.toolbar-count {
+  font-size: 10px !important;
+}
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
-.input-label {
-  min-width: 60px;
-  font-weight: 500;
-  font-size: 0.875rem;
-  color: #374151;
-  text-align: left;
+/* Klinis bar */
+.klinis-bar {
+  display: flex;
+  gap: 12px;
+  padding: 8px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fafcff;
+  flex-wrap: wrap;
 }
-
-.input-control {
+.klinis-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   flex: 1;
   min-width: 200px;
 }
-
-/* Responsive design */
-@media (max-width: 768px) {
-  .input-group {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-
-  .panel-header-content {
-    gap: 1.5rem;
-  }
+.klinis-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.klinis-input {
+  flex: 1;
+  font-size: 12px !important;
+}
+.required {
+  color: #dc2626;
 }
 
-/* Additional styles for better UX */
-.btn {
-  padding: 4px 8px;
-  border-radius: 4px;
-  border: none;
-  cursor: pointer;
+/* Table */
+.radio-table {
+  flex: 1;
+}
+
+.barcode-text {
+  font-size: 10px;
+  color: #64748b;
+  font-family: monospace;
+  background: #f1f5f9;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.item-cell-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #1e293b;
+}
+.price-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #16a34a;
+}
+
+/* Footer */
+.radio-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.footer-info {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.footer-total-lbl {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+}
+.footer-total-count {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Dialog: Cari Pemeriksaan ────────────────── */
+.radio-dialog-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.radio-search-wrap {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  gap: 6px;
+}
+.search-icon {
+  position: absolute;
+  left: 10px;
+  color: #94a3b8;
+  font-size: 13px;
+  pointer-events: none;
+  z-index: 1;
+}
+.radio-search-input {
+  padding-left: 32px !important;
+  width: 380px;
+  font-size: 13px;
+  height: 36px;
+}
+.radio-search-btn {
+  height: 36px;
+}
+.radio-found-tag {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Table list pemeriksaan */
+:deep(.radio-list-table .p-datatable-thead > tr > th) {
+  background: #eef6ff;
+  color: #3b6fa0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  border-bottom: 2px solid #bfdbfe;
+  padding: 0.5rem 0.75rem;
+}
+:deep(.radio-list-table .p-datatable-tbody > tr) {
+  background: #ffffff;
+}
+:deep(.radio-list-table .p-datatable-tbody > tr:nth-child(even)) {
+  background: #f5f9ff;
+}
+:deep(.radio-list-table .p-datatable-tbody > tr > td) {
+  border-bottom: 1px solid #e8f0fa;
+  padding: 0.35rem 0.75rem;
+  color: #334155;
+}
+:deep(.radio-list-table .p-datatable-tbody > tr:hover > td) {
+  background: #dbeafe !important;
+  transition: background 0.15s;
+}
+:deep(.radio-list-table .p-paginator) {
+  background: #f0f7ff;
+  border-top: 1px solid #bfdbfe;
+  padding: 6px 10px;
+}
+
+.item-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #1e293b;
+}
+.item-qty-badge {
+  font-size: 10px;
+  color: #d97706;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-left: 6px;
+}
+
+/* ── Drawer: Hasil ───────────────────────────── */
+.hasil-drawer-hdr {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.hasil-drawer-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hasil-status-tag {
+  font-size: 12px !important;
+  padding: 4px 10px !important;
+}
+
+.hasil-table-wrap {
+  overflow-x: auto;
+}
+.hasil-table {
+  width: 100%;
+  border-collapse: collapse;
   font-size: 12px;
 }
-
-.btn-danger {
-  background-color: #dc2626;
-  color: white;
+.hasil-table thead tr {
+  background: #eef6ff;
 }
-
-.btn-xs {
-  font-size: 10px;
-  padding: 2px 6px;
+.hasil-table th {
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #3b6fa0;
+  border-bottom: 2px solid #bfdbfe;
 }
-
-.mb-1 {
-  margin-bottom: 0.25rem;
+.hasil-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #e8f0fa;
+  vertical-align: top;
+  color: #334155;
 }
-
-.text-xs {
-  font-size: 0.75rem;
+.hasil-table tbody tr:nth-child(even) {
+  background: #f5f9ff;
 }
-
-.mr-2 {
-  margin-right: 0.5rem;
-}
-
-.ml-1 {
-  margin-left: 0.25rem;
-}
-
-.gap-4 {
-  gap: 1rem;
-}
-
-.gap-2 {
-  gap: 0.5rem;
-}
-
-.flex {
-  display: flex;
-}
-
-.items-center {
-  align-items: center;
-}
-
-.justify-content-between {
-  justify-content: space-between;
-}
-
-.text-center {
-  text-align: center;
-}
-
-.text-right {
-  text-align: right;
-}
-
-.font-semibold {
-  font-weight: 600;
-}
-
-.text-blue-400 {
-  color: #60a5fa;
-}
-
-.text-blue-500 {
-  color: #3b82f6;
-}
-
-.text-gray-600 {
-  color: #4b5563;
-}
-
-.text-green-600 {
-  color: #059669;
-}
-
-.p-4 {
-  padding: 1rem;
-}
-
-.mb-3 {
-  margin-bottom: 0.75rem;
-}
-
-.mt-2 {
-  margin-top: 0.5rem;
-}
-
-.text-4xl {
-  font-size: 2.25rem;
-  line-height: 2.5rem;
-}
-
-.text-2xl {
-  font-size: 1.5rem;
-  line-height: 2rem;
-}
-
-.small-table {
-  font-size: 0.875rem;
+.hasil-table tbody tr:hover td {
+  background: #dbeafe;
 }
 
 .merged-category {
   vertical-align: middle !important;
   text-align: center !important;
-  font-weight: bold !important;
-  background-color: #f8f9fa !important;
+  font-weight: 700;
+  background: #f1f5f9 !important;
+  color: #334155;
 }
 
-/* AdminLTE compatible styling */
-.table-bordered th,
-.table-bordered td {
-  border: 1px solid #dee2e6;
+.attachment-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.attachment-img {
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
 }
 
-.table-striped tbody tr:nth-of-type(odd) {
-  background-color: rgba(0, 0, 0, 0.05);
+/* ── DataTable global ────────────────────────── */
+:deep(.p-datatable .p-datatable-tbody > tr > td) {
+  padding: 0.25rem 0.6rem;
+  font-size: 12px;
+}
+:deep(.p-datatable .p-datatable-thead > tr > th) {
+  padding: 0.45rem 0.6rem;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  background: #f8fafc;
+  color: #475569;
+}
+
+/* ── Empty state ─────────────────────────────── */
+.tbl-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+.tbl-empty i {
+  font-size: 28px;
+}
+.tbl-empty p {
+  margin: 0;
+}
+
+/* ── Misc ────────────────────────────────────── */
+.text-xs {
+  font-size: 10px;
+}
+
+/* ── Responsive ──────────────────────────────── */
+@media (max-width: 768px) {
+  .radio-wrapper {
+    flex-direction: column;
+  }
+  .radio-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+    max-height: 180px;
+  }
+  .sidebar-list {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .resep-card {
+    min-width: 160px;
+  }
+  .klinis-bar {
+    flex-direction: column;
+  }
+  .radio-search-input {
+    width: 240px;
+  }
+}
+
+/* ── Sering Diminta ────────────────────────────────── */
+.radio-recent-section {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+}
+.radio-recent-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.radio-recent-hdr-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.radio-recent-hdr-left .pi-star-fill {
+  color: #f59e0b;
+  font-size: 13px;
+}
+.radio-recent-loading {
+  font-size: 11px;
+  color: #a16207;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.radio-recent-empty {
+  font-size: 12px;
+  color: #a16207;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+}
+.radio-recent-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.radio-recent-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 10px;
+  background: #fff;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  cursor: pointer;
+  min-width: 130px;
+  max-width: 200px;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.radio-recent-chip:hover {
+  background: #fef9c3;
+  border-color: #f59e0b;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+  transform: translateY(-1px);
+}
+.radio-recent-chip:active {
+  transform: translateY(0);
+}
+.radio-recent-chip-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.35;
+  white-space: normal;
+  word-break: break-word;
+}
+.radio-recent-chip-price {
+  font-size: 11px;
+  font-weight: 700;
+  color: #16a34a;
+  margin-top: 2px;
+}
+.radio-recent-chip-per {
+  font-size: 10px;
+  font-weight: 400;
+  color: #64748b;
+}
+.radio-recent-chip-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+.radio-recent-chip-satuan {
+  font-size: 10px;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.radio-recent-chip-count {
+  font-size: 10px;
+  font-weight: 700;
+  color: #d97706;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.radio-recent-chip-count .pi {
+  font-size: 9px;
 }
 </style>

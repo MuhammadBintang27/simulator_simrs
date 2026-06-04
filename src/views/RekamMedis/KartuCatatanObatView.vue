@@ -167,7 +167,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, inject } from 'vue'
 import { useRoute } from 'vue-router'
 import { useConfigStore, useAuthStore } from '@/stores/config'
 import { storeToRefs } from 'pinia'
@@ -189,6 +189,8 @@ const resolvedNama = computed(() => props.dataPasien?.NAMAPASIEN || route.query.
 const resolvedRuangan = computed(
   () => props.dataPasien?.RUANGAN || props.dataPasien?.KAMAR || route.query.ruangan || '',
 )
+
+const reportSectionData = inject('reportSectionData', () => {})
 
 const loading = ref(false)
 const error = ref(null)
@@ -227,6 +229,7 @@ const fetchData = async () => {
     error.value = 'Gagal memuat data: ' + (e.message || '')
   } finally {
     loading.value = false
+    reportSectionData('kartu-obat', data.value.itembarang.length > 0)
   }
 }
 

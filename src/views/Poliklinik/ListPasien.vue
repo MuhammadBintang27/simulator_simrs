@@ -9,7 +9,6 @@
           <h3 style="color: tomato" v-if="namadokterSelected">
             [{{ namadokterSelected?.NAMADOKTER }}] - [{{ namadokterSelected?.POLI }}]
           </h3>
-          <!-- <h3 style="color: cadetblue">Poli : {{ namadokterSelected?.POLI }}</h3> -->
           <p class="hero-description">
             Dashboard ini menyajikan informasi lengkap dan terkini mengenai status seluruh pasien
             yang terdaftar di poliklinik. Anda dapat memantau daftar pasien, status kunjungan, dan
@@ -127,6 +126,69 @@
       </div>
     </div>
 
+    <!-- Kelompok Usia Filter -->
+    <div class="usia-filter-bar" v-if="filteredPasienBase.length > 0">
+      <span class="usia-filter-label"><i class="pi pi-users"></i> Usia :</span>
+      <div class="usia-filter-chips">
+        <div
+          v-for="grup in kelompokUsia"
+          :key="grup.label"
+          class="usia-chip"
+          :class="{
+            'usia-chip-active': filterKelompokUsia?.label === grup.label,
+            'usia-chip-empty': grup.jumlah === 0,
+          }"
+          :style="{
+            borderColor: grup.warna,
+            background: filterKelompokUsia?.label === grup.label ? grup.warna : 'transparent',
+            color: filterKelompokUsia?.label === grup.label ? 'white' : grup.warna,
+          }"
+          @click="toggleFilterUsia(grup)"
+        >
+          <i :class="grup.icon" style="font-size: 0.6rem"></i>
+          <span>{{ grup.label }}</span>
+          <span class="usia-chip-badge">{{ grup.jumlah }}</span>
+
+          <div class="usia-chip-tooltip" :style="{ borderColor: grup.warna }">
+            <div class="usia-chip-tooltip-header" :style="{ background: grup.warna }">
+              <i :class="grup.icon"></i> {{ grup.label }}
+            </div>
+            <div class="usia-chip-tooltip-body">
+              <div class="usia-chip-tooltip-row">
+                <span>Rentang</span>
+                <strong>{{ grup.range }}</strong>
+              </div>
+              <div class="usia-chip-tooltip-row">
+                <span>Jumlah</span>
+                <strong>{{ grup.jumlah }} pasien</strong>
+              </div>
+              <div class="usia-chip-tooltip-row">
+                <span>Proporsi</span>
+                <strong>{{ grup.persen }}%</strong>
+              </div>
+            </div>
+            <div class="usia-chip-tooltip-hint">
+              {{
+                filterKelompokUsia?.label === grup.label
+                  ? 'Klik untuk hapus filter'
+                  : 'Klik untuk filter tabel'
+              }}
+            </div>
+          </div>
+        </div>
+      </div>
+      <Button
+        v-if="filterKelompokUsia"
+        icon="pi pi-times"
+        size="small"
+        text
+        severity="secondary"
+        @click="filterKelompokUsia = null"
+        v-tooltip.top="'Hapus filter usia'"
+        style="width: 1.5rem; height: 1.5rem; padding: 0"
+      />
+    </div>
+
     <!-- DataTable Section -->
     <div class="tabs-section">
       <div class="table-container">
@@ -134,6 +196,16 @@
           <h3 class="table-title">
             <i class="pi pi-list"></i>
             Daftar Pasien ({{ filteredPasien.length }})
+            <Button
+              icon="pi pi-file-excel"
+              @click="exportToExcel"
+              severity="success"
+              size="small"
+              rounded
+              text
+              v-tooltip.top="'Export Excel'"
+              style="width: 1.6rem; height: 1.6rem; padding: 0; font-size: 0.75rem"
+            />
           </h3>
 
           <div class="table-actions">
@@ -161,11 +233,18 @@
             <Button
               icon="pi pi-refresh"
               label="Refresh"
+              class="p-button-outlined"
               @click="fetchData('history10')"
               :loading="loading"
-              class="round-button"
               size="small"
             />
+            <span
+              v-if="lastUpdatedLabel"
+              class="last-updated-label"
+              :title="lastUpdated?.toLocaleString('id-ID')"
+            >
+              <i class="pi pi-clock" style="font-size: 0.75rem"></i> {{ lastUpdatedLabel }}
+            </span>
             <!-- <Button
               icon="fa-solid fa-bell"
               label="Panggil Antrean"
@@ -219,12 +298,19 @@
                     </strong>
                     <!-- <div class="patient-mr">NO MR: {{ slotProps.data.NOMR }}</div> -->
                     <div class="patient-extra" style="color: darkcyan">
-                      <!-- {{ slotProps.data.NAMADOKTER }} -->
                       {{ slotProps.data.USIA_PASIEN.tahun }} Thn,{{
                         slotProps.data.USIA_PASIEN.bulan
                       }}
                       Bln,
                       {{ slotProps.data.USIA_PASIEN.hari }} Hari
+                    </div>
+                    <div
+                      v-if="getWaitingTime(slotProps.data)"
+                      class="waiting-badge"
+                      :class="`waiting-${getWaitingTime(slotProps.data).severity}`"
+                    >
+                      <i class="pi pi-clock" style="font-size: 0.65rem"></i>
+                      Tunggu {{ getWaitingTime(slotProps.data).label }}
                     </div>
                   </div>
                 </div>
@@ -259,7 +345,7 @@
                 <Button
                   icon="fa-solid fa-bullhorn"
                   label=""
-                  @click="panggil_pasien(slotProps.data)"
+                  @click="konfirmasiPanggil(slotProps.data)"
                   :loading="slotProps.data.loading"
                   class="round-button2"
                   size="small"
@@ -332,31 +418,133 @@
       </div>
     </div>
 
+    <!-- Dialog Detail Kelompok Usia -->
     <Dialog
-      v-model:visible="showPanggilanAntrian"
+      v-model:visible="showKelompokUsiaDialog"
       modal
-      header="PANGGILAN ANTRIAN"
+      :header="`${selectedKelompokUsia?.icon ? '' : ''}Pasien ${selectedKelompokUsia?.label} (${pasienKelompokSelected.length})`"
       :style="{ width: '700px' }"
       class="patient-detail-dialog"
     >
-      <div class="row">
-        <div class="col-md-4">
-          <Button
-            class="w-100"
-            icon="pi pi-send"
-            label="Pasien sudah datang kepoli, siap untuk dilayani"
-          />
+      <DataTable
+        :value="pasienKelompokSelected"
+        :paginator="pasienKelompokSelected.length > 10"
+        :rows="10"
+        stripedRows
+        size="small"
+        scrollable
+        scrollHeight="400px"
+      >
+        <Column header="#" style="width: 40px">
+          <template #body="slotProps">
+            <span>{{ slotProps.data.NOMORANTRIAN }}</span>
+          </template>
+        </Column>
+        <Column header="Nama Pasien" style="min-width: 200px">
+          <template #body="slotProps">
+            <div>
+              <strong style="color: #2563eb">{{ slotProps.data.NAMAPASIEN }}</strong>
+              <div style="font-size: 0.75rem; color: #6b7280">{{ slotProps.data.NOMR }}</div>
+            </div>
+          </template>
+        </Column>
+        <Column header="Usia" style="width: 100px">
+          <template #body="slotProps">
+            <span style="font-size: 0.8rem">
+              {{ slotProps.data.USIA_PASIEN?.tahun }} thn
+              {{ slotProps.data.USIA_PASIEN?.bulan }} bln
+            </span>
+          </template>
+        </Column>
+        <Column header="Dokter / Poli" style="min-width: 160px">
+          <template #body="slotProps">
+            <div style="font-size: 0.8rem">
+              <div>{{ slotProps.data.NAMADOKTER }}</div>
+              <div style="color: #6b7280">{{ slotProps.data.POLI }}</div>
+            </div>
+          </template>
+        </Column>
+        <Column header="Cara Bayar" style="width: 110px">
+          <template #body="slotProps">
+            <span style="font-size: 0.8rem">{{ slotProps.data.CARABAYAR }}</span>
+          </template>
+        </Column>
+        <Column header="Tunggu" style="width: 100px">
+          <template #body="slotProps">
+            <span
+              v-if="getWaitingTime(slotProps.data)"
+              class="waiting-badge"
+              :class="`waiting-${getWaitingTime(slotProps.data).severity}`"
+            >
+              {{ getWaitingTime(slotProps.data).label }}
+            </span>
+            <span v-else style="font-size: 0.75rem; color: #94a3b8">—</span>
+          </template>
+        </Column>
+        <Column header="" style="width: 60px">
+          <template #body="slotProps">
+            <Button
+              icon="fa-solid fa-bullhorn"
+              size="small"
+              rounded
+              text
+              @click="konfirmasiPanggil(slotProps.data)"
+              v-tooltip.top="'Panggil'"
+            />
+          </template>
+        </Column>
+      </DataTable>
+      <template #footer>
+        <Button
+          label="Tutup"
+          icon="pi pi-times"
+          severity="secondary"
+          class="p-button-outlined"
+          @click="showKelompokUsiaDialog = false"
+        />
+      </template>
+    </Dialog>
+
+    <Dialog
+      v-model:visible="showPanggilanAntrian"
+      modal
+      header="Konfirmasi Panggilan Antrian"
+      :style="{ width: '420px' }"
+      class="patient-detail-dialog"
+    >
+      <div v-if="pasienToCall" class="konfirmasi-panggil">
+        <div class="konfirmasi-info">
+          <i class="fa-solid fa-bullhorn konfirmasi-icon"></i>
+          <div>
+            <div class="konfirmasi-nama">{{ pasienToCall.NAMAPASIEN }}</div>
+            <div class="konfirmasi-sub">
+              No. MR: {{ pasienToCall.NOMR }} &nbsp;|&nbsp; Antrian:
+              <strong>{{ pasienToCall.NOMORANTRIAN }}</strong>
+            </div>
+            <div class="konfirmasi-sub">
+              Dokter: {{ pasienToCall.NAMADOKTER }} — {{ pasienToCall.POLI }}
+            </div>
+          </div>
         </div>
-        <div class="col-md-4">
-          <Button
-            class="w-100"
-            severity="warn"
-            label="Pasien belum datang kepoli, hanya keperluaan melihat rekam medis"
-          />
-        </div>
+        <p class="konfirmasi-desc">
+          Sistem akan memanggil pasien ini melalui antrian poli. Pastikan data sudah benar sebelum
+          melanjutkan.
+        </p>
       </div>
       <template #footer>
-        <Button label="Panggil Antrian" @click="keformpoli(slotProps.data)" />
+        <Button
+          label="Batal"
+          icon="pi pi-times"
+          severity="secondary"
+          class="p-button-outlined"
+          @click="showPanggilanAntrian = false"
+        />
+        <Button
+          label="Ya, Panggil Sekarang"
+          icon="fa-solid fa-bullhorn"
+          :loading="pasienToCall?.loading"
+          @click="eksekusiPanggil"
+        />
       </template>
     </Dialog>
     <!-- Patient Detail Dialog -->
@@ -893,6 +1081,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
+import * as XLSX from 'xlsx'
 
 import { useRouter } from 'vue-router'
 
@@ -980,8 +1169,61 @@ const startDate = ref(new Date())
 const endDate = ref(new Date())
 const showDetailDialog = ref(false)
 const selectedPatient = ref(null)
+const pasienToCall = ref(null)
+const showKelompokUsiaDialog = ref(false)
+const selectedKelompokUsia = ref(null)
 
 const namadokterSelected = ref(null)
+const lastUpdated = ref(null)
+const lastUpdatedLabel = ref(null)
+let refreshLabelTimer = null
+
+const now = ref(new Date())
+
+const getWaitingTime = (patient) => {
+  if (patient.STATUS != 0) return null
+  const raw = patient.MASUKPOLY
+  if (!raw) return null
+
+  // Coba parse waktu dari string (format HH:MM atau HH:MM:SS)
+  const match = String(raw).match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/)
+  if (!match) return null
+
+  const base = new Date(now.value)
+  base.setHours(parseInt(match[1]), parseInt(match[2]), parseInt(match[3] ?? 0), 0)
+
+  const diffMs = now.value - base
+  if (diffMs < 0) return null
+
+  const diffMin = Math.floor(diffMs / 60000)
+  const jam = Math.floor(diffMin / 60)
+  const menit = diffMin % 60
+
+  return {
+    menit: diffMin,
+    label: jam > 0 ? `${jam} jam ${menit} mnt` : `${menit} mnt`,
+    severity: diffMin < 30 ? 'success' : diffMin < 60 ? 'warn' : 'danger',
+  }
+}
+
+const updateLastUpdatedLabel = () => {
+  if (!lastUpdated.value) {
+    lastUpdatedLabel.value = null
+    return
+  }
+  const diffMs = Date.now() - lastUpdated.value.getTime()
+  const diffSec = Math.floor(diffMs / 1000)
+  const diffMin = Math.floor(diffSec / 60)
+  const diffHour = Math.floor(diffMin / 60)
+
+  if (diffSec < 60) {
+    lastUpdatedLabel.value = 'Baru saja diperbarui'
+  } else if (diffMin < 60) {
+    lastUpdatedLabel.value = `Diperbarui ${diffMin} menit yang lalu`
+  } else {
+    lastUpdatedLabel.value = `Diperbarui ${diffHour} jam yang lalu`
+  }
+}
 
 const showPanggilanAntrian = ref(false)
 
@@ -1003,10 +1245,15 @@ const JenisRawat = ref([
 onMounted(() => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
+  refreshLabelTimer = setInterval(() => {
+    updateLastUpdatedLabel()
+    now.value = new Date()
+  }, 30000)
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', checkMobile)
+  clearInterval(refreshLabelTimer)
 })
 
 // Toast methods
@@ -1191,30 +1438,48 @@ const keformpoli = async (status) => {
   }
 }
 
+const konfirmasiPanggil = (data) => {
+  pasienToCall.value = data
+  showPanggilanAntrian.value = true
+}
+
+const eksekusiPanggil = async () => {
+  if (!pasienToCall.value) return
+  showPanggilanAntrian.value = false
+  await panggil_pasien(pasienToCall.value)
+  pasienToCall.value = null
+}
+
 const panggil_pasien = async (data) => {
   const url = configStore.apiBaseUrl
 
   data.loading = true
 
-  const response = await axios.get(
-    `${url}/index.php/api/antrian/panggil_pasien_poli/${data.NOPENDAFTARAN}/${id_client.value}`,
-  )
+  try {
+    const response = await axios.get(
+      `${url}/index.php/api/antrian/panggil_pasien_poli/${data.NOPENDAFTARAN}/${id_client.value}`,
+    )
 
-  const payload_pusher = {
-    channel: `channel1${id_client.value}`, // matches: "channel1" + ID_CLIENT
-    event: 'panggil_antrian_poli', // event name
-    JENIS_ANTRIAN: response.data.JENIS_ANTRIAN,
-    NOMOR_ANTRIAN: response.data.NOMOR_ANTRIAN,
-    PANGGILAN_POLI: 1,
-    LOKET: 1,
-    POLI: response.data.POLI,
-    NAMA_PASIEN: data.DATA_SINGKAT,
-    NAMA_DOKTER: data.NAMADOKTER, // your data object
-    KODE_DOKTER: data.KDDOKTER, // your data object
+    const payload_pusher = {
+      channel: `channel1${id_client.value}`,
+      event: 'panggil_antrian_poli',
+      JENIS_ANTRIAN: response.data.JENIS_ANTRIAN,
+      NOMOR_ANTRIAN: response.data.NOMOR_ANTRIAN,
+      PANGGILAN_POLI: 1,
+      LOKET: 1,
+      POLI: response.data.POLI,
+      NAMA_PASIEN: data.DATA_SINGKAT,
+      NAMA_DOKTER: data.NAMADOKTER,
+      KODE_DOKTER: data.KDDOKTER,
+    }
+    await axios.post(`${url}/index.php/api/data_referensi/push_to_pusher_v2/`, payload_pusher)
+
+    showSuccess(`Pasien ${data.NAMAPASIEN} berhasil dipanggil`)
+  } catch (error) {
+    showError('Gagal memanggil pasien, coba lagi')
+  } finally {
+    data.loading = false
   }
-  await axios.post(`${url}/index.php/api/data_referensi/push_to_pusher_v2/`, payload_pusher)
-
-  data.loading = false
 }
 
 const SetTaskID_4 = async (data) => {
@@ -1235,10 +1500,9 @@ onMounted(() => {
 })
 
 // Computed properties
-const filteredPasien = computed(() => {
+const filteredPasienBase = computed(() => {
   let filtered = [...listpasienStore.value]
 
-  // Global filter
   if (globalFilter.value) {
     const query = globalFilter.value.toLowerCase()
     filtered = filtered.filter(
@@ -1249,21 +1513,31 @@ const filteredPasien = computed(() => {
         patient.DATA_SINGKAT?.toLowerCase().includes(query),
     )
   } else {
-    // Filter by selected status
-
-    // Filter by Status Layan Selesai
     if (statusLayanSelesai.value) {
       if (statusLayanSelesai.value.kode === 0) {
         filtered = filtered.filter((patient) => patient.STATUS == 0)
-      }
-      if (statusLayanSelesai.value.kode != 0) {
+      } else if (statusLayanSelesai.value.kode === 1) {
         filtered = filtered.filter((patient) => patient.STATUS != 0)
       }
-      // If kode is 2, show all, so no filtering needed
     }
   }
   return filtered
 })
+
+const filterKelompokUsia = ref(null)
+
+const filteredPasien = computed(() => {
+  if (!filterKelompokUsia.value) return filteredPasienBase.value
+  const { min, max } = filterKelompokUsia.value
+  return filteredPasienBase.value.filter((p) => {
+    const thn = p.USIA_PASIEN?.tahun ?? 0
+    return thn >= min && thn < max
+  })
+})
+
+const toggleFilterUsia = (grup) => {
+  filterKelompokUsia.value = filterKelompokUsia.value?.label === grup.label ? null : grup
+}
 
 const searchFromDB = async () => {
   fetchData('history5')
@@ -1287,10 +1561,59 @@ const rataKunjungan = computed(() => {
   return 0
 })
 
+const kelompokUsia = computed(() => {
+  const antri = filteredPasienBase.value
+  const total = antri.length || 1
+
+  const groups = [
+    { label: 'Bayi', range: '0–1 thn', icon: 'pi pi-heart', warna: '#ec4899', min: 0, max: 1 },
+    { label: 'Balita', range: '1–5 thn', icon: 'pi pi-star', warna: '#f97316', min: 1, max: 5 },
+    { label: 'Anak', range: '5–12 thn', icon: 'pi pi-user', warna: '#3b82f6', min: 5, max: 12 },
+    { label: 'Remaja', range: '12–18 thn', icon: 'pi pi-bolt', warna: '#8b5cf6', min: 12, max: 18 },
+    {
+      label: 'Dewasa',
+      range: '18–60 thn',
+      icon: 'pi pi-briefcase',
+      warna: '#10b981',
+      min: 18,
+      max: 60,
+    },
+    {
+      label: 'Lansia',
+      range: '> 60 thn',
+      icon: 'pi pi-clock',
+      warna: '#64748b',
+      min: 60,
+      max: 999,
+    },
+  ]
+
+  return groups.map((g) => {
+    const jumlah = antri.filter((p) => {
+      const thn = p.USIA_PASIEN?.tahun ?? 0
+      return thn >= g.min && thn < g.max
+    }).length
+    return { ...g, jumlah, persen: Math.round((jumlah / total) * 100) }
+  })
+})
+
+const pasienKelompokSelected = computed(() => {
+  if (!selectedKelompokUsia.value) return []
+  const { min, max } = selectedKelompokUsia.value
+  return filteredPasien.value.filter((p) => {
+    const thn = p.USIA_PASIEN?.tahun ?? 0
+    return thn >= min && thn < max
+  })
+})
+
+const bukaKelompokUsia = (grup) => {
+  selectedKelompokUsia.value = grup
+  showKelompokUsiaDialog.value = true
+}
+
 const listRuangPoli = ref([])
 const getdataPoliRuang = async (mode) => {
   try {
-    loading.value = true
     const url = configStore.apiBaseUrl
 
     loading.value = true
@@ -1347,17 +1670,96 @@ const editPatient = (patient) => {
   })
 }
 
+const FILTER_KEY = 'listpasien_poli_filter'
+
+const saveFilters = () => {
+  localStorage.setItem(
+    FILTER_KEY,
+    JSON.stringify({
+      JenisRawatSelected: JenisRawatSelected.value,
+      statusLayanSelesai: statusLayanSelesai.value,
+      selectedStatus: selectedStatus.value,
+      startDate: startDate.value ? startDate.value.toISOString() : null,
+      endDate: endDate.value ? endDate.value.toISOString() : null,
+      globalFilter: globalFilter.value,
+    }),
+  )
+}
+
+const loadFilters = () => {
+  const raw = localStorage.getItem(FILTER_KEY)
+  if (!raw) return
+  try {
+    const saved = JSON.parse(raw)
+    if (saved.JenisRawatSelected) JenisRawatSelected.value = saved.JenisRawatSelected
+    if (saved.statusLayanSelesai) statusLayanSelesai.value = saved.statusLayanSelesai
+    if (saved.selectedStatus) selectedStatus.value = saved.selectedStatus
+    if (saved.startDate) startDate.value = new Date(saved.startDate)
+    if (saved.endDate) endDate.value = new Date(saved.endDate)
+    if (saved.globalFilter) globalFilter.value = saved.globalFilter
+  } catch {
+    localStorage.removeItem(FILTER_KEY)
+  }
+}
+
 const resetFilters = () => {
   globalFilter.value = ''
   selectedStatus.value = null
   startDate.value = new Date()
   endDate.value = new Date()
+  JenisRawatSelected.value = { kode: 0, caption: 'JALAN' }
+  statusLayanSelesai.value = { kode: 0, caption: 'BELUM DILAYANI' }
+  filterKelompokUsia.value = null
+  localStorage.removeItem(FILTER_KEY)
 
   toast.add({
     severity: 'info',
     summary: 'Filter Reset',
     detail: 'Semua filter telah direset',
     life: 2000,
+  })
+}
+
+const exportToExcel = () => {
+  if (!filteredPasien.value.length) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Export',
+      detail: 'Tidak ada data untuk diekspor',
+      life: 3000,
+    })
+    return
+  }
+
+  const rows = filteredPasien.value.map((p) => ({
+    'No Antrian': p.NOMORANTRIAN,
+    'No Pendaftaran': p.NOPENDAFTARAN,
+    'Nama Pasien': p.NAMAPASIEN,
+    'No MR': p.NOMR,
+    'Jenis Kelamin': p.JENISKELAMIN === 'P' ? 'Perempuan' : 'Laki-laki',
+    Usia: `${p.USIA_PASIEN?.tahun ?? 0} Thn ${p.USIA_PASIEN?.bulan ?? 0} Bln`,
+    Dokter: p.NAMADOKTER,
+    Poli: p.POLI,
+    Alamat: p.ALAMAT,
+    'Masuk Poli': p.MASUKPOLY_DISPLAY,
+    'Keluar Poli': p.KELUARPOLY,
+    'Jenis Rawat': p.JENISRAWAT,
+    'Cara Bayar': p.CARABAYAR,
+    Status: p.STTS_PULANG,
+  }))
+
+  const ws = XLSX.utils.json_to_sheet(rows)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Daftar Pasien')
+
+  const fileName = `daftar_pasien_${formatDate(startDate.value)}_${formatDate(endDate.value)}.xlsx`
+  XLSX.writeFile(wb, fileName)
+
+  toast.add({
+    severity: 'success',
+    summary: 'Export',
+    detail: `${rows.length} data berhasil diekspor`,
+    life: 3000,
   })
 }
 
@@ -1392,6 +1794,8 @@ const fetchData = async (mode) => {
       STATUS_KUNJUNGAN: patient.STATUS_KUNJUNGAN || 'terdaftar',
       TANGGAL_DAFTAR: patient.TANGGAL_DAFTAR || new Date().toISOString().split('T')[0],
     }))
+    lastUpdated.value = new Date()
+    updateLastUpdatedLabel()
 
     loading.value = false
   } catch (error) {
@@ -1427,20 +1831,23 @@ const formatDate = (date) => {
 
 // Initialize data
 onMounted(async () => {
+  loadFilters()
+  if (!JenisRawatSelected.value) JenisRawatSelected.value = { kode: 0, caption: 'JALAN' }
   fetchData('history10')
-  JenisRawatSelected.value = {
-    kode: 0,
-    caption: 'JALAN',
-  }
-
-  await getdataPoliRuang(0)
+  await getdataPoliRuang(JenisRawatSelected.value?.kode ?? 0)
 })
 
-watch([startDate, endDate, JenisRawatSelected], () => {
-  if (startDate.value && endDate.value) {
-    //fetchData()
+// Simpan semua perubahan filter ke localStorage
+watch(
+  [startDate, endDate, JenisRawatSelected, selectedStatus, statusLayanSelesai, globalFilter],
+  () => saveFilters(),
+)
 
-    getdataPoliRuang(JenisRawatSelected.value.kode)
+// Panggil ulang API hanya saat filter yang dikirim ke server berubah
+watch([startDate, endDate, JenisRawatSelected, selectedStatus], () => {
+  if (startDate.value && endDate.value) {
+    getdataPoliRuang(JenisRawatSelected.value?.kode ?? 0)
+    fetchData('history10')
   }
 })
 </script>
@@ -1459,24 +1866,98 @@ watch([startDate, endDate, JenisRawatSelected], () => {
 .hero-section {
   background: linear-gradient(135deg, #2d1b69 0%, #11998e 100%);
   border-radius: 8px;
-  padding: 1.25rem 1.5rem;
+  padding: 0.6rem 1rem;
   margin-bottom: 0.75rem;
   color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-shadow: 0 4px 20px rgba(0, 139, 139, 0.25);
+}
+
+.hero-top-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  box-shadow: 0 4px 20px rgba(0, 139, 139, 0.25);
+  gap: 0.5rem;
+}
+
+.hero-usia-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  padding-top: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.hero-usia-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.hero-usia-grid {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.hero-usia-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid;
+  cursor: pointer;
+  transition:
+    transform 0.15s,
+    opacity 0.15s;
+}
+
+.hero-usia-chip:hover:not(.hero-usia-chip-empty) {
+  transform: scale(1.06);
+}
+
+.hero-usia-chip-empty {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.hero-usia-chip-active {
+  outline: 2px solid white;
+  outline-offset: 1px;
+}
+
+.hero-usia-chip-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.hero-usia-chip-count {
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 999px;
+  padding: 0 0.3rem;
+  line-height: 1.3;
 }
 
 .hover-grow {
-  cursor: pointer; /* hand cursor */
+  cursor: pointer;
   transition: transform 0.1s ease-in-out;
 }
 
 .hover-grow:hover {
-  transform: scale(1.1); /* grow 10% on hover */
+  transform: scale(1.1);
 }
 
 .custom-textarea {
@@ -1489,15 +1970,15 @@ watch([startDate, endDate, JenisRawatSelected], () => {
 .hero-content {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 .hero-icon {
   background: rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(10px);
-  border-radius: 16px;
-  padding: 1.5rem;
-  font-size: 2rem;
+  border-radius: 10px;
+  padding: 0.6rem;
+  font-size: 1.2rem;
 }
 
 .hero-text {
@@ -1505,52 +1986,53 @@ watch([startDate, endDate, JenisRawatSelected], () => {
 }
 
 .hero-title {
+  font-size: 1rem;
   font-weight: 700;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.1rem 0;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .hero-description {
-  font-size: 1.1rem;
-  opacity: 0.9;
-  line-height: 1.6;
+  font-size: 0.75rem;
+  opacity: 0.85;
+  line-height: 1.4;
   margin: 0;
 }
 
 .hero-stats {
   display: flex;
-  gap: 2rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
 
 .stat-card {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
   backdrop-filter: blur(15px);
-  border-radius: 4px;
-  padding: 1.5rem;
-  min-width: 180px;
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  min-width: 90px;
   text-align: center;
   border: 1px solid rgba(255, 255, 255, 0.3);
   transition: all 0.3s ease;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 .stat-value {
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.1rem;
 }
 
 .stat-label {
-  font-size: 0.9rem;
+  font-size: 0.65rem;
   opacity: 0.8;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
 }
 
 /* Filter Section */
@@ -1645,10 +2127,11 @@ watch([startDate, endDate, JenisRawatSelected], () => {
 .table-title {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  font-size: 1.25rem;
+  gap: 0.5rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  color: #1e293b;
+  color: #94a3b8;
+  letter-spacing: 0.01em;
 }
 
 .table-actions {
@@ -1656,6 +2139,336 @@ watch([startDate, endDate, JenisRawatSelected], () => {
   gap: 0.75rem;
   align-items: center;
   flex-wrap: wrap;
+}
+
+.last-updated-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 0.3rem 0.65rem;
+  background: transparent;
+  white-space: nowrap;
+  cursor: default;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.last-updated-label:hover {
+  border-color: #9ca3af;
+  color: #374151;
+}
+
+/* Waiting Time Badge */
+.waiting-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  margin-top: 0.2rem;
+  width: fit-content;
+}
+.waiting-success {
+  background: #dcfce7;
+  color: #15803d;
+}
+.waiting-warn {
+  background: #fef9c3;
+  color: #a16207;
+}
+.waiting-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Konfirmasi Panggil Dialog */
+.konfirmasi-panggil {
+  padding: 0.5rem 0;
+}
+
+.konfirmasi-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.konfirmasi-icon {
+  font-size: 1.75rem;
+  color: #0284c7;
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+.konfirmasi-nama {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+}
+
+.konfirmasi-sub {
+  font-size: 0.8rem;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.konfirmasi-desc {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Kelompok Usia Filter Bar */
+.usia-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.usia-filter-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.usia-filter-chips {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.usia-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1.5px solid;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    transform 0.1s;
+  user-select: none;
+}
+
+.usia-chip:not(.usia-chip-empty):hover {
+  transform: scale(1.05);
+}
+
+.usia-chip-empty {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.usia-chip-badge {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 999px;
+  padding: 0 0.3rem;
+  font-size: 0.65rem;
+  line-height: 1.4;
+}
+
+.usia-chip-active .usia-chip-badge {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Custom Tooltip */
+.usia-chip {
+  position: relative;
+}
+
+.usia-chip-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 160px;
+  background: white;
+  border: 1.5px solid;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 999;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.usia-chip:not(.usia-chip-empty):hover .usia-chip-tooltip {
+  display: block;
+}
+
+.usia-chip-tooltip-header {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.4rem 0.6rem;
+}
+
+.usia-chip-tooltip-body {
+  padding: 0.4rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.usia-chip-tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: #374151;
+}
+
+.usia-chip-tooltip-row span {
+  color: #9ca3af;
+}
+
+.usia-chip-tooltip-hint {
+  font-size: 0.65rem;
+  color: #6b7280;
+  text-align: center;
+  padding: 0.25rem 0.6rem 0.4rem;
+  border-top: 1px solid #f1f5f9;
+  font-style: italic;
+}
+
+/* Rangkuman Kelompok Usia */
+.usia-summary-section {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.usia-summary-header {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.usia-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.4rem;
+}
+
+.usia-card {
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 0.35rem 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #fafafa;
+}
+
+.usia-card-icon {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  flex-shrink: 0;
+}
+
+.usia-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.usia-card-count {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.usia-card-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.usia-card-range {
+  font-size: 0.6rem;
+  color: #94a3b8;
+}
+
+.usia-card-bar {
+  height: 3px;
+  background: #f1f5f9;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 0.2rem;
+}
+
+.usia-card-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.usia-card:not(.usia-card-empty) {
+  cursor: pointer;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+}
+
+.usia-card:not(.usia-card-empty):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.usia-card-active {
+  box-shadow: 0 0 0 2px currentColor;
+}
+
+.usia-card-empty {
+  opacity: 0.4;
+  cursor: default;
+}
+
+@media (max-width: 768px) {
+  .usia-summary-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 /* Patient Info Styles */

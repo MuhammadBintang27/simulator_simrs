@@ -962,7 +962,7 @@ onMounted(() => {
   align-items: center;
   gap: 1rem;
   background: linear-gradient(135deg, #1a3a5c 0%, #2563a8 100%);
-  border-radius: 10px;
+  border-radius: 4px;
   padding: 1rem 1.5rem;
   color: #fff;
 }
@@ -986,7 +986,7 @@ onMounted(() => {
   gap: 0;
   padding: 0.75rem 1rem;
   background: #f8f9fa;
-  border-radius: 10px;
+  border-radius: 4px;
   border: 1px solid #e9ecef;
 }
 .phase-step {
@@ -996,7 +996,7 @@ onMounted(() => {
   gap: 0.2rem;
   cursor: pointer;
   padding: 0.4rem 1.5rem;
-  border-radius: 8px;
+  border-radius: 4px;
   transition: background 0.2s;
 }
 .phase-step:hover {
@@ -1024,7 +1024,7 @@ onMounted(() => {
 .step-badge {
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1044,7 +1044,7 @@ onMounted(() => {
 
 /* ====== Cards ====== */
 .checklist-card {
-  border-radius: 10px;
+  border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   background: #fff;
@@ -1160,7 +1160,7 @@ onMounted(() => {
 .action-bar {
   background: #fff;
   border: 1px solid #e9ecef;
-  border-radius: 10px;
+  border-radius: 4px;
   padding: 0.85rem 1.25rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
@@ -1197,7 +1197,7 @@ onMounted(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.4rem 0.75rem;
-  border-radius: 8px;
+  border-radius: 4px;
   font-size: 0.78rem;
   width: 100%;
 }
@@ -1244,7 +1244,7 @@ onMounted(() => {
 
 /* ====== QR Code Section ====== */
 .qr-section {
-  border-radius: 12px;
+  border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
@@ -1276,7 +1276,7 @@ onMounted(() => {
   padding: 0.75rem;
   background: #fff;
   border: 2px solid #e5e7eb;
-  border-radius: 10px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;

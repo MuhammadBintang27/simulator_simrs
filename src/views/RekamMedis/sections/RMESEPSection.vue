@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="sep-wrap">
     <div class="rme-section-title">Surat Eligibilitas Peserta (SEP) BPJS Kesehatan</div>
 
@@ -12,33 +12,54 @@
     </div>
 
     <div v-else class="sep-doc">
-      <!-- Header BPJS -->
+      <!-- ═══ LAYER 1: Header ══════════════════════════════════════════ -->
       <div class="sep-header">
         <div class="sep-logo">
           <img
             src="https://ws-simrs.net/assets/bpjs_icon.png"
             class="sep-logo-img"
             alt="BPJS Kesehatan"
+            crossorigin="anonymous"
           />
         </div>
-
         <div class="sep-title-col">
           <div class="sep-title">SURAT ELIGIBILITAS PESERTA</div>
           <div class="sep-rs-name">{{ company }}</div>
         </div>
+      </div>
 
-        <div class="sep-qr-col">
-          <div class="sep-qr-box">
-            <div class="sep-qr-finder sep-qr-tl"></div>
-            <div class="sep-qr-finder sep-qr-tr"></div>
-            <div class="sep-qr-finder sep-qr-bl"></div>
-            <div class="sep-qr-dots"></div>
-          </div>
-          <div class="sep-qr-label"></div>
+      <!-- ═══ LAYER 2: Status Bar ══════════════════════════════════════ -->
+      <div class="sep-statusbar no-print">
+        <div class="ssb-left">
+          <span class="sep-badge sep-badge-eligible">
+            <i class="pi pi-verified"></i> Eligible
+          </span>
+          <span v-if="isNaikKelas" class="sep-badge sep-badge-naik">
+            <i class="pi pi-arrow-up-right"></i>
+            Naik Kelas &nbsp;<b>{{ kelasHakLabel }}</b
+            >&nbsp;→&nbsp;<b>{{ kelasRawatLabel }}</b>
+          </span>
+          <span v-if="isCOB" class="sep-badge sep-badge-cob">
+            <i class="pi pi-shield"></i> COB Aktif
+          </span>
+          <span v-if="isKecelakaan" class="sep-badge sep-badge-kll">
+            <i class="pi pi-exclamation-triangle"></i> Kecelakaan
+          </span>
+          <span v-if="isSudahPulang" class="sep-badge sep-badge-pulang">
+            <i class="pi pi-sign-out"></i> Sudah Pulang
+          </span>
+        </div>
+        <div class="ssb-right">
+          <span v-if="sepData.JENISPESERTA" class="sep-badge sep-badge-jenis">
+            <i class="pi pi-id-card"></i> {{ sepData.JENISPESERTA }}
+          </span>
+          <span v-if="sepData.JENISPELAYANAN" class="sep-badge sep-badge-rawat">
+            <i class="pi pi-building"></i> {{ sepData.JENISPELAYANAN }}
+          </span>
         </div>
       </div>
 
-      <!-- Body -->
+      <!-- ═══ LAYER 3: Body tabel data ════════════════════════════════ -->
       <div class="sep-body">
         <!-- Left column -->
         <table class="sep-tbl sep-tbl-l">
@@ -207,7 +228,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch, inject } from 'vue'
 import { useConfigStore, useAuthStore } from '@/stores/config'
 import { storeToRefs } from 'pinia'
 import axios from 'axios'
@@ -221,9 +242,27 @@ const configStore = useConfigStore()
 const authStore = useAuthStore()
 const { id_client, company } = storeToRefs(authStore)
 
+const reportSectionData = inject('reportSectionData', () => {})
+
 const loading = ref(false)
 const sepData = ref(null)
 
+// ── Computed: Status Badges ────────────────────────────────────────────
+const isNaikKelas = computed(() => !!sepData.value?.NAIK_KELAS)
+const isCOB = computed(() => !!sepData.value?.COB)
+const isKecelakaan = computed(() => {
+  const ctt = sepData.value?.CTT_KLL
+  return !!ctt && ctt !== '-' && ctt.trim() !== ''
+})
+const isSudahPulang = computed(() => !!sepData.value?.KELUAR)
+
+const kelasHakLabel = computed(() => sepData.value?.HAKKELAS || '-')
+const kelasRawatLabel = computed(() => {
+  const k = sepData.value?.KELASRAWAT
+  return k ? 'Kelas ' + k : '-'
+})
+
+// ── Format helpers ─────────────────────────────────────────────────────
 const fmtDate = (d) => {
   if (!d) return '-'
   const parts = String(d).split('-')
@@ -239,6 +278,7 @@ const fmtKeluar = (dt) => {
   return `${parts[2]}/${parts[1]}/${parts[0]} ${timePart}`
 }
 
+// ── Fetch ──────────────────────────────────────────────────────────────
 const fetchData = async () => {
   const noregVal = props.noreg
   const idClientVal = id_client.value
@@ -259,10 +299,10 @@ const fetchData = async () => {
     sepData.value = null
   } finally {
     loading.value = false
+    reportSectionData('sep', !!sepData.value)
   }
 }
 
-// Tunggu noreg, id_client, DAN dataPasien semuanya tersedia baru fetch
 watch(
   [() => props.noreg, id_client, () => props.dataPasien],
   ([noreg, idClient, dataPasien]) => {
@@ -273,32 +313,22 @@ watch(
 </script>
 
 <style scoped>
-/* Wrapper */
+/* ── Wrapper ─────────────────────────────────────────────────────────── */
 .sep-wrap {
   font-size: 0px;
 }
-
-/* Document card */
 .sep-doc {
-  border-radius: 4px;
   overflow: hidden;
-  margin-top: 0px;
 }
 
-/* Header */
+/* ── LAYER 1: Header ─────────────────────────────────────────────────── */
 .sep-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
   padding: 10px 16px;
   background: #fff;
-  border-bottom: 3px solid #2b2b2b;
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
 }
-
-/* BPJS Logo */
 .sep-logo {
   display: flex;
   flex-direction: column;
@@ -312,15 +342,6 @@ watch(
   object-fit: contain;
   display: block;
 }
-.sep-logo-tagline {
-  font-size: 7px;
-  color: #555;
-  text-align: center;
-  max-width: 80px;
-  line-height: 1.3;
-}
-
-/* Title center */
 .sep-title-col {
   flex: 1;
   text-align: center;
@@ -329,7 +350,6 @@ watch(
   font-size: 16px;
   font-weight: 900;
   letter-spacing: 0.5px;
-  color: #007d3a;
   text-transform: uppercase;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
@@ -341,97 +361,87 @@ watch(
   margin-top: 3px;
 }
 
-/* QR placeholder */
-
-.sep-qr-box {
-  width: 64px;
-  height: 64px;
-  border: 2px solid #222;
-  position: relative;
-  background: #fff;
-  overflow: hidden;
+/* ── LAYER 2: Status Bar ─────────────────────────────────────────────── */
+.sep-statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 7px 14px;
+  background: #f4faf6;
+  border-top: 1px solid #c6e0cc;
+  border-bottom: 1px solid #c6e0cc;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+.ssb-left,
+.ssb-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.sep-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
-.sep-qr-finder {
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  border: 3px solid #222;
-  background: #fff;
-  box-sizing: border-box;
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
+.sep-badge-eligible {
+  background: #e6f4ec;
+  color: #1a6e35;
+  border: 1px solid #a8d8b6;
 }
-.sep-qr-tl {
-  top: 3px;
-  left: 3px;
+.sep-badge-naik {
+  background: #fff3e0;
+  color: #b75c00;
+  border: 1px solid #ffcc80;
 }
-.sep-qr-tr {
-  top: 3px;
-  right: 3px;
+.sep-badge-cob {
+  background: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
 }
-.sep-qr-bl {
-  bottom: 3px;
-  left: 3px;
+.sep-badge-kll {
+  background: #fdecea;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
 }
-.sep-qr-dots {
-  position: absolute;
-  top: 22px;
-  left: 22px;
-  right: 3px;
-  bottom: 22px;
-  background-image:
-    linear-gradient(45deg, #333 25%, transparent 25%),
-    linear-gradient(-45deg, #333 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #333 75%),
-    linear-gradient(-45deg, transparent 75%, #333 75%);
-  background-size: 5px 5px;
-  background-position:
-    0 0,
-    0 2.5px,
-    2.5px -2.5px,
-    -2.5px 0;
-  opacity: 0.4;
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
+.sep-badge-pulang {
+  background: #f3e5f5;
+  color: #6a1b9a;
+  border: 1px solid #ce93d8;
 }
-.sep-qr-label {
-  font-size: 7px;
-  font-family: 'Courier New', monospace;
-  color: #555;
-  text-align: center;
-  word-break: break-all;
-  max-width: 72px;
+.sep-badge-jenis {
+  background: #f5f5f5;
+  color: #444;
+  border: 1px solid #ddd;
 }
-
-/* Green stripe */
-.sep-stripe {
-  height: 4px;
-  background: linear-gradient(90deg, #007d3a 0%, #00b86e 60%, #80ddb0 100%);
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
+.sep-badge-rawat {
+  background: #f5f5f5;
+  color: #444;
+  border: 1px solid #ddd;
 }
 
-/* Body */
+/* ── LAYER 3: Body tabel ─────────────────────────────────────────────── */
 .sep-body {
   display: flex;
-  padding: 10px 16px 8px;
 }
 .sep-col-div {
   width: 1px;
   background: #c0d8c0;
   margin: 0 14px;
   flex-shrink: 0;
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
 }
 .sep-tbl {
   border-collapse: collapse;
-  flex: 1;
-}
-.sep-tbl-r {
-  flex: 0.72;
 }
 .col-label {
   width: 108px;
@@ -439,31 +449,23 @@ watch(
 .col-sep-c {
   width: 12px;
 }
-
 .sl {
   color: #444;
   white-space: nowrap;
-  padding: 2.5px 4px 2.5px 0;
   vertical-align: top;
-  font-size: 11px;
+  font-size: 12px;
 }
 .ss {
   color: #777;
-  padding: 2.5px 2px;
   vertical-align: top;
 }
 .sv {
   color: #111;
-  padding: 2.5px 0 2.5px 4px;
   vertical-align: top;
-  font-size: 11px;
+  font-size: 12px;
 }
 .sv-bold {
   font-weight: 700;
-}
-.mono {
-  font-family: 'Courier New', monospace;
-  font-size: 10.5px;
 }
 .sep-norm-tag {
   font-size: 10px;
@@ -484,7 +486,7 @@ watch(
   margin-top: 1px;
 }
 
-/* Footer */
+/* ── Footer ──────────────────────────────────────────────────────────── */
 .sep-footer {
   display: flex;
   gap: 20px;

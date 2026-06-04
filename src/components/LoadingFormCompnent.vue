@@ -9,7 +9,7 @@
 
   <!-- <div v-if="isLoading" class="loading-overlay">
     <div class="loader-container">
-      
+
       <img src="@/assets/loading2.gif" alt="Loading..." class="loading-image" />
       <p v-if="message" class="loading-message">{{ message }}</p>
     </div>
@@ -38,7 +38,7 @@ defineProps({
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(255, 255, 255, 0.4);
+  background-color: rgba(255, 255, 255, 0.2);
   display: flex;
   justify-content: center;
   align-items: center;

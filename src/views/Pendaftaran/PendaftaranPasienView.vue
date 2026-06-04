@@ -146,8 +146,37 @@
       </div>
 
       <div class="col-md-9">
+        <Transition name="status-banner">
+          <div
+            v-if="
+              !bannerDismissed &&
+              peserta.nama &&
+              peserta.statusPeserta?.keterangan &&
+              peserta.statusPeserta.keterangan !== 'AKTIF'
+            "
+            class="status-nonaktif-banner"
+          >
+            <div class="status-banner-icon">
+              <i class="pi pi-exclamation-triangle"></i>
+            </div>
+            <div class="status-banner-body">
+              <strong>Peserta Tidak Aktif</strong>
+              <span>
+                Status BPJS <strong>{{ peserta.nama }}</strong> adalah
+                <strong>{{ peserta.statusPeserta?.keterangan }}</strong
+                >. Pastikan cara bayar sudah sesuai sebelum melanjutkan pendaftaran.
+              </span>
+            </div>
+            <button class="status-banner-dismiss" @click="bannerDismissed = true" title="Tutup">
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
+        </Transition>
+
         <FormPendaftaranComponent
           @fungsiInduk="CallDialogPendaftarn"
+          @restorePatient="restorePatientFromDraft"
+          @clearPatient="clearPatientData"
           :os="peserta"
           ref="GetCaraBayarChild"
         />
@@ -274,9 +303,9 @@
                 <Button
                   label="Riwayat BPJS"
                   text
-                  icon="pi pi-arrow-"
+                  icon="pi pi-history"
                   iconPos="right"
-                  @click="showDialogPendaftaran = false"
+                  @click="riwayatBPJSRef.open()"
                   class="p-button-sm flex-fill round-button2"
                 />
               </div>
@@ -287,126 +316,149 @@
         <!-- Tab Data Pasien & Riwayat -->
         <div
           class="card mt-4 elevation-0"
-          style="border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08)"
+          style="border-radius: 4px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); overflow: hidden"
         >
           <div
-            class="p-4 rounded position-relative overflow-hidden"
-            style="min-height: 200px; background: linear-gradient(135deg, #1e293b 0%, #334155 100%)"
+            class="position-relative overflow-hidden"
+            style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%)"
           >
-            <ScrollPanel style="width: 100%; height: 250px">
-              <div class="text-white d-flex align-items-center justify-content-center h-40">
-                <table class="table table-sm">
-                  <tbody>
-                    <!-- Personal Information -->
-                    <tr>
-                      <th colspan="2" class="text-center">
-                        <strong>INFORMASI PRIBADI</strong>
-                      </th>
-                    </tr>
-                    <tr>
-                      <td class="font-weight-bold" style="width: 30%">Nomor Kartu</td>
-                      <td>{{ peserta.noKartu || '-' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="font-weight-bold">NIK</td>
-                      <td>{{ peserta?.nik || '-' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="font-weight-bold">Nama</td>
-                      <td>{{ peserta?.nama || '-' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="font-weight-bold">Jenis Kelamin</td>
-                      <td>{{ peserta?.sex || '-' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="font-weight-bold">Tanggal Lahir</td>
-                      <td>{{ peserta?.tglLahir || '-' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="font-weight-bold">Umur</td>
-                      <td>{{ peserta?.umur?.umurSekarang || '-' }}</td>
-                    </tr>
+            <!-- Empty state -->
+            <div v-if="!peserta.nama" class="pd-empty-state">
+              <i class="pi pi-id-card" style="font-size: 1.8rem; opacity: 0.3"></i>
+              <span>Belum ada data peserta</span>
+            </div>
 
-                    <!-- Medical Record -->
-                    <tr>
-                      <th colspan="2" class="text-center"><strong>REKAM MEDIS</strong></th>
-                    </tr>
-                    <tr>
-                      <td class="font-weight-bold">Nomor MR</td>
-                      <td>{{ peserta?.mr?.noMR || '-' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="font-weight-bold">No. Telepon</td>
-                      <td>{{ peserta?.mr?.noTelepon || '-' }}</td>
-                    </tr>
-
-                    <!-- Insurance Information -->
-                    <tr>
-                      <th colspan="2" class="text-center">
-                        <strong>INFORMASI KEPESERTAAN</strong>
-                      </th>
-                    </tr>
-                    <tr>
-                      <td class="font-weight-bold">Status Peserta</td>
-                      <td style="font-size: small">
-                        {{ peserta?.statusPeserta?.keterangan || '-' }}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td class="font-weight-bold">Jenis Peserta</td>
-                      <td>{{ peserta?.jenisPeserta?.keterangan || '-' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="font-weight-bold">Hak Kelas</td>
-                      <td>{{ peserta?.hakKelas?.keterangan || '-' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="font-weight-bold">Tanggal TMT</td>
-                      <td>{{ peserta?.tglTMT || '-' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="font-weight-bold">Tanggal TAT</td>
-                      <td>{{ peserta?.tglTAT || '-' }}</td>
-                    </tr>
-
-                    <!-- Provider Information -->
-                    <tr>
-                      <th colspan="2" class="text-center">
-                        <strong>INFORMASI PROVIDER</strong>
-                      </th>
-                    </tr>
-                    <tr>
-                      <td class="font-weight-bold">Kode Provider</td>
-                      <td>{{ peserta?.provUmum?.kdProvider || '-' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="font-weight-bold">Nama Provider</td>
-                      <td>{{ peserta?.provUmum?.nmProvider || '-' }}</td>
-                    </tr>
-
-                    <!-- Additional Information -->
-                    <tr v-if="peserta?.informasi || peserta?.cob">
-                      <th colspan="2" class="text-center">
-                        <strong>INFORMASI TAMBAHAN</strong>
-                      </th>
-                    </tr>
-                    <tr v-if="peserta?.informasi?.noSKTM">
-                      <td class="font-weight-bold">No. SKTM</td>
-                      <td>{{ peserta?.informasi?.noSKTM }}</td>
-                    </tr>
-                    <tr v-if="peserta?.informasi?.prolanisPRB">
-                      <td class="font-weight-bold">Prolanis/PRB</td>
-                      <td>{{ peserta?.informasi?.prolanisPRB }}</td>
-                    </tr>
-                    <tr v-if="peserta?.cob?.nmAsuransi">
-                      <td class="font-weight-bold">COB - Asuransi</td>
-                      <td>{{ peserta?.cob?.nmAsuransi }}</td>
-                    </tr>
-                  </tbody>
-                </table>
+            <!-- Loaded state -->
+            <template v-else>
+              <!-- Key metrics bar -->
+              <div class="pd-metrics-bar">
+                <div class="pd-metric">
+                  <span class="pd-metric-lbl">No. Kartu BPJS</span>
+                  <span class="pd-metric-val pd-mono">{{ peserta.noKartu || '-' }}</span>
+                </div>
+                <div class="pd-metric-divider"></div>
+                <div class="pd-metric">
+                  <span class="pd-metric-lbl">Status Peserta</span>
+                  <span
+                    class="pd-status-badge"
+                    :class="
+                      peserta.statusPeserta?.keterangan === 'AKTIF'
+                        ? 'pd-badge-aktif'
+                        : 'pd-badge-nonaktif'
+                    "
+                  >
+                    <i
+                      class="pi"
+                      :class="
+                        peserta.statusPeserta?.keterangan === 'AKTIF'
+                          ? 'pi-check-circle'
+                          : 'pi-times-circle'
+                      "
+                    ></i>
+                    {{ peserta.statusPeserta?.keterangan || '-' }}
+                  </span>
+                </div>
+                <div class="pd-metric-divider"></div>
+                <div class="pd-metric">
+                  <span class="pd-metric-lbl">Hak Kelas</span>
+                  <span class="pd-metric-val">{{ peserta.hakKelas?.keterangan || '-' }}</span>
+                </div>
+                <div class="pd-metric-divider"></div>
+                <div class="pd-metric">
+                  <span class="pd-metric-lbl">Jenis Peserta</span>
+                  <span class="pd-metric-val">{{ peserta.jenisPeserta?.keterangan || '-' }}</span>
+                </div>
               </div>
-            </ScrollPanel>
+
+              <!-- Info sections grid -->
+              <div class="pd-sections">
+                <!-- Pribadi & Rekam Medis -->
+                <div class="pd-section">
+                  <div class="pd-section-title">
+                    <i class="pi pi-user"></i> Pribadi & Rekam Medis
+                  </div>
+                  <div class="pd-grid">
+                    <div class="pd-item pd-item--full">
+                      <span class="pd-lbl">Nama</span>
+                      <span
+                        class="pd-val"
+                        style="font-weight: 700; color: rgba(255, 255, 255, 0.95)"
+                        >{{ peserta.nama || '-' }}</span
+                      >
+                    </div>
+                    <div class="pd-item">
+                      <span class="pd-lbl">NIK</span>
+                      <span class="pd-val pd-mono">{{ peserta.nik || '-' }}</span>
+                    </div>
+                    <div class="pd-item">
+                      <span class="pd-lbl">Jenis Kelamin</span>
+                      <span class="pd-val">{{ peserta.sex || '-' }}</span>
+                    </div>
+                    <div class="pd-item">
+                      <span class="pd-lbl">Tanggal Lahir</span>
+                      <span class="pd-val">{{ peserta.tglLahir || '-' }}</span>
+                    </div>
+                    <div class="pd-item">
+                      <span class="pd-lbl">Umur</span>
+                      <span class="pd-val">{{ peserta.umur?.umurSekarang || '-' }}</span>
+                    </div>
+                    <div class="pd-item">
+                      <span class="pd-lbl">No. MR</span>
+                      <span class="pd-val pd-mono">{{ peserta.mr?.noMR || '-' }}</span>
+                    </div>
+                    <div class="pd-item">
+                      <span class="pd-lbl">No. Telepon</span>
+                      <span class="pd-val">{{ peserta.mr?.noTelepon || '-' }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Kepesertaan & Provider -->
+                <div class="pd-section">
+                  <div class="pd-section-title">
+                    <i class="pi pi-id-card"></i> Kepesertaan & Provider
+                  </div>
+                  <div class="pd-grid">
+                    <div class="pd-item">
+                      <span class="pd-lbl">TMT</span>
+                      <span class="pd-val">{{ peserta.tglTMT || '-' }}</span>
+                    </div>
+                    <div class="pd-item">
+                      <span class="pd-lbl">TAT</span>
+                      <span class="pd-val">{{ peserta.tglTAT || '-' }}</span>
+                    </div>
+                    <div class="pd-item pd-item--full">
+                      <span class="pd-lbl">Kode Provider</span>
+                      <span class="pd-val pd-mono">{{ peserta.provUmum?.kdProvider || '-' }}</span>
+                    </div>
+                    <div class="pd-item pd-item--full">
+                      <span class="pd-lbl">Nama Provider</span>
+                      <span class="pd-val">{{ peserta.provUmum?.nmProvider || '-' }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Additional chips -->
+              <div
+                v-if="
+                  peserta.informasi?.noSKTM ||
+                  peserta.informasi?.prolanisPRB ||
+                  peserta.cob?.nmAsuransi
+                "
+                class="pd-chips"
+              >
+                <span v-if="peserta.informasi?.noSKTM" class="pd-chip pd-chip--yellow">
+                  <i class="pi pi-file-text"></i> SKTM: {{ peserta.informasi.noSKTM }}
+                </span>
+                <span v-if="peserta.informasi?.prolanisPRB" class="pd-chip pd-chip--blue">
+                  <i class="pi pi-heart"></i> {{ peserta.informasi.prolanisPRB }}
+                </span>
+                <span v-if="peserta.cob?.nmAsuransi" class="pd-chip pd-chip--purple">
+                  <i class="pi pi-building"></i> COB: {{ peserta.cob.nmAsuransi }}
+                </span>
+              </div>
+            </template>
           </div>
         </div>
 
@@ -443,6 +495,8 @@
     <FormInputPasienComponent :os="peserta" :mode="mode_proses_data" :norm="norm" ref="childRef" />
 
     <ListPasienComponent ref="showPatientDialog" />
+
+    <RiwayatBPJSComponent :noKartu="peserta.noKartu" :view-only="true" ref="riwayatBPJSRef" />
   </div>
   <Toast />
 </template>
@@ -450,7 +504,6 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import DatePicker from 'primevue/datepicker'
-import ScrollPanel from 'primevue/scrollpanel'
 import TabView from 'primevue/tabview'
 import TabPanel from 'primevue/tabpanel'
 import InputText from 'primevue/inputtext'
@@ -466,6 +519,7 @@ import { useToast } from 'primevue/usetoast'
 import FormPendaftaranComponent from '@/views/Pendaftaran/FormPendaftaranComponent.vue'
 import FormInputPasienComponent from '@/views/Pendaftaran/FormInputPasienComponent.vue'
 import ListPasienComponent from '@/views/Pendaftaran/ListPasienComponent.vue'
+import RiwayatBPJSComponent from '@/views/Pendaftaran/RiwayatBPJSComponent.vue'
 
 const configStore = useConfigStore()
 const authStore = useAuthStore()
@@ -495,6 +549,7 @@ const function_GetCaraBayarChild = async () => {
   return GetCaraBayarChild.value.carabayarSelected.KODE
 }
 const showPatientDialog = ref(null)
+const riwayatBPJSRef = ref(null)
 const openPatientDialog = () => {
   showPatientDialog.value.showDialogInputPasien()
 }
@@ -525,6 +580,14 @@ const peserta = ref({
   informasi: { dinsos: null, prolanisPRB: null, noSKTM: null, eSEP: null },
   cob: { noAsuransi: null, nmAsuransi: null, tglTMT: null, tglTAT: null },
 })
+
+const bannerDismissed = ref(false)
+watch(
+  () => peserta.value.nama,
+  () => {
+    bannerDismissed.value = false
+  },
+)
 
 const getGenderText = (sex) => (sex === 'P' ? 'Perempuan' : sex === 'L' ? 'Laki-laki' : '-')
 
@@ -720,6 +783,33 @@ const showWarning = (message) => {
 
 const CallDialogPendaftarn = async () => {
   showDialogPendaftaran.value = true
+}
+
+const restorePatientFromDraft = (patientData) => {
+  peserta.value = patientData
+}
+
+const clearPatientData = () => {
+  peserta.value = {
+    noKartu: '',
+    nik: '',
+    nama: '',
+    pisa: '',
+    sex: '',
+    mr: { noMR: '', noTelepon: null },
+    tglLahir: '',
+    tglCetakKartu: '',
+    tglTAT: '',
+    tglTMT: '',
+    statusPeserta: { kode: '', keterangan: '' },
+    provUmum: { kdProvider: '', nmProvider: '' },
+    jenisPeserta: { kode: '', keterangan: '' },
+    hakKelas: { kode: '', keterangan: '' },
+    umur: { umurSekarang: '', umurSaatPelayanan: '' },
+    informasi: { dinsos: null, prolanisPRB: null, noSKTM: null, eSEP: null },
+    cob: { noAsuransi: null, nmAsuransi: null, tglTMT: null, tglTAT: null },
+  }
+  bannerDismissed.value = false
 }
 
 onMounted(() => {
@@ -946,5 +1036,263 @@ onMounted(() => {
 .table-secondary th {
   background-color: #f3f4f6 !important;
   color: #374151;
+}
+
+.status-nonaktif-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: #fff1f2;
+  border: 1.5px solid #fca5a5;
+  border-left: 5px solid #dc2626;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.1);
+}
+.status-banner-icon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  background: #dc2626;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  animation: banner-pulse 2s ease-in-out infinite;
+}
+@keyframes banner-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(220, 38, 38, 0);
+  }
+}
+.status-banner-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.82rem;
+  color: #991b1b;
+}
+.status-banner-body strong:first-child {
+  font-size: 0.88rem;
+  color: #7f1d1d;
+}
+.status-banner-dismiss {
+  flex-shrink: 0;
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  line-height: 1;
+  transition: background 0.15s;
+}
+.status-banner-dismiss:hover {
+  background: #fee2e2;
+}
+.status-banner-enter-active,
+.status-banner-leave-active {
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+.status-banner-enter-from,
+.status-banner-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+/* ── Peserta Detail Panel ── */
+.pd-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1rem;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 12px;
+}
+
+.pd-metrics-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-wrap: wrap;
+}
+
+.pd-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pd-metric-divider {
+  width: 1px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+}
+
+.pd-metric-lbl {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pd-metric-val {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.88);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pd-mono {
+  font-family: 'Courier New', monospace;
+  font-size: 11px !important;
+  letter-spacing: 0.02em;
+}
+
+.pd-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  width: fit-content;
+}
+
+.pd-badge-aktif {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.pd-badge-nonaktif {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.pd-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.pd-section {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  padding: 0;
+}
+
+.pd-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 8px 12px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pd-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 6px;
+  gap: 2px;
+}
+
+.pd-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  transition: background 0.12s;
+}
+
+.pd-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.pd-item--full {
+  grid-column: 1 / -1;
+}
+
+.pd-lbl {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.38);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.pd-val {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.82);
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.pd-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 14px 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pd-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.pd-chip--yellow {
+  background: rgba(234, 179, 8, 0.18);
+  color: #fde68a;
+  border: 1px solid rgba(234, 179, 8, 0.28);
+}
+
+.pd-chip--blue {
+  background: rgba(59, 130, 246, 0.18);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.28);
+}
+
+.pd-chip--purple {
+  background: rgba(168, 85, 247, 0.18);
+  color: #d8b4fe;
+  border: 1px solid rgba(168, 85, 247, 0.28);
 }
 </style>

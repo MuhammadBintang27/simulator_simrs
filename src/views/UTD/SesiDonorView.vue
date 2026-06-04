@@ -189,8 +189,8 @@
         </Panel>
       </div>
 
-      <!-- Kolom kanan: form sesi donor -->
-      <div class="col-md-10">
+      <!-- Kolom tengah: form sesi donor -->
+      <div class="col-md-7">
         <Transition name="sesi-slide">
           <Panel v-if="showSesiForm" class="donor-form-panel">
             <template #header>
@@ -202,9 +202,8 @@
               </span>
             </template>
 
-            <!-- Baris 1: Tanggal Donor + Jenis Donor + Kategori Pendonor -->
-            <div class="row">
-              <div class="col-md-3">
+            <div class="sesi-form-stack">
+              <div class="sesi-field">
                 <label>Tanggal Donor <span class="req">*</span></label>
                 <DatePicker
                   v-model="sesiForm.tgl_donor"
@@ -218,7 +217,8 @@
                   sesiErrors.tgl_donor
                 }}</small>
               </div>
-              <div class="col-md-5">
+
+              <div class="sesi-field">
                 <label>Jenis Donor <span class="req">*</span></label>
                 <Select
                   v-model="sesiForm.jenis_donor"
@@ -233,32 +233,31 @@
                   sesiErrors.jenis_donor
                 }}</small>
               </div>
-              <div class="col-md-4">
+
+              <div class="sesi-field">
                 <label style="color: darkblue">Kategori Pendonor <span class="req">*</span></label>
-                <div class="kelayakan-opts mt-2">
-                  <button
+                <div class="kategori-radio-opts mt-2">
+                  <div
                     v-for="opt in kategoriDonorOptions"
                     :key="opt.value"
-                    :class="[
-                      'kelayakan-btn',
-                      { active: sesiForm.kategori_donor === opt.value },
-                      'kd-' + opt.cls,
-                    ]"
-                    @click="sesiForm.kategori_donor = opt.value"
-                    type="button"
+                    class="kategori-radio-item"
                   >
-                    <i :class="opt.icon + ' me-1'"></i>{{ opt.label }}
-                  </button>
+                    <RadioButton
+                      v-model="sesiForm.kategori_donor"
+                      :inputId="'kat_' + opt.value"
+                      :value="opt.value"
+                    />
+                    <label :for="'kat_' + opt.value" class="kategori-radio-label">
+                      <i :class="opt.icon + ' me-1'"></i>{{ opt.label }}
+                    </label>
+                  </div>
                 </div>
                 <small v-if="sesiErrors.kategori_donor" class="p-error">{{
                   sesiErrors.kategori_donor
                 }}</small>
               </div>
-            </div>
 
-            <!-- Baris 2: Tanda Vital -->
-            <div class="row mt-4">
-              <div class="col-md-3">
+              <div class="sesi-field">
                 <label>Berat Badan <span class="req">*</span></label>
                 <InputGroup>
                   <InputNumber
@@ -275,7 +274,8 @@
                   sesiErrors.berat_badan
                 }}</small>
               </div>
-              <div class="col-md-3">
+
+              <div class="sesi-field">
                 <label>Tekanan Darah <span class="req">*</span></label>
                 <InputGroup>
                   <InputText
@@ -290,7 +290,8 @@
                   sesiErrors.tekanan_darah
                 }}</small>
               </div>
-              <div class="col-md-3">
+
+              <div class="sesi-field">
                 <label>Hemoglobin <span class="req">*</span></label>
                 <InputGroup>
                   <InputNumber
@@ -307,7 +308,8 @@
                   sesiErrors.hemoglobin
                 }}</small>
               </div>
-              <div class="col-md-3">
+
+              <div class="sesi-field">
                 <label>Suhu Tubuh <span class="req">*</span></label>
                 <InputGroup>
                   <InputNumber
@@ -324,11 +326,8 @@
                   sesiErrors.suhu_tubuh
                 }}</small>
               </div>
-            </div>
 
-            <!-- Baris 3: Nadi + Riwayat Penyakit -->
-            <div class="row mt-4">
-              <div class="col-md-3">
+              <div class="sesi-field">
                 <label>Denyut Nadi <span class="req">*</span></label>
                 <InputGroup>
                   <InputNumber
@@ -343,7 +342,8 @@
                 </InputGroup>
                 <small v-if="sesiErrors.nadi" class="p-error">{{ sesiErrors.nadi }}</small>
               </div>
-              <div class="col-md-9">
+
+              <div class="sesi-field">
                 <label>Riwayat Penyakit</label>
                 <Textarea
                   v-model="sesiForm.riwayat_penyakit"
@@ -354,52 +354,6 @@
                 />
               </div>
             </div>
-
-            <!-- Hasil Screening -->
-            <div class="row mt-5">
-              <div class="col-md-12">
-                <label>Hasil Screening <span class="req">*</span></label>
-                <div class="kelayakan-opts mt-2">
-                  <button
-                    v-for="opt in hasilScreeningOptions"
-                    :key="opt.value"
-                    :class="[
-                      'kelayakan-btn',
-                      { active: sesiForm.hasil_screening === opt.value },
-                      'kl-' + opt.cls,
-                    ]"
-                    @click="onHasilScreeningChange(opt.value)"
-                    type="button"
-                  >
-                    <i :class="opt.icon + ' me-1'"></i>{{ opt.label }}
-                  </button>
-                </div>
-                <small v-if="sesiErrors.hasil_screening" class="p-error">{{
-                  sesiErrors.hasil_screening
-                }}</small>
-              </div>
-            </div>
-
-            <!-- Alasan Tolak (kondisional) -->
-            <Transition name="sesi-slide">
-              <div v-if="sesiForm.hasil_screening === 3" class="row mt-3">
-                <div class="col-md-6">
-                  <label>Alasan Penolakan <span class="req">*</span></label>
-                  <Select
-                    v-model="sesiForm.alasan_tolak"
-                    :options="alasanOptions"
-                    optionLabel="label"
-                    optionValue="value"
-                    placeholder="Pilih alasan penolakan..."
-                    class="w-100"
-                    :class="{ 'p-invalid': sesiErrors.alasan_tolak }"
-                  />
-                  <small v-if="sesiErrors.alasan_tolak" class="p-error">{{
-                    sesiErrors.alasan_tolak
-                  }}</small>
-                </div>
-              </div>
-            </Transition>
 
             <template #footer>
               <Button
@@ -430,6 +384,52 @@
           </p>
         </div>
       </div>
+
+      <!-- Kolom kanan: riwayat sesi donor -->
+      <div class="col-md-3">
+        <Panel>
+          <template #header>
+            <h6 style="color: darkcyan; margin: 0">
+              <i class="pi pi-history me-1"></i>
+              <strong>RIWAYAT DONOR</strong>
+            </h6>
+            <Button
+              icon="pi pi-refresh"
+              text
+              rounded
+              size="small"
+              class="ms-auto"
+              v-tooltip.top="'Muat ulang riwayat'"
+              :loading="loadingRiwayat"
+              @click="fetchRiwayatDonor"
+            />
+          </template>
+
+          <div v-if="loadingRiwayat" class="riwayat-loading">
+            <i class="pi pi-spin pi-spinner me-1"></i> Memuat...
+          </div>
+
+          <div v-else-if="riwayatDonor.length === 0" class="riwayat-empty">
+            <i class="pi pi-inbox"></i>
+            <p>Belum ada riwayat donor</p>
+          </div>
+
+          <div v-else class="riwayat-list">
+            <div v-for="(item, idx) in riwayatDonor" :key="idx" class="riwayat-item">
+              <div class="riwayat-tgl">
+                <i class="pi pi-calendar me-1"></i>{{ formatTgl(item.tgl_donor) }}
+              </div>
+              <div class="riwayat-jenis">{{ item.jenis_donor_label ?? item.jenis_donor }}</div>
+              <span
+                class="riwayat-kat-badge"
+                :class="item.kategori_donor === 'SUKARELA' ? 'kat-sukarela' : 'kat-keluarga'"
+              >
+                {{ item.kategori_donor === 'SUKARELA' ? 'Sukarela' : 'Keluarga' }}
+              </span>
+            </div>
+          </div>
+        </Panel>
+      </div>
     </div>
   </div>
 </template>
@@ -445,6 +445,7 @@ import axios from 'axios'
 import DatePicker from 'primevue/datepicker'
 import InputGroup from 'primevue/inputgroup'
 import InputGroupAddon from 'primevue/inputgroupaddon'
+import RadioButton from 'primevue/radiobutton'
 import ListPasienSesiDonor from '@/views/UTD/ListPasienSesiDonor.vue'
 
 const configStore = useConfigStore()
@@ -463,6 +464,9 @@ const showSesiForm = ref(false)
 const loadingSesi = ref(false)
 const showListSesi = ref(false)
 
+const riwayatDonor = ref([])
+const loadingRiwayat = ref(false)
+
 // ── Sesi Form ─────────────────────────────────────────────
 const sesiFormDefault = {
   no_sesi: '',
@@ -477,7 +481,7 @@ const sesiFormDefault = {
   suhu_tubuh: null,
   nadi: null,
   riwayat_penyakit: '',
-  hasil_screening: 1, // 1=Layak, 2=Ditunda, 3=Ditolak
+  hasil_screening: null,
   alasan_tolak: null,
   status: 0,
 }
@@ -497,31 +501,6 @@ const kategoriDonorOptions = [
   { label: 'Sukarela', value: 'SUKARELA', icon: 'pi pi-heart', cls: 'sukarela' },
   { label: 'Keluarga Pasien', value: 'KELUARGA', icon: 'pi pi-users', cls: 'keluarga' },
 ]
-
-const hasilScreeningOptions = [
-  { label: 'Layak Donor', value: 1, icon: 'pi pi-check-circle', cls: 'layak' },
-  { label: 'Ditunda', value: 2, icon: 'pi pi-clock', cls: 'ditunda' },
-  { label: 'Ditolak', value: 3, icon: 'pi pi-times-circle', cls: 'ditolak' },
-]
-
-const alasanOptions = [
-  { label: 'Tekanan darah tidak normal', value: 'Tekanan darah tidak normal' },
-  { label: 'Berat badan kurang (< 45 kg)', value: 'Berat badan kurang' },
-  { label: 'Hemoglobin rendah', value: 'Hemoglobin rendah' },
-  { label: 'Suhu tubuh tidak normal', value: 'Suhu tubuh tidak normal' },
-  { label: 'Denyut nadi tidak normal', value: 'Denyut nadi tidak normal' },
-  { label: 'Sedang sakit / demam', value: 'Sedang sakit / demam' },
-  { label: 'Riwayat penyakit tertentu', value: 'Riwayat penyakit tertentu' },
-  { label: 'Baru menjalani operasi', value: 'Baru menjalani operasi' },
-  { label: 'Mengonsumsi obat tertentu', value: 'Mengonsumsi obat tertentu' },
-  { label: 'Usia tidak memenuhi syarat', value: 'Usia tidak memenuhi syarat' },
-  { label: 'Lainnya', value: 'Lainnya' },
-]
-
-const onHasilScreeningChange = (val) => {
-  sesiForm.value.hasil_screening = val
-  if (val !== 3) sesiForm.value.alasan_tolak = null
-}
 
 // ── Helpers ───────────────────────────────────────────────
 const formatTgl = (val) => {
@@ -571,13 +550,13 @@ const cariPasien = async () => {
     }
 
     pasien.value = data
-    // Pre-fill sesi form dengan data pasien
     sesiForm.value = {
       ...sesiFormDefault,
       norm: data.NOMR,
-      id_petugas: null, // diisi dari user_id saat submit
+      id_petugas: null,
       tgl_donor: new Date(),
     }
+    fetchRiwayatDonor()
   } catch {
     showError('Gagal menghubungi server. Periksa koneksi.')
   } finally {
@@ -591,6 +570,25 @@ const resetPasien = () => {
   searchNomr.value = ''
   searchError.value = ''
   sesiErrors.value = {}
+  riwayatDonor.value = []
+}
+
+// ── API: Riwayat Sesi Donor ───────────────────────────────
+const fetchRiwayatDonor = async () => {
+  if (!pasien.value?.NOMR) return
+  try {
+    loadingRiwayat.value = true
+    const res = await axios.post(`${configStore.apiBaseUrl}/index.php/api/utd/get_sesi_donor`, {
+      mode: 2,
+      norm: pasien.value.NOMR,
+      id_client: id_client.value,
+    })
+    riwayatDonor.value = res.data?.data ?? []
+  } catch {
+    riwayatDonor.value = []
+  } finally {
+    loadingRiwayat.value = false
+  }
 }
 
 // ── Validasi Sesi ─────────────────────────────────────────
@@ -608,16 +606,10 @@ const validateSesi = () => {
     sesiErrors.value.hemoglobin = 'Hemoglobin wajib diisi (min. 8 g/dL)'
   if (!sesiForm.value.suhu_tubuh) sesiErrors.value.suhu_tubuh = 'Suhu tubuh wajib diisi'
   if (!sesiForm.value.nadi) sesiErrors.value.nadi = 'Denyut nadi wajib diisi'
-  if (!sesiForm.value.hasil_screening)
-    sesiErrors.value.hasil_screening = 'Hasil screening wajib dipilih'
-  if (sesiForm.value.hasil_screening === 3 && !sesiForm.value.alasan_tolak)
-    sesiErrors.value.alasan_tolak = 'Alasan penolakan wajib dipilih'
   return Object.keys(sesiErrors.value).length === 0
 }
 
 // ── API: Simpan Sesi ──────────────────────────────────────
-// Map nilai integer hasil_screening ke string uppercase sesuai ekspektasi backend
-const hasilScreeningMap = { 1: 'LAYAK', 2: 'DITUNDA', 3: 'DITOLAK' }
 
 const simpanSesi = async () => {
   if (!validateSesi()) return
@@ -649,9 +641,6 @@ const simpanSesi = async () => {
           suhu_tubuh: parseFloat(sesiForm.value.suhu_tubuh),
           nadi: parseInt(sesiForm.value.nadi),
           riwayat_penyakit: sesiForm.value.riwayat_penyakit || null,
-          hasil_screening:
-            hasilScreeningMap[sesiForm.value.hasil_screening] ?? sesiForm.value.hasil_screening,
-          alasan_tolak: sesiForm.value.hasil_screening === 3 ? sesiForm.value.alasan_tolak : null,
           status: sesiForm.value.status ?? 0,
           user_id: user_id.value,
           id_client: id_client.value,
@@ -668,6 +657,7 @@ const simpanSesi = async () => {
           showSuccess('Sesi donor berhasil disimpan')
           showSesiForm.value = false
           sesiErrors.value = {}
+          fetchRiwayatDonor()
         } else {
           showError(res.data?.metadata?.message ?? res.data?.message ?? 'Gagal menyimpan sesi')
         }
@@ -838,6 +828,43 @@ const simpanSesi = async () => {
   margin-top: 2px;
 }
 
+/* ── Form Stack (vertical layout) ── */
+.sesi-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.sesi-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sesi-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+}
+
+/* ── Kategori Pendonor RadioButton ── */
+.kategori-radio-opts {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.kategori-radio-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.kategori-radio-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  margin: 0;
+}
+
 /* ── Kelayakan / Hasil Screening buttons ── */
 .kelayakan-opts {
   display: flex;
@@ -912,5 +939,67 @@ const simpanSesi = async () => {
   font-size: 13px;
   margin: 0;
   color: #64748b;
+}
+
+/* ── Riwayat Donor ── */
+.riwayat-loading {
+  font-size: 12px;
+  color: #64748b;
+  padding: 8px 0;
+}
+.riwayat-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 12px;
+  color: #94a3b8;
+  font-size: 12px;
+  gap: 6px;
+}
+.riwayat-empty i {
+  font-size: 1.6rem;
+  opacity: 0.4;
+}
+.riwayat-empty p {
+  margin: 0;
+}
+.riwayat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.riwayat-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.riwayat-tgl {
+  font-size: 11.5px;
+  color: #64748b;
+}
+.riwayat-jenis {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+}
+.riwayat-kat-badge {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: 12px;
+  width: fit-content;
+}
+.kat-sukarela {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+.kat-keluarga {
+  background: #fff3e0;
+  color: #c2410c;
 }
 </style>

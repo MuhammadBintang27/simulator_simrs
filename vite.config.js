@@ -15,6 +15,25 @@ export default defineConfig(({ mode }) => {
 
     base: '/',
 
+    server: {
+      proxy: {
+        // Proxy gambar dari ws-simrs.net — dev only, path prioritas utama
+        '/ws-simrs-assets': {
+          target: 'https://ws-simrs.net',
+          changeOrigin: true,
+          secure: true,
+          rewrite: (path) => path.replace(/^\/ws-simrs-assets/, ''),
+        },
+        // Proxy Laravel API (termasuk /img-proxy endpoint)
+        '/api-laravel': {
+          target: 'https://simrs-link.site',
+          changeOrigin: true,
+          secure: true,
+          rewrite: (path) => path.replace(/^\/api-laravel/, ''),
+        },
+      },
+    },
+
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),

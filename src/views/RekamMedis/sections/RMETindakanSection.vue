@@ -49,7 +49,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, inject } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConfigStore, useAuthStore } from '@/stores/config'
 import axios from 'axios'
@@ -62,6 +62,9 @@ const props = defineProps({
 const configStore = useConfigStore()
 const authStore = useAuthStore()
 const { id_client } = storeToRefs(authStore)
+
+const reportSectionData = inject('reportSectionData', () => {})
+const addTimelineEvent = inject('addTimelineEvent', () => {})
 
 const loading = ref(true)
 const error = ref(null)
@@ -98,6 +101,18 @@ const fetchData = async () => {
     console.error(e)
   } finally {
     loading.value = false
+    const hasTindakan = tindakanList.value.length > 0
+    reportSectionData('tindakan', hasTindakan)
+    if (hasTindakan) {
+      addTimelineEvent('tindakan', {
+        key: 'tindakan',
+        label: 'Tindakan / Prosedur',
+        icon: '🔧',
+        color: '#bf360c',
+        datetime: fmtDate(tindakanList.value[0]?.TANGGAL_TRANS || tindakanList.value[0]?.timestamp || ''),
+        meta: tindakanList.value.length + ' tindakan',
+      })
+    }
   }
 }
 

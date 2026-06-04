@@ -3,7 +3,12 @@
   <div class="rme-section">
     <!-- Header RS -->
     <div class="rme-rs-header">
-      <img :src="LINK_LOGO || '/img/logo.png'" class="rme-rs-logo" alt="Logo RS" />
+      <img
+        :src="LINK_LOGO || '/img/logo.png'"
+        class="rme-rs-logo"
+        alt="Logo RS"
+        crossorigin="anonymous"
+      />
       <div class="rme-rs-info">
         <h2 class="rme-rs-name">{{ company || 'RUMAH SAKIT' }}</h2>
         <p class="rme-rs-addr">{{ ALAMAT || '' }}</p>
@@ -34,96 +39,112 @@
       <div class="rme-info-grid">
         <div class="rme-info-col">
           <table class="rme-tbl-info">
-            <tr>
-              <td class="rme-td-lbl">Nama Lengkap</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val"><strong>{{ dataPasien?.NAMAPASIEN || '-' }}</strong></td>
-            </tr>
-            <tr>
-              <td class="rme-td-lbl">No. Rekam Medis</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val mono">{{ dataPasien?.NOMR || '-' }}</td>
-            </tr>
-            <tr>
-              <td class="rme-td-lbl">Jenis Kelamin</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val">
-                {{ dataPasien?.JENISKELAMIN === 'P' ? 'Perempuan' : dataPasien?.JENISKELAMIN === 'L' ? 'Laki-laki' : (dataPasien?.JENISKELAMIN || '-') }}
-              </td>
-            </tr>
-            <tr>
-              <td class="rme-td-lbl">Tanggal Lahir</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val">{{ dataPasien?.TGLLAHIR || '-' }}</td>
-            </tr>
-            <tr>
-              <td class="rme-td-lbl">Usia</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val">
-                {{ dataPasien?.USIA_PASIEN?.tahun ?? '-' }} Thn,
-                {{ dataPasien?.USIA_PASIEN?.bulan ?? '' }} Bln,
-                {{ dataPasien?.USIA_PASIEN?.hari ?? '' }} Hr
-              </td>
-            </tr>
-            <tr>
-              <td class="rme-td-lbl">Alamat</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val">{{ dataPasien?.ALAMAT || '-' }}</td>
-            </tr>
-            <tr>
-              <td class="rme-td-lbl">Kecamatan</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val">{{ dataPasien?.NAMAKECAMATAN || '-' }}</td>
-            </tr>
-            <tr>
-              <td class="rme-td-lbl">No. Telepon</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val">{{ dataPasien?.NOTELP || '-' }}</td>
-            </tr>
+            <tbody>
+              <tr>
+                <td class="rme-td-lbl">Nama Lengkap</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">
+                  <strong>{{ dataPasien?.NAMAPASIEN || '-' }}</strong>
+                </td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">No. Rekam Medis</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val mono">{{ dataPasien?.NOMR || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">Jenis Kelamin</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">
+                  {{
+                    dataPasien?.JENISKELAMIN === 'P'
+                      ? 'Perempuan'
+                      : dataPasien?.JENISKELAMIN === 'L'
+                        ? 'Laki-laki'
+                        : dataPasien?.JENISKELAMIN || '-'
+                  }}
+                </td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">Tanggal Lahir</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ dataPasien?.TGLLAHIR || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">Usia</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">
+                  {{ dataPasien?.USIA_PASIEN?.tahun ?? '-' }} Thn,
+                  {{ dataPasien?.USIA_PASIEN?.bulan ?? '' }} Bln,
+                  {{ dataPasien?.USIA_PASIEN?.hari ?? '' }} Hr
+                </td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">Alamat</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ dataPasien?.ALAMAT || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">Kecamatan</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ dataPasien?.NAMAKECAMATAN || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">No. Telepon</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ dataPasien?.NOTELP || '-' }}</td>
+              </tr>
+            </tbody>
           </table>
         </div>
         <div class="rme-info-col">
           <table class="rme-tbl-info">
-            <tr>
-              <td class="rme-td-lbl">No. Registrasi</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val mono">{{ noreg }}</td>
-            </tr>
-            <tr>
-              <td class="rme-td-lbl">Poli / Ruang</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val">{{ dataPasien?.NAMAPOLI || dataPasien?.KODEPOLI || '-' }}</td>
-            </tr>
-            <tr>
-              <td class="rme-td-lbl">DPJP / Dokter</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val">{{ dataPasien?.NAMADOKTER || dataPasien?.DPJP || '-' }}</td>
-            </tr>
-            <tr>
-              <td class="rme-td-lbl">Cara Bayar</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val">{{ dataPasien?.CARABAYAR || '-' }}</td>
-            </tr>
-            <tr>
-              <td class="rme-td-lbl">No. SEP / Kartu</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val mono">{{ dataPasien?.NOSEP || dataPasien?.NOKARTU || '-' }}</td>
-            </tr>
-            <tr>
-              <td class="rme-td-lbl">Tanggal Masuk</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val">{{ dataPasien?.TGLMASUK || dataPasien?.TANGGAL || '-' }}</td>
-            </tr>
-            <tr>
-              <td class="rme-td-lbl">Jenis Rawat</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val">{{ dataPasien?.JENISRAWAT || '-' }}</td>
-            </tr>
-            <tr>
-              <td class="rme-td-lbl">Tanggal Cetak</td>
-              <td class="rme-td-sep">:</td>
-              <td class="rme-td-val">{{ printDate }}</td>
-            </tr>
+            <tbody>
+              <tr>
+                <td class="rme-td-lbl">No. Registrasi</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val mono">{{ noreg }}</td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">Poli / Ruang</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">
+                  {{ dataPasien?.NAMAPOLI || dataPasien?.KODEPOLI || '-' }}
+                </td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">DPJP / Dokter</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ dataPasien?.NAMADOKTER || dataPasien?.DPJP || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">Cara Bayar</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ dataPasien?.CARABAYAR || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">No. SEP / Kartu</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val mono">
+                  {{ dataPasien?.NOSEP || dataPasien?.NOKARTU || '-' }}
+                </td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">Tanggal Masuk</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ dataPasien?.TGLMASUK || dataPasien?.TANGGAL || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">Jenis Rawat</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ dataPasien?.JENISRAWAT || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">Tanggal Cetak</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ printDate }}</td>
+              </tr>
+            </tbody>
           </table>
         </div>
       </div>
@@ -148,8 +169,12 @@ const { company, LINK_LOGO, ALAMAT } = storeToRefs(authStore)
 const printDate = computed(() => {
   const d = new Date()
   return d.toLocaleString('id-ID', {
-    day: '2-digit', month: 'long', year: 'numeric',
-    hour: '2-digit', minute: '2-digit', hour12: false,
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
   })
 })
 </script>

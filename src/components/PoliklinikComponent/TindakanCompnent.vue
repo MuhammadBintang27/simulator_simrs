@@ -98,6 +98,45 @@
       </div>
     </div>
 
+    <!-- ── Sering Digunakan di Poli Ini ── -->
+    <div v-if="recentTindakan.length > 0 || loadingRecentTindakan" class="recent-tindakan-section">
+      <div class="recent-tindakan-hdr">
+        <span class="recent-tindakan-hdr-left">
+          <i class="pi pi-star-fill"></i>
+          Tindakan/Administrasi Sering Dilakukan di Poli Ini
+        </span>
+        <div class="recent-tindakan-hdr-right">
+          <span v-if="loadingRecentTindakan" class="recent-tindakan-loading">
+            <i class="pi pi-spin pi-spinner"></i> Memuat…
+          </span>
+          <Button
+            v-else
+            icon="pi pi-refresh"
+            text
+            rounded
+            size="small"
+            severity="secondary"
+            v-tooltip.left="'Perbarui daftar'"
+            @click="refreshRecentTindakan"
+          />
+        </div>
+      </div>
+      <div class="recent-tindakan-grid">
+        <div
+          v-for="item in recentTindakan"
+          :key="item.BARCODE"
+          class="recent-tindakan-chip"
+          @click="addRecentTindakan(item)"
+          v-tooltip.bottom="'Klik untuk tambah prosedur'"
+        >
+          <div class="recent-tindakan-chip-name">{{ item.NAMABARANG }}</div>
+          <div class="recent-tindakan-chip-price" v-if="item.HARGA > 0">
+            {{ formatCurrency(item.HARGA) }}
+          </div>
+        </div>
+      </div>
+    </div>
+
     <Divider />
 
     <!-- DAFTAR PROSEDUR -->
@@ -244,6 +283,75 @@ const loadingAddTindakan = ref(false)
 const loadingProcedures = ref(false)
 const loadingRefresh = ref(false)
 const showValidationErrors = ref(false)
+
+const recentTindakan = ref([])
+const loadingRecentTindakan = ref(false)
+
+const getTodayStr = () => {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+}
+
+const getRecentTindakan = async () => {
+  const kodePoli = props.datapasien?.KODERUANGAN || 'UNKNOWN'
+  const KEY = `recent_tindakan_poly_${kodePoli}`
+  const DATE_KEY = `recent_tindakan_poly_date_${kodePoli}`
+  try {
+    loadingRecentTindakan.value = true
+    const today = getTodayStr()
+    const savedDate = localStorage.getItem(DATE_KEY)
+    if (savedDate === today) {
+      const cached = localStorage.getItem(KEY)
+      if (cached) {
+        recentTindakan.value = JSON.parse(cached)
+        return
+      }
+    }
+    localStorage.removeItem(KEY)
+    localStorage.removeItem(DATE_KEY)
+    const res = await axios.post(
+      `${configStore.apiApotikUrl}/index.php/api/data_referensi/get_recent_tindakan_poly`,
+      {
+        id_client: id_client.value,
+        kategori: ['TENAGA AHLI', 'KEPERAWATAN'],
+        kode_poli: kodePoli,
+        limit: '20',
+      },
+    )
+    if (res.data?.code === 200) {
+      recentTindakan.value = res.data.result || []
+      localStorage.setItem(KEY, JSON.stringify(recentTindakan.value))
+      localStorage.setItem(DATE_KEY, today)
+    }
+  } catch (error) {
+    console.error('Gagal memuat recent tindakan:', error)
+  } finally {
+    loadingRecentTindakan.value = false
+  }
+}
+
+const refreshRecentTindakan = () => {
+  const kodePoli = props.datapasien?.KODERUANGAN || 'UNKNOWN'
+  localStorage.removeItem(`recent_tindakan_poly_${kodePoli}`)
+  localStorage.removeItem(`recent_tindakan_poly_date_${kodePoli}`)
+  recentTindakan.value = []
+  getRecentTindakan()
+}
+
+const addRecentTindakan = async (item) => {
+  selectedProcedure.value = {
+    BARCODE: item.BARCODE,
+    IDBARANG: item.BARCODE,
+    CAPTION: item.NAMABARANG,
+    NAMA: item.NAMABARANG,
+    HARGA_JUAL_JASA: item.HARGA || 0,
+    SATUAN: item.SATUAN,
+    ID_LOKASI: id_lokasi.value,
+    KATEGORI: 'Tindakan',
+  }
+  procedureDescription.value = '-'
+  await handleAddProcedure()
+}
 
 const canAddProcedure = computed(
   () => selectedProcedure.value && procedureDescription.value.trim() && !loadingAddTindakan.value,
@@ -550,6 +658,7 @@ defineExpose({
 
 onMounted(async () => {
   if (props.datapasien?.NOPENDAFTARAN) await loadProcedureHistory()
+  getRecentTindakan()
 })
 </script>
 
@@ -722,5 +831,91 @@ onMounted(async () => {
 }
 .tindakan-empty small {
   font-size: 12px;
+}
+
+/* ── Recent Tindakan Poli ─────────────────────────── */
+.recent-tindakan-section {
+  margin: 10px 0 4px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #86efac;
+  border-radius: 8px;
+}
+
+.recent-tindakan-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.recent-tindakan-hdr-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #14532d;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.recent-tindakan-hdr-left .pi-star-fill {
+  color: #22c55e;
+  font-size: 13px;
+}
+.recent-tindakan-hdr-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.recent-tindakan-loading {
+  font-size: 11px;
+  color: #14532d;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.recent-tindakan-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.recent-tindakan-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 8px;
+  background: #fff;
+  border: 1px solid #86efac;
+  border-radius: 6px;
+  cursor: pointer;
+  min-width: 100px;
+  max-width: 180px;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.recent-tindakan-chip:hover {
+  background: #f0fdf4;
+  border-color: #22c55e;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.2);
+  transform: translateY(-1px);
+}
+.recent-tindakan-chip:active {
+  transform: translateY(0);
+}
+
+.recent-tindakan-chip-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.3;
+  white-space: normal;
+  word-break: break-word;
+}
+.recent-tindakan-chip-price {
+  font-size: 10px;
+  font-weight: 700;
+  color: #16a34a;
 }
 </style>

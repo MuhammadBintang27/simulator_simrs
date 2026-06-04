@@ -27,6 +27,7 @@ export const useConfigStore = defineStore('config', {
       laravel: isProd == true ? 'https://simrs-link.site/api' : 'https://simrs-link.site/api',
 
       sidebarCollapsed: localStorage.getItem('sb_collapsed') === '1',
+      mobileSidebarOpen: false,
     }
   },
 
@@ -34,6 +35,12 @@ export const useConfigStore = defineStore('config', {
     toggleSidebar() {
       this.sidebarCollapsed = !this.sidebarCollapsed
       localStorage.setItem('sb_collapsed', this.sidebarCollapsed ? '1' : '0')
+    },
+    toggleMobileSidebar() {
+      this.mobileSidebarOpen = !this.mobileSidebarOpen
+    },
+    closeMobileSidebar() {
+      this.mobileSidebarOpen = false
     },
   },
 
@@ -56,6 +63,8 @@ export const useAuthStore = defineStore('auth', {
     id_lokasi: localStorage.getItem('id_lokasi') || null,
     use_tte_bsre: localStorage.getItem('use_tte_bsre') || null,
     disable_jika_sediaan_nol: localStorage.getItem('disable_jika_sediaan_nol') || null,
+    group_user: localStorage.getItem('group_user') || null,
+    kd_dokter: localStorage.getItem('kd_dokter') || null,
     // NEW: Add user object and job_code
     user: null,
     job_code: localStorage.getItem('job_code') || null,
@@ -74,6 +83,7 @@ export const useAuthStore = defineStore('auth', {
       id_lokasi,
       use_tte_bsre,
       disable_jika_sediaan_nol,
+      group_user,
     ) {
       this.id_client = id
       this.user_name = name
@@ -82,6 +92,7 @@ export const useAuthStore = defineStore('auth', {
       this.ALAMAT = ALAMAT
       this.LINK_LOGO = LINK_LOGO
       this.id_lokasi = id_lokasi
+      this.group_user = group_user
       ;(this.use_tte_bsre = use_tte_bsre),
         (this.disable_jika_sediaan_nol = disable_jika_sediaan_nol)
 
@@ -94,6 +105,7 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem('id_lokasi', id_lokasi)
       localStorage.setItem('use_tte_bsre', use_tte_bsre)
       localStorage.setItem('disable_jika_sediaan_nol', disable_jika_sediaan_nol)
+      localStorage.setItem('group_user', group_user)
     },
 
     // NEW: Set user data with job_code
@@ -101,13 +113,13 @@ export const useAuthStore = defineStore('auth', {
       this.user = userData
       this.job_code = userData?.job_code || userData?.kode_jabatan || null
       this.bidang_id = userData?.bidang_id || userData?.LOKASI || null
+      this.group_user = userData?.group_user || null
+      this.kd_dokter  = userData?.kd_dokter  || null
 
-      if (this.job_code) {
-        localStorage.setItem('job_code', this.job_code)
-      }
-      if (this.bidang_id) {
-        localStorage.setItem('bidang_id', this.bidang_id)
-      }
+      if (this.job_code)   localStorage.setItem('job_code',   this.job_code)
+      if (this.bidang_id)  localStorage.setItem('bidang_id',  this.bidang_id)
+      if (this.group_user) localStorage.setItem('group_user', this.group_user)
+      if (this.kd_dokter)  localStorage.setItem('kd_dokter',  this.kd_dokter)
     },
 
     clearAuthData() {
@@ -121,7 +133,9 @@ export const useAuthStore = defineStore('auth', {
       this.use_tte_bsre = 0
       this.user = null
       this.job_code = null
-      this.bidang_id = null
+      this.bidang_id  = null
+      this.group_user = null
+      this.kd_dokter  = null
 
       localStorage.removeItem('id_client')
       localStorage.removeItem('user_name')
@@ -134,6 +148,8 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('use_tte_bsre')
       localStorage.removeItem('job_code')
       localStorage.removeItem('bidang_id')
+      localStorage.removeItem('group_user')
+      localStorage.removeItem('kd_dokter')
     },
   },
 })

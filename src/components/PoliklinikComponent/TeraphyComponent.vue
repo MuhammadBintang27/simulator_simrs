@@ -2,620 +2,691 @@
   <loading_overlay :is-loading="loading" message="Memuat data...." />
   <Toast />
 
-  <!-- Dialog List Obat -->
-
+  <!-- ══════════════════════ Dialog: Cari Obat ══════════════════════ -->
   <Dialog
     v-model:visible="listObat"
     modal
-    header="List obat-obatan"
-    :style="{ width: '1200px' }"
-    class="patient-detail-dialog"
+    header="Cari & Tambah Obat"
+    :style="{ width: '1100px', maxWidth: '96vw' }"
     :closable="false"
   >
-    <div>
-      <DataTable
-        :value="availableObat"
-        :paginator="true"
-        :rows="10"
-        :rowsPerPageOptions="[5, 10, 20, 50]"
-        :scrollable="true"
-        scrollHeight="400px"
-        class="p-datatable-sm"
-        :rowHover="true"
-        :showGridlines="true"
+    <div class="obat-dialog-search">
+      <span class="p-input-icon-left obat-search-wrap">
+        <i class="pi pi-search" />
+        <InputText
+          v-model="searchQuery"
+          placeholder="Ketik minimal 3 huruf nama obat…"
+          @input="findObatan(19, '')"
+          class="obat-search-input"
+          autofocus
+        />
+      </span>
+      <Tag
+        :value="`${availableObat.length} obat ditemukan`"
+        severity="info"
+        class="obat-found-tag"
+      />
+    </div>
+
+    <!-- ── Sering Diresepkan (tampil saat belum ada pencarian) ── -->
+    <div v-if="searchQuery.length <= 2" class="recent-obat-section">
+      <div class="recent-obat-hdr">
+        <span class="recent-obat-hdr-left">
+          <i class="pi pi-star-fill"></i>
+          Sering Diresepkan di Poli Ini
+        </span>
+        <span v-if="loadingRecent" class="recent-loading">
+          <i class="pi pi-spin pi-spinner"></i> Memuat…
+        </span>
+      </div>
+
+      <div v-if="!loadingRecent && recentObat.length === 0" class="recent-obat-empty">
+        <i class="pi pi-inbox"></i> Belum ada data
+      </div>
+
+      <div class="recent-obat-grid">
+        <div
+          v-for="item in recentObat"
+          :key="item.BARCODE"
+          class="recent-chip"
+          @click="addRecentObat(item)"
+          v-tooltip.bottom="'Klik untuk tambah ke resep'"
+        >
+          <div class="recent-chip-name">{{ item.NAMABARANG }}</div>
+          <div class="recent-chip-price" v-if="item.HARGA > 0">
+            {{ formatCurrency(item.HARGA) }}
+            <span class="recent-chip-per">/ {{ item.SATUAN }}</span>
+          </div>
+          <div class="recent-chip-footer">
+            <span class="recent-chip-satuan">{{ item.SATUAN }}</span>
+            <span class="recent-chip-count"><i class="pi pi-chart-bar"></i>{{ item.JML }}x</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <DataTable
+      :value="availableObat"
+      :paginator="true"
+      :rows="10"
+      :rowsPerPageOptions="[5, 10, 20, 50]"
+      :scrollable="true"
+      scrollHeight="360px"
+      class="p-datatable-sm obat-list-table"
+      :rowHover="true"
+      :showGridlines="false"
+      stripedRows
+    >
+      <template #empty>
+        <div class="tbl-empty">
+          <i class="pi pi-pills"></i>
+          <p>Ketik nama obat untuk mencari</p>
+        </div>
+      </template>
+      <template #loading>
+        <div class="tbl-empty">
+          <i class="pi pi-spin pi-spinner"></i>
+          <p>Memuat data…</p>
+        </div>
+      </template>
+
+      <Column field="CAPTION" header="Nama Obat" :sortable="true" style="min-width: 220px">
+        <template #body="slotProps">
+          <div class="obat-name">{{ slotProps.data.CAPTION }}</div>
+          <span v-if="slotProps.data.BATCH_NUMBER" class="batch-badge">
+            Batch: {{ slotProps.data.BATCH_NUMBER }}
+          </span>
+        </template>
+      </Column>
+
+      <Column field="KATEGORI" header="Kategori" :sortable="true" style="min-width: 130px">
+        <template #body="slotProps">
+          <Tag :value="slotProps.data.KATEGORI" severity="success" class="text-xs" />
+        </template>
+      </Column>
+
+      <Column
+        field="HARGAJUAL"
+        header="Harga Jual"
+        :sortable="true"
+        dataType="numeric"
+        style="min-width: 130px"
       >
-        <template #header>
-          <div class="flex justify-content-between align-items-center">
-            <div class="flex align-items-center gap-2 mr-2">
-              <span class="p-input-icon-left">
-                <i class="pi pi-search mr-2" />
-                <InputText
-                  placeholder="Cari obat..."
-                  v-model="searchQuery"
-                  @input="findObatan(19, '')"
-                  style="font-size: 12px"
-                />
-              </span>
-              <span>obat ditemukan ({{ availableObat.length }})</span>
-            </div>
-          </div>
+        <template #body="slotProps">
+          <span class="price-text">{{ formatCurrency(slotProps.data.HARGAJUAL) }}</span>
         </template>
+      </Column>
 
+      <Column
+        field="QUNATITY"
+        header="Stok"
+        :sortable="true"
+        dataType="numeric"
+        style="width: 90px; text-align: center"
+      >
+        <template #body="slotProps">
+          <Tag
+            :value="String(slotProps.data.QUNATITY < 0 ? '0' : slotProps.data.QUNATITY)"
+            :severity="slotProps.data.QUNATITY > 0 ? 'success' : 'danger'"
+          />
+        </template>
+      </Column>
+
+      <Column style="width: 70px; text-align: center">
+        <template #body="slotProps">
+          <Button
+            icon="pi pi-plus"
+            rounded
+            size="small"
+            severity="success"
+            @click="addItem(slotProps.data, 1)"
+            v-tooltip.left="'Tambah ke resep'"
+          />
+        </template>
+      </Column>
+    </DataTable>
+
+    <template #footer>
+      <Button
+        label="Tutup"
+        icon="pi pi-times"
+        @click="listObat = false"
+        severity="secondary"
+        outlined
+      />
+    </template>
+  </Dialog>
+
+  <!-- ══════════════════════ Main Layout ══════════════════════════════ -->
+  <div class="therapy-wrapper">
+    <!-- ── Sidebar: Riwayat Resep ── -->
+    <div class="therapy-sidebar">
+      <div class="sidebar-hdr">
+        <i class="pi pi-history sidebar-hdr-icon"></i>
+        <span class="sidebar-hdr-title">Riwayat Resep</span>
+        <Tag :value="String(riwayat_obat.length)" severity="secondary" class="sidebar-count" />
+      </div>
+
+      <div class="sidebar-list">
+        <div v-if="riwayat_obat.length === 0" class="sidebar-empty">
+          <i class="pi pi-inbox"></i>
+          <p>Belum ada resep</p>
+        </div>
+
+        <div
+          v-for="(data, index) in riwayat_obat"
+          :key="index"
+          class="resep-card"
+          :class="data.TELAH_DIKIRIM == 1 ? 'resep-sent' : 'resep-pending'"
+        >
+          <div class="resep-card-top">
+            <span class="resep-date">
+              <i class="pi pi-calendar"></i>
+              {{ data.SHORTDATE }}
+            </span>
+            <span class="resep-time">{{ data.JAM }}</span>
+          </div>
+
+          <div class="resep-status-row">
+            <Tag v-if="data.TELAH_DIKIRIM == 1" severity="success" class="resep-tag">
+              <i class="pi pi-check-circle"></i>&nbsp;Terkirim
+            </Tag>
+            <Tag v-else severity="danger" class="resep-tag">
+              <i class="pi pi-hourglass"></i>&nbsp;Pending
+            </Tag>
+          </div>
+
+          <div v-if="data.TELAH_DIKIRIM == 1" class="resep-sent-time">
+            {{ data.TANGGAL_KIRIM }} {{ data.JAM_KIRIM }}
+          </div>
+
+          <div class="resep-actions">
+            <Button
+              icon="pi pi-eye"
+              label="Detail"
+              size="small"
+              text
+              severity="info"
+              class="resep-btn"
+              @click="getdetail_sales(data.RECEIPT_NO)"
+            />
+            <Button
+              v-if="data.TELAH_DIKIRIM == 0"
+              icon="pi pi-send"
+              label="Kirim"
+              size="small"
+              severity="success"
+              class="resep-btn"
+              @click="kirim_resep(data.RECEIPT_NO)"
+            />
+            <Button
+              icon="pi pi-trash"
+              size="small"
+              text
+              severity="danger"
+              class="resep-btn-del"
+              @click="ConfirmVoidResep(data.RECEIPT_NO, index)"
+              v-tooltip.right="'Batalkan resep'"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Main Content ── -->
+    <div class="therapy-main">
+      <!-- Plafon bar -->
+      <div
+        v-if="biayaPelayanan.PLAFON_OBAT > 0"
+        class="plafon-bar"
+        :class="totalAmount > biayaPelayanan.PLAFON_OBAT ? 'plafon-exceeded' : 'plafon-ok'"
+      >
+        <div class="plafon-left">
+          <span class="plafon-lbl">Total Terapi</span>
+          <span
+            class="plafon-amount"
+            :class="{ 'plafon-amount-over': totalAmount > biayaPelayanan.PLAFON_OBAT }"
+          >
+            {{ formatCurrency(totalAmount) }}
+          </span>
+        </div>
+        <div class="plafon-right">
+          <span class="plafon-max-lbl"
+            >Plafon: {{ formatCurrency(biayaPelayanan.PLAFON_OBAT) }}</span
+          >
+          <Tag v-if="totalAmount > biayaPelayanan.PLAFON_OBAT" severity="danger">
+            <i class="pi pi-exclamation-triangle"></i>&nbsp;Melebihi Plafon
+          </Tag>
+          <Tag v-else severity="success"> {{ calculatePercentage() }}% terpakai </Tag>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="therapy-toolbar">
+        <div class="toolbar-left">
+          <i class="pi pi-list-check toolbar-icon"></i>
+          <span class="toolbar-title">Daftar Item Terapi</span>
+          <Tag
+            :value="`${selectedObatObatan.length} item`"
+            severity="secondary"
+            class="toolbar-count"
+          />
+        </div>
+        <div class="toolbar-right">
+          <Button
+            icon="pi pi-search"
+            label="Tambah Obat"
+            size="small"
+            severity="success"
+            @click="listObat = true"
+          />
+          <Button
+            icon="pi pi-plus-circle"
+            label="Obat Racikan"
+            size="small"
+            class="btn-racikan"
+            @click="showResepRacikan = true"
+          />
+          <Button
+            icon="fas fa-file-medical"
+            label="Obat Kronis (Apol)"
+            size="small"
+            severity="warn"
+            outlined
+            @click="obat_kronisBPJS"
+          />
+        </div>
+      </div>
+
+      <!-- Table -->
+      <DataTable
+        :value="selectedObatObatan"
+        :scrollable="true"
+        scrollHeight="360px"
+        class="p-datatable-sm therapy-table"
+        :rowHover="true"
+        :showGridlines="false"
+        stripedRows
+      >
         <template #empty>
-          <div class="text-center p-4">
-            <i class="pi pi-info-circle text-4xl text-blue-400 mb-3"></i>
-            <p class="text-gray-600 m-0">Tidak ada data obat yang tersedia</p>
+          <div class="tbl-empty">
+            <i class="pi pi-pills"></i>
+            <p>Belum ada obat ditambahkan</p>
+            <Button
+              label="Cari Obat"
+              icon="pi pi-search"
+              size="small"
+              severity="success"
+              @click="listObat = true"
+            />
           </div>
         </template>
-
         <template #loading>
-          <div class="text-center p-4">
-            <i class="pi pi-spin pi-spinner text-2xl text-blue-500"></i>
-            <p class="mt-2 text-gray-600">Memuat data...</p>
+          <div class="tbl-empty">
+            <i class="pi pi-spin pi-spinner"></i>
+            <p>Memuat data…</p>
           </div>
         </template>
 
-        <!-- <Column field="GROUPING" header="Grouping" :sortable="true" style="min-width: 200px">
+        <Column style="width: 56px; text-align: center" header="Rutin">
           <template #body="slotProps">
-            <div class="flex align-items-center gap-2">
-              <Tag :value="slotProps.data.GROUPING" class="text-xs" />
-            </div>
-          </template>
-        </Column> -->
-
-        <Column field="CAPTION" header="NAMA ITEM" :sortable="true" style="min-width: 200px">
-          <template #body="slotProps">
-            <div class="flex align-items-right gap-2">
-              <span class="font-semibold">
-                {{ slotProps.data.CAPTION }}
-              </span>
-            </div>
-
-            <span v-if="slotProps.data.BATCH_NUMBER" class="badge bg-primary">
-              BTCH{{ slotProps.data.BATCH_NUMBER }}</span
-            >
+            <Checkbox
+              v-if="slotProps.data.JENIS_R == 'R/'"
+              v-model="slotProps.data.obat_rutin"
+              :value="slotProps.data.obat_rutin"
+              @change="onCheckObat(slotProps.data)"
+              :binary="true"
+            />
           </template>
         </Column>
 
-        <Column field="KATEGORI" header="KATEGORI" :sortable="true" style="min-width: 150px">
+        <Column field="NAMA" header="Nama Obat" style="min-width: 180px">
           <template #body="slotProps">
-            <span class="badge badge-success">{{ slotProps.data.KATEGORI }}</span>
+            <div class="obat-cell-name">{{ slotProps.data.NAMA }}</div>
+            <span class="obat-cell-barcode">{{ slotProps.data.BARCODE }}</span>
           </template>
         </Column>
 
-        <Column
-          field="HARGAJUAL"
-          header="HARGA JUAL"
-          :sortable="true"
-          dataType="numeric"
-          style="min-width: 120px"
-        >
+        <Column field="JENIS_R" header="Jenis" style="width: 68px; text-align: center">
           <template #body="slotProps">
-            <div class="text-right font-semibold text-green-600">
-              {{ formatCurrency(slotProps.data.HARGAJUAL) }}
-            </div>
-          </template>
-        </Column>
-        <Column
-          field="QUNATITY"
-          header="SEDIAAN"
-          :sortable="true"
-          dataType="numeric"
-          style="min-width: 120px"
-        >
-          <template #body="slotProps">
-            <div class="text-right font-semibold text-green-600">
-              {{ slotProps.data.QUNATITY }}
-            </div>
+            <Tag
+              v-if="slotProps.data.JENIS_R"
+              :value="slotProps.data.JENIS_R"
+              :severity="slotProps.data.JENIS_R === 'R/' ? 'info' : 'secondary'"
+              style="font-size: 10px"
+            />
           </template>
         </Column>
 
-        <Column header="AKSI" :exportable="false" style="min-width: 120px">
+        <Column field="QTY" header="Qty" style="width: 96px">
           <template #body="slotProps">
-            <div class="flex gap-1">
+            <InputText
+              v-if="slotProps.data.JENIS_R == 'R/'"
+              type="number"
+              v-model="slotProps.data.QTY"
+              class="qty-input"
+              min="0"
+              @update:modelValue="(val) => (slotProps.data.QTY = Math.max(0, Number(val || 0)))"
+              @keydown="(e) => e.key === '-' && e.preventDefault()"
+            />
+            <span v-else class="text-muted-sm">—</span>
+          </template>
+        </Column>
+
+        <Column field="SATUAN" header="Satuan" style="width: 76px">
+          <template #body="slotProps">
+            <span v-if="slotProps.data.JENIS_R" class="satuan-text">
+              {{ slotProps.data.SATUAN }}
+            </span>
+          </template>
+        </Column>
+
+        <Column field="REMARK_ITEM" header="Cara Pakai" style="min-width: 200px">
+          <template #body="slotProps">
+            <div class="cara-pakai-cell">
               <Button
-                icon="pi pi-plus"
-                :disabled="disable_jika_sediaan_nol == 1 && slotProps.data.QUNATITY <= 0"
-                class="p-button-rounded p-button-success round-button2 p-button-sm"
-                @click="addItem(slotProps.data, 1)"
+                icon="pi pi-book"
+                severity="warn"
+                text
+                rounded
+                size="small"
+                @click="openCaraPakaiDialog(slotProps.index)"
+                v-tooltip.top="'Pilih cara pakai'"
+              />
+              <InputText
+                v-model="slotProps.data.REMARK_ITEM"
+                placeholder="Cara pakai…"
+                class="cara-pakai-input"
               />
             </div>
           </template>
         </Column>
+
+        <Column field="HARGA" header="Subtotal" style="width: 120px; text-align: right">
+          <template #body="slotProps">
+            <span class="price-text">
+              {{ formatCurrency(slotProps.data.HARGA * slotProps.data.QTY) }}
+            </span>
+          </template>
+        </Column>
+
+        <Column style="width: 48px; text-align: center">
+          <template #body="slotProps">
+            <Button
+              icon="pi pi-times"
+              severity="danger"
+              text
+              rounded
+              size="small"
+              @click.stop.prevent="confirmRemoveItemObat(slotProps.index)"
+              v-tooltip.left="'Hapus item'"
+            />
+          </template>
+        </Column>
       </DataTable>
-    </div>
 
-    <template #footer>
-      <div class="dialog-footer">
-        <Button label="Close" icon="pi pi-times" @click="listObat = false" class="p-button-text" />
-      </div>
-    </template>
-  </Dialog>
-
-  <!-- Main Panel -->
-  <Panel style="padding: 0; margin: 0">
-    <template #header>
-      <div class="flex justify-content-between align-items-center">
-        <div class="flex align-items-center gap-2">
-          <span class="font-bold text-sm">Terapi Obat</span>
+      <!-- Footer -->
+      <div class="therapy-footer">
+        <div class="footer-info">
+          <span class="footer-total-lbl">Total Resep</span>
+          <span class="footer-total-amt">{{ formatCurrency(totalAmount) }}</span>
+          <span class="footer-items-lbl">· {{ selectedObatObatan.length }} item</span>
+        </div>
+        <div class="footer-actions">
+          <Button
+            label="Histori"
+            icon="pi pi-history"
+            size="small"
+            severity="info"
+            outlined
+            @click="showHistoryTeraphy = true"
+          />
+          <Button
+            label="Hapus Semua"
+            icon="pi pi-trash"
+            size="small"
+            severity="danger"
+            outlined
+            @click="clearAllItems"
+            :disabled="selectedObatObatan.length === 0"
+          />
+          <Button
+            label="Simpan Resep"
+            icon="pi pi-save"
+            size="small"
+            severity="success"
+            @click="saveItems"
+            :disabled="selectedObatObatan.length === 0"
+          />
         </div>
       </div>
-    </template>
-    <div class="row">
-      <!-- Left Panel - History -->
-      <ScrollPanel class="col-md-2" style="height: 500px; padding-right: 4px">
-        <Panel v-for="(data, index) in riwayat_obat" :key="index" class="mb-1">
-          <template #header>
-            <div>
-              <Tag severity="info" class="ml-0 text-xs mb-1">
-                <i class="pi pi-calendar text-blue-500"></i>{{ data.SHORTDATE }} -
-                {{ data.JAM }}
-              </Tag>
-            </div>
-          </template>
-
-          <Tag v-if="data.TELAH_DIKIRIM == 1" severity="success" style="font-size: 10px">
-            Dikirim
-            {{ data.TANGGAL_KIRIM }} - {{ data.JAM_KIRIM }}
-          </Tag>
-          <Tag v-else severity="danger" value="Blm Terkirim" class="text-xs" />
-
-          <template #footer>
-            <div class="flex flex-wrap items-center justify-between gap-4">
-              <div class="flex items-center gap-2">
-                <Button
-                  icon="pi pi-times"
-                  severity="warn"
-                  @click="ConfirmVoidResep(data.RECEIPT_NO, index)"
-                  class="round-button2"
-                  text
-                ></Button>
-                <Button
-                  icon="pi pi-eye"
-                  label="lihat"
-                  class="round-button2"
-                  @click="getdetail_sales(data.RECEIPT_NO)"
-                  rounded
-                  text
-                ></Button>
-                <button
-                  v-if="data.TELAH_DIKIRIM == 0"
-                  type="button"
-                  @click="kirim_resep(data.RECEIPT_NO)"
-                  class="btn btn-block btn-danger btn-xs"
-                >
-                  Kirim
-                  <i class="pi pi-send" style="font-size: 10px; margin-right: 4px"></i>
-                </button>
-              </div>
-            </div>
-          </template>
-        </Panel>
-      </ScrollPanel>
-
-      <!-- Main Content -->
-      <div class="col-md-10">
-        <Panel>
-          <template #header>
-            <div class="header-container" v-if="biayaPelayanan.PLAFON_OBAT > 0">
-              <!-- Left Side - Total -->
-              <div class="total-section">
-                <span class="label">TOTAL TERAPI</span>
-                <span
-                  class="amount"
-                  :class="{ exceeded: totalAmount > biayaPelayanan.PLAFON_OBAT }"
-                >
-                  {{ formatCurrency(totalAmount) }}
-                </span>
-              </div>
-
-              <!-- Right Side - Status -->
-              <div class="status-section" v-if="totalAmount > biayaPelayanan.PLAFON_OBAT">
-                <Tag severity="danger" class="status-tag danger-tag">
-                  <i class="pi pi-exclamation-circle mr-2"></i>
-                  Plafon Terlampaui
-                  <br />
-                  <small>Max: {{ formatCurrency(biayaPelayanan.PLAFON_OBAT) }}</small>
-                </Tag>
-              </div>
-            </div>
-          </template>
-          <div class="mb-2 flex justify-end">
-            <Button
-              class="p-button-success round-button2"
-              icon="pi pi-plus"
-              label="Tambah Item"
-              size="small"
-              @click="listObat = true"
-            />
-            <Button
-              class="p-button-success ml-1 round-button2"
-              icon="pi pi-plus"
-              label="Obat Racikan"
-              size="small"
-              style="background-color: deeppink; border: none"
-              @click="showResepRacikan = true"
-            />
-            <Button
-              label="Obat Kronis (Apol)"
-              icon="fas fa-file-medical"
-              severity="warn"
-              class="p-button-outlined round-button2 ml-1"
-              @click="obat_kronisBPJS"
-            />
-          </div>
-          <DataTable
-            :value="selectedObatObatan"
-            :paginator="false"
-            :scrollable="true"
-            scrollHeight="400px"
-            :breakpoints="{ '1100px': '75vw', '575px': '90vw' }"
-            class="p-datatable-sm"
-            :rowHover="true"
-            :showGridlines="true"
-            striped-rows
-          >
-            <!-- <template #header>
-              <div class="flex justify-content-between align-items-center"></div>
-            </template> -->
-
-            <template #empty>
-              <div class="text-center p-4">
-                <i class="pi pi-info-circle text-4xl text-blue-400 mb-3"></i>
-                <p class="text-gray-600 m-0">Tidak ada data obat yang tersedia</p>
-              </div>
-            </template>
-
-            <template #loading>
-              <div class="text-center p-4">
-                <i class="pi pi-spin pi-spinner text-2xl text-blue-500"></i>
-                <p class="mt-2 text-gray-600">Memuat data...</p>
-              </div>
-            </template>
-
-            <Column field="PILIH" header="OBT RUTIN" style="width: 1px">
-              <template #body="slotProps">
-                <Checkbox
-                  v-if="slotProps.data.JENIS_R == 'R/'"
-                  v-model="slotProps.data.obat_rutin"
-                  :value="slotProps.data.obat_rutin"
-                  @change="onCheckObat(slotProps.data)"
-                  :binary="true"
-                />
-              </template>
-            </Column>
-            <Column field="BARCODE" header="BARCODE" style="min-width: 10px"></Column>
-            <Column field="NAMA" header="NAMA"></Column>
-
-            <Column field="JENIS_R" header="JENIS_R">
-              <template #body="slotProps">
-                {{ slotProps.data.JENIS_R }}
-              </template>
-            </Column>
-            <Column field="QTY" header="QTY">
-              <template #body="slotProps">
-                <InputText
-                  type="number"
-                  v-model="slotProps.data.QTY"
-                  v-if="slotProps.data.JENIS_R == 'R/'"
-                  style="width: 5em"
-                  min="0"
-                  @update:modelValue="(val) => (slotProps.data.QTY = Math.max(0, Number(val || 0)))"
-                  @keydown="(e) => e.key === '-' && e.preventDefault()"
-                />
-              </template>
-            </Column>
-            <Column field="SATUAN" header="SATUAN">
-              <template #body="slotProps">
-                <span v-if="slotProps.data.JENIS_R != ''">{{ slotProps.data.SATUAN }}</span>
-              </template>
-            </Column>
-            <Column field="REMARK" header="CARA PAKAI">
-              <template #body="slotProps">
-                <Button
-                  severity="warn"
-                  icon="fa-solid fa-book-medical"
-                  class="p-button-outlined"
-                  text
-                  style="width: 10%"
-                  @click="openCaraPakaiDialog(slotProps.index)"
-                />
-                <InputText v-model="slotProps.data.REMARK_ITEM" style="width: 60%" />
-              </template>
-            </Column>
-
-            <Column field="AKSI" header="AKSI">
-              <template #body="slotProps">
-                <Button
-                  icon="pi pi-times"
-                  severity="danger"
-                  class="p-button-text round-button2"
-                  @click.stop.prevent="confirmRemoveItemObat(slotProps.index)"
-                />
-              </template>
-            </Column>
-
-            <Column field="HARGA" header="AMOUNT" style="text-align: right">
-              <template #body="slotProps">
-                {{ formatCurrency(slotProps.data.HARGA * slotProps.data.QTY) }}
-              </template>
-            </Column>
-          </DataTable>
-
-          <template #footer>
-            <div class="panel-footer">
-              <div class="flex justify-content-between align-items-center">
-                <div class="flex align-items-center gap-2">
-                  <small>Total Items: {{ selectedObatObatan.length }}</small>
-                </div>
-                <div class="flex gap-2">
-                  <Button
-                    label="Clear All"
-                    icon="pi pi-trash"
-                    severity="danger"
-                    class="p-button-outlined round-button2"
-                    @click="clearAllItems"
-                    :disabled="selectedObatObatan.length === 0"
-                  />
-                  <Button
-                    label="Save"
-                    icon="pi pi-save"
-                    class="p-button-success round-button2 ml-1"
-                    @click="saveItems"
-                    :disabled="selectedObatObatan.length === 0"
-                  />
-                  <Button
-                    label="Histori"
-                    icon="pi pi-history"
-                    @click="showHistoryTeraphy = true"
-                    class="p-button-info round-button2 ml-1"
-                  />
-                </div>
-              </div>
-            </div>
-          </template>
-        </Panel>
-      </div>
     </div>
-  </Panel>
+  </div>
 
-  <!-- Detail Resep Dialog -->
+  <!-- ══════════════════════ Dialog: Detail Resep ══════════════════════ -->
   <Dialog
     v-model:visible="detailsResep"
     modal
-    :header="`RESEP : ${RECEIPT_NO}`"
-    :breakpoints="{ '1100px': '75vw', '575px': '90vw' }"
+    :header="`Detail Resep — ${RECEIPT_NO}`"
+    :style="{ width: '900px', maxWidth: '96vw' }"
     :closable="true"
   >
-    <div>
-      <Tag :severity="progress == 'C' ? 'success' : 'warn'">
-        {{ progress === 'C' ? 'Selesai Pada Pukul' : 'Menunggu' }} {{ jamSelesai }}
+    <div class="mb-3">
+      <Tag :severity="progress == 'C' ? 'success' : 'warn'" class="detail-status-tag">
+        <i
+          :class="progress == 'C' ? 'pi pi-check-circle' : 'pi pi-clock'"
+          style="margin-right: 4px"
+        ></i>
+        {{ progress === 'C' ? 'Selesai' : 'Menunggu' }}
+        <span v-if="jamSelesai">&nbsp;· {{ jamSelesai }}</span>
       </Tag>
     </div>
-    <div>
-      <DataTable
-        :value="detils_obat"
-        :paginator="false"
-        :scrollable="true"
-        scrollHeight="400px"
-        :breakpoints="{ '1100px': '75vw', '575px': '90vw' }"
-        class="p-datatable-sm"
-        :rowHover="true"
-        :showGridlines="true"
-        striped-rows
+
+    <DataTable
+      :value="detils_obat"
+      :scrollable="true"
+      scrollHeight="380px"
+      class="p-datatable-sm"
+      :rowHover="true"
+      stripedRows
+    >
+      <template #empty>
+        <div class="tbl-empty">
+          <i class="pi pi-info-circle"></i>
+          <p>Tidak ada data obat</p>
+        </div>
+      </template>
+
+      <Column field="BARCODE" header="Barcode" style="width: 110px">
+        <template #body="slotProps">
+          <Tag :value="slotProps.data.BARCODE" severity="secondary" class="text-xs" />
+        </template>
+      </Column>
+      <Column field="NAMABARANG_REQ" header="Item Diminta" :sortable="true" />
+      <Column field="NAMABARANG" header="Item Diberikan" :sortable="true" />
+      <Column
+        field="QTY_REQ"
+        header="Permintaan"
+        style="width: 100px; text-align: center"
+        :sortable="true"
+      />
+      <Column field="REMARK_ITEM" header="Dosis" :sortable="true" />
+      <Column
+        field="QTY"
+        header="Diberikan"
+        style="width: 100px; text-align: center"
+        :sortable="true"
       >
-        <template #empty>
-          <div class="text-center p-4">
-            <i class="pi pi-info-circle text-4xl text-blue-400 mb-3"></i>
-            <p class="text-gray-600 m-0">Tidak ada data obat yang tersedia</p>
-          </div>
+        <template #body="slotProps">
+          <Tag
+            :value="String(slotProps.data.QTY)"
+            :severity="slotProps.data.QTY > 0 ? 'success' : 'warn'"
+            style="min-width: 48px; justify-content: center"
+          />
         </template>
-
-        <template #loading>
-          <div class="text-center p-4">
-            <i class="pi pi-spin pi-spinner text-2xl text-blue-500"></i>
-            <p class="mt-2 text-gray-600">Memuat data...</p>
-          </div>
+      </Column>
+      <Column
+        field="QTY_COPY"
+        header="Copy Resep"
+        style="width: 100px; text-align: center"
+        :sortable="true"
+      >
+        <template #body="slotProps">
+          <Tag
+            v-if="slotProps.data.QTY_COPY > 0"
+            :value="String(slotProps.data.QTY_COPY)"
+            severity="info"
+            style="min-width: 48px; justify-content: center"
+          />
         </template>
-
-        <Column field="BARCODE" header="BARCODE" :sortable="true">
-          <template #body="slotProps">
-            <div class="flex align-items-center gap-2">
-              <Tag :value="slotProps.data.BARCODE" class="text-xs" />
-            </div>
-          </template>
-        </Column>
-        <Column field="NAMABARANG_REQ" header="ITEM REQ" :sortable="true">
-          <template #body="slotProps">
-            <div class="flex align-items-center gap-2">
-              {{ slotProps.data.NAMABARANG_REQ }}
-            </div>
-          </template>
-        </Column>
-        <Column field="NAMABARANG" header="ITEM APPROVED" :sortable="true">
-          <template #body="slotProps">
-            <div class="flex align-items-center gap-2">
-              {{ slotProps.data.NAMABARANG }}
-            </div>
-          </template>
-        </Column>
-        <Column field="QTY_REQ" header="PERMINTAAN" :sortable="true">
-          <template #body="slotProps">
-            <div class="flex align-items-center gap-2">
-              {{ slotProps.data.QTY_REQ }}
-            </div>
-          </template>
-        </Column>
-
-        <Column field="REMARK_ITEM" header="DOSIS" :sortable="true"></Column>
-        <Column field="QTY" header="DIBERIKAN" :sortable="true">
-          <template #body="slotProps">
-            <div class="flex align-items-center gap-2" v-if="slotProps.data.QTY > 0">
-              <Tag :value="slotProps.data.QTY" class="text-sx" style="width: 5em" />
-            </div>
-            <div class="flex align-items-center gap-2" v-else>
-              <Tag :value="slotProps.data.QTY" severity="warn" class="text-sx" style="width: 5em" />
-            </div>
-          </template>
-        </Column>
-        <Column field="QTY_COPY" header="COPY RESEP" :sortable="true">
-          <template #body="slotProps">
-            <div class="flex align-items-center gap-2" v-if="slotProps.data.QTY_COPY > 0">
-              <Tag :value="slotProps.data.QTY_COPY" class="text-sx" style="width: 5em" />
-            </div>
-          </template>
-        </Column>
-      </DataTable>
-    </div>
+      </Column>
+    </DataTable>
   </Dialog>
 
-  <!-- Dialog Cara Pakai Obat - FIXED -->
+  <!-- ══════════════════════ Dialog: Cara Pakai ═══════════════════════ -->
   <Dialog
     v-model:visible="showCaraPakaiObat"
-    :style="{ width: '40vw' }"
+    :style="{ width: '440px' }"
     modal
-    header="Cara pakai obat"
+    header="Pilih Cara Pakai Obat"
     :closable="true"
   >
-    <InputText
-      v-model="searchValue"
-      @input="listCaraMinumObat(searchValue)"
-      placeholder="Cari cara pakai..."
-      class="w-full mb-3"
-    />
+    <span class="p-input-icon-left w-full">
+      <i class="pi pi-search" />
+      <InputText
+        v-model="searchValue"
+        @input="listCaraMinumObat(searchValue)"
+        placeholder="Ketik cara pakai…"
+        class="w-full"
+        autofocus
+      />
+    </span>
 
-    <div style="height: 500px">
-      <DataTable
-        :value="listCaraPakaiObat"
-        :paginator="false"
-        :scrollable="true"
-        scrollHeight="400px"
-        class="p-datatable-sm"
-        :rowHover="true"
-        :showGridlines="true"
-        striped-rows
-      >
-        <template #empty>
-          <div class="text-center p-4">
-            <i class="pi pi-info-circle text-4xl text-blue-400 mb-3"></i>
-            <p class="text-gray-600 m-0">Ketik untuk mencari cara pakai obat</p>
-          </div>
+    <DataTable
+      :value="listCaraPakaiObat"
+      :scrollable="true"
+      scrollHeight="360px"
+      class="p-datatable-sm mt-2"
+      :rowHover="true"
+      stripedRows
+    >
+      <template #empty>
+        <div class="tbl-empty">
+          <i class="pi pi-search"></i>
+          <p>Ketik untuk mencari cara pakai</p>
+        </div>
+      </template>
+
+      <Column field="REMARK" header="Cara Pakai" />
+      <Column style="width: 90px">
+        <template #body="slotProps">
+          <Button
+            label="Pilih"
+            size="small"
+            severity="success"
+            @click="pilihCaraPakai(slotProps.data.REMARK)"
+          />
         </template>
-
-        <Column field="" header="#" style="width: 60px">
-          <template #body="slotProps">
-            {{ slotProps.index + 1 }}
-          </template>
-        </Column>
-
-        <Column field="REMARK" header="CARA PAKAI">
-          <template #body="slotProps">
-            {{ slotProps.data.REMARK }}
-          </template>
-        </Column>
-
-        <Column field="" header="AKSI" style="width: 120px">
-          <template #body="slotProps">
-            <Button
-              severity="success"
-              style="width: 100%"
-              class="round-button2"
-              label="Pilih"
-              @click="pilihCaraPakai(slotProps.data.REMARK)"
-            />
-          </template>
-        </Column>
-      </DataTable>
-    </div>
+      </Column>
+    </DataTable>
   </Dialog>
+
   <!-- History Therapy Component -->
   <HIstoryTeraphy v-model:showHistoryTeraphy="showHistoryTeraphy" @sendData="getDataHistori" />
 
-  <!-- Resep Racikan Dialog -->
-  <Dialog v-model:visible="showResepRacikan" modal header="Resep Racikan" :closable="true">
-    <Card class="m-10">
-      <template #content>
-        <div class="row">
-          <div class="col-md-4">
-            <label for="">Nama Racikan</label><br />
-            <InputText v-model="TitleRacikan" class="form-control" style="width: 100%" />
-          </div>
-          <div class="col-md-2">
-            <label for="">Jumlah</label><br />
-            <InputText
-              type="number"
-              v-model="jumlQtyResepRacikan"
-              @input="handleQuantityInput"
-              style="width: 80%"
-              class="form-control"
-            />
-          </div>
-          <div class="col-md-4">
-            <label for="">Satuan</label><br />
-            <InputText
-              v-model="SatuanRacikan"
-              class="form-control"
-              placeholder="Bungkus/"
-              style="width: 90%"
-            />
-          </div>
-          <div class="col-md-2">
-            <Button
-              label=""
-              @click="addItemRacik"
-              class="w-full round-button2 mt-4"
-              icon="pi pi-plus"
-            />
-          </div>
+  <!-- ══════════════════════ Dialog: Resep Racikan ══════════════════════ -->
+  <Dialog
+    v-model:visible="showResepRacikan"
+    modal
+    header="Tambah Resep Racikan"
+    :style="{ width: '560px' }"
+    :closable="true"
+  >
+    <div class="racikan-form">
+      <div class="racikan-header-fields">
+        <div class="racikan-field" style="flex: 2">
+          <label class="field-label">Nama Racikan <span class="required">*</span></label>
+          <InputText v-model="TitleRacikan" placeholder="Cth: Puyer Batuk" class="w-full" />
         </div>
-        <hr />
-        <div class="row" v-for="(data, index) in itemResepRacikan" :key="index">
-          <div class="col-md-9 mb-1">
-            <label for="" class="mr-2">Item Racikan</label>
-            <InputText v-model="data.NAMABARANG" style="width: 80%" />
-          </div>
-          <div class="col-md-3">
-            <Button
-              label=""
-              @click="removeItemRacikan(index)"
-              severity="danger"
-              class="round-button2 p-button-text"
-              icon="pi pi-times"
-            />
-          </div>
-        </div>
-      </template>
-      <template #footer>
-        <div class="flex gap-4 mt-1 justify-center">
-          <Button
-            label="Cancel"
-            severity="secondary"
-            variant="outlined"
-            class="w-32"
-            @click="showResepRacikan = false"
+        <div class="racikan-field">
+          <label class="field-label">Jumlah</label>
+          <InputText
+            type="number"
+            v-model="jumlQtyResepRacikan"
+            @input="handleQuantityInput"
+            class="w-full"
           />
-          <Button label="Save" @click="ResepRacikan()" class="w-32" />
         </div>
-      </template>
-    </Card>
+        <div class="racikan-field">
+          <label class="field-label">Satuan</label>
+          <InputText v-model="SatuanRacikan" placeholder="Bungkus" class="w-full" />
+        </div>
+      </div>
+
+      <div class="racikan-items-hdr">
+        <span class="racikan-items-title">
+          <i class="pi pi-list"></i>
+          Komposisi Racikan
+        </span>
+        <Button
+          icon="pi pi-plus"
+          label="Tambah Item"
+          size="small"
+          severity="success"
+          outlined
+          @click="addItemRacik"
+        />
+      </div>
+
+      <div class="racikan-item-list">
+        <div v-if="itemResepRacikan.length === 0" class="racikan-empty">
+          <i class="pi pi-info-circle"></i>
+          Belum ada item — klik Tambah Item
+        </div>
+        <div v-for="(data, index) in itemResepRacikan" :key="index" class="racikan-item-row">
+          <span class="racikan-item-no">{{ index + 1 }}</span>
+          <InputText
+            v-model="data.NAMABARANG"
+            placeholder="Nama bahan/obat…"
+            class="racikan-item-input"
+          />
+          <Button
+            icon="pi pi-times"
+            severity="danger"
+            text
+            rounded
+            size="small"
+            @click="removeItemRacikan(index)"
+          />
+        </div>
+      </div>
+    </div>
+
+    <template #footer>
+      <Button
+        label="Batal"
+        icon="pi pi-times"
+        severity="secondary"
+        outlined
+        @click="showResepRacikan = false"
+      />
+      <Button label="Simpan Racikan" icon="pi pi-save" @click="ResepRacikan()" />
+    </template>
   </Dialog>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import HIstoryTeraphy from '@/components/PoliklinikComponent/HIstoryTeraphy.vue'
 
-import ScrollPanel from 'primevue/scrollpanel'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
-import Panel from 'primevue/panel'
+import Checkbox from 'primevue/checkbox'
 import Dialog from 'primevue/dialog'
 import Tag from 'primevue/tag'
 import Toast from 'primevue/toast'
-import Card from 'primevue/card'
-import Chip from 'primevue/chip'
 
 import { useConfigStore } from '@/stores/config'
 import axios from 'axios'
@@ -655,9 +726,6 @@ const searchValue = ref('')
 const showCaraPakaiObat = ref(false)
 const currentObatIndex = ref(null)
 
-// Methods
-
-// Handle quantity input properly
 const handleQuantityInput = () => {
   jumlQtyResepRacikan.value = parseInt(jumlQtyResepRacikan.value || 0)
 }
@@ -674,9 +742,7 @@ const biayaPelayanan = ref({
   PLAFON_OBAT: 0,
 })
 
-// Fixed computed property
 const totalAmount = computed(() => {
-  // total dari item obat
   const totalObat = Array.isArray(selectedObatObatan.value)
     ? selectedObatObatan.value.reduce((total, item) => {
         const qty = parseFloat(item.QTY) || 0
@@ -685,9 +751,7 @@ const totalAmount = computed(() => {
       }, 0)
     : 0
 
-  // total dari billing
   const biayaObatan = parseFloat(biayaPelayanan.value.OBATAN) || 0
-
   return totalObat + biayaObatan
 })
 
@@ -730,7 +794,6 @@ const total_amount_obat = async () => {
       param,
     )
 
-    // Update biayaPelayanan instead of totalAmount
     if (response.data) {
       biayaPelayanan.value = {
         ...biayaPelayanan.value,
@@ -751,7 +814,6 @@ const obat_kronisBPJS = async () => {
       nosep: props.datapasien.NOSEP,
     },
   })
-  // 🔹 Buka di tab baru
   window.open(routeData.href, '_blank')
 }
 
@@ -762,7 +824,6 @@ const addItemRacik = () => {
   })
 }
 
-// FIXED: Open dialog and store current index
 const openCaraPakaiDialog = (index) => {
   currentObatIndex.value = index
   searchValue.value = ''
@@ -770,7 +831,6 @@ const openCaraPakaiDialog = (index) => {
   showCaraPakaiObat.value = true
 }
 
-// FIXED: Apply selected cara pakai to the correct item
 const pilihCaraPakai = (remark) => {
   if (currentObatIndex.value !== null && selectedObatObatan.value[currentObatIndex.value]) {
     selectedObatObatan.value[currentObatIndex.value].REMARK_ITEM = remark
@@ -838,7 +898,7 @@ const loading = ref(false)
 const showSuccess = (message = 'Operation successful') => {
   toast.add({
     severity: 'success',
-    summary: 'Success Message',
+    summary: 'Berhasil',
     detail: message,
     life: 3000,
   })
@@ -850,25 +910,25 @@ const confirmRemoveItemObat = (index) => {
 
   confirm.require({
     message: `Anda ingin menghapus item "${namaObat}"?`,
-    header: 'Konfirm hapus',
+    header: 'Konfirmasi Hapus',
     icon: 'pi pi-exclamation-triangle',
     rejectLabel: 'Batal',
     acceptLabel: 'Hapus',
-    rejectClass: 'p-button-secondary p-button-outlined round-button2',
-    acceptClass: 'p-button-danger round-button2',
+    rejectClass: 'p-button-secondary p-button-outlined',
+    acceptClass: 'p-button-danger',
     accept: () => removeItem(index),
   })
 }
 
 const ConfirmVoidResep = (RECEIPT_NO, index) => {
   confirm.require({
-    message: `Anda ingin menghapus resep "${RECEIPT_NO}"?`,
-    header: 'Konfirm hapus',
+    message: `Anda ingin membatalkan resep "${RECEIPT_NO}"?`,
+    header: 'Konfirmasi Batal Resep',
     icon: 'pi pi-exclamation-triangle',
-    rejectLabel: 'Batal',
-    acceptLabel: 'Hapus',
-    rejectClass: 'p-button-secondary p-button-outlined round-button2',
-    acceptClass: 'p-button-danger round-button2',
+    rejectLabel: 'Tidak',
+    acceptLabel: 'Batalkan',
+    rejectClass: 'p-button-secondary p-button-outlined',
+    acceptClass: 'p-button-danger',
     accept: () => RemoveResep(RECEIPT_NO, index),
   })
 }
@@ -917,11 +977,6 @@ const getdetail_sales = async (no_receipt) => {
     if (response.data.response && response.data.response.length > 0) {
       jamSelesai.value = response.data.response[0].SELESAI
       progress.value = response.data.response[0].STATUS_PROGRESS
-
-      detils_obat.value = {
-        ...detils_obat.value,
-        obat_rutin: false, // default tercentang
-      }
     }
 
     detailsResep.value = true
@@ -981,10 +1036,7 @@ const kirim_resep = async (rcpt_no) => {
   }
   try {
     const url = configStore.apiApotikUrl
-    const response = await axios.post(
-      `${url}/index.php/api/sales/kirim_resep/${id_client.value}`,
-      param,
-    )
+    await axios.post(`${url}/index.php/api/sales/kirim_resep/${id_client.value}`, param)
 
     await get_riwayat()
     showSuccess('Resep berhasil dikirim')
@@ -1051,6 +1103,7 @@ const saveItems = async () => {
     const url = configStore.apiApotikUrl
     const response = await axios.post(`${url}/index.php/api/sales/insert_sales_v2`, headerObat)
 
+    console.log(response.data)
     if (response.data?.metadata?.code == 200) {
       showSuccess('Data berhasil disimpan')
       selectedObatObatan.value = []
@@ -1080,7 +1133,6 @@ const ResepRacikan = async () => {
       return
     }
 
-    // Add main racikan item first
     const mainRacikanItem = {
       BARCODE: '00000',
       ID_BARANG: '00000',
@@ -1093,7 +1145,7 @@ const ResepRacikan = async () => {
       QTY_RACIK: 0,
       PERSEDIAAN: 0,
       MEREK: '',
-      QTY: 0, //jumlQtyResepRacikan.value,
+      QTY: 0,
       QTY_REQ: jumlQtyResepRacikan.value,
       JENIS: '',
       SATUAN_RACIK: SatuanRacikan.value,
@@ -1101,7 +1153,6 @@ const ResepRacikan = async () => {
 
     addItem(mainRacikanItem)
 
-    // Add individual racikan items
     itemResepRacikan.value.forEach((item) => {
       if (item.NAMABARANG) {
         const setItem = {
@@ -1116,7 +1167,7 @@ const ResepRacikan = async () => {
           POTONGSTOCK: 0,
           QTY_RACIK: 0,
           PERSEDIAAN: 0,
-          MEREK: '', // SatuanRacikan.value,
+          MEREK: '',
           QTY: 0,
           JENIS: '',
           SATUAN_RACIK: '',
@@ -1125,7 +1176,6 @@ const ResepRacikan = async () => {
       }
     })
 
-    // Reset form
     TitleRacikan.value = ''
     SatuanRacikan.value = ''
     jumlQtyResepRacikan.value = 0
@@ -1242,7 +1292,7 @@ const showError = (message = 'An error occurred') => {
 const showWarning = (message) => {
   toast.add({
     severity: 'warn',
-    summary: 'Warning',
+    summary: 'Perhatian',
     detail: message,
     life: 4000,
   })
@@ -1251,6 +1301,7 @@ const showWarning = (message) => {
 const findObatan = async (mode, barcode) => {
   try {
     if (searchQuery.value.length <= 2) {
+      availableObat.value = []
       return
     }
 
@@ -1291,167 +1342,127 @@ const formatCurrency = (amount) => {
   }).format(amount)
 }
 
+/* ── Recent Obat Poli ─────────────────────────────────── */
+const recentObat = ref([])
+const loadingRecent = ref(false)
+
+const getTodayStr = () => {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+}
+
+const getRecentObat = async () => {
+  const kodePoli = props.datapasien?.KODERUANGAN || 'UNKNOWN'
+  const RECENT_OBAT_KEY = `recent_obat_poly_${kodePoli}`
+  const RECENT_OBAT_DATE_KEY = `recent_obat_poly_date_${kodePoli}`
+
+  try {
+    loadingRecent.value = true
+    const today = getTodayStr()
+    const savedDate = localStorage.getItem(RECENT_OBAT_DATE_KEY)
+
+    if (savedDate === today) {
+      const cached = localStorage.getItem(RECENT_OBAT_KEY)
+      if (cached) {
+        recentObat.value = JSON.parse(cached)
+        return
+      }
+    }
+
+    localStorage.removeItem(RECENT_OBAT_KEY)
+    localStorage.removeItem(RECENT_OBAT_DATE_KEY)
+
+    const url = configStore.apiApotikUrl
+    const response = await axios.post(`${url}/index.php/api/data_referensi/get_recent_obat_poly`, {
+      id_client: id_client.value,
+      kode_poli: kodePoli,
+      limit: '20',
+    })
+    if (response.data?.code === 200) {
+      recentObat.value = response.data.result || []
+      localStorage.setItem(RECENT_OBAT_KEY, JSON.stringify(recentObat.value))
+      localStorage.setItem(RECENT_OBAT_DATE_KEY, today)
+    }
+  } catch (error) {
+    console.error('Gagal memuat recent obat:', error)
+  } finally {
+    loadingRecent.value = false
+  }
+}
+
+const addRecentObat = (item) => {
+  addItem(
+    {
+      BARCODE: item.BARCODE,
+      CAPTION: item.NAMABARANG,
+      SATUAN: item.SATUAN,
+      HARGAJUAL: item.HARGA || 0,
+      HARGA: item.HARGA || 0,
+      QTY: 0,
+      QUNATITY: 0,
+      MEREK: item.SATUAN,
+    },
+    1,
+  )
+}
+
+watch(listObat, (val) => {
+  if (val && recentObat.value.length === 0) {
+    getRecentObat()
+  }
+})
+
 onMounted(() => {
   get_riwayat()
 })
 </script>
 
 <style scoped>
-.panel-total-therapy {
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.header-container {
+/* ═══════════════════════════════════════════════════
+   Layout utama: sidebar + main
+═══════════════════════════════════════════════════ */
+.therapy-wrapper {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  gap: 20px;
-  padding: 8px 0;
-  flex-wrap: nowrap;
-}
-
-.total-section {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.label {
-  font-size: 13px;
-  font-weight: 500;
-  color: #6b7280;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
-.amount {
-  font-size: 18px;
-  font-weight: 700;
-  color: #10b981;
-  transition: color 0.3s ease;
-}
-
-.amount.exceeded {
-  color: #dc2626;
-}
-
-.status-section {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-left: auto;
-}
-
-.status-tag {
-  font-size: 12px;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-}
-
-.status-tag small {
-  font-size: 11px;
-  opacity: 0.9;
-  display: block;
-  margin-top: 2px;
-}
-
-.danger-tag {
-  background-color: #fee2e2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
-}
-
-.success-tag {
-  background-color: #dcfce7;
-  color: #166534;
-  border: 1px solid #bbf7d0;
-}
-
-.mr-2 {
-  margin-right: 6px;
-}
-
-.ml-1 {
-  margin-left: 6px;
-}
-
-.mb-2 {
-  margin-bottom: 12px;
-}
-
-.flex {
-  display: flex;
-}
-
-.justify-end {
-  justify-content: flex-end;
-}
-
-.round-button2 {
-  border-radius: 6px;
-}
-/* Obat Picker */
-.obat-picker {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-
-  min-height: 400px;
-}
-.picker-panel {
-  border: 1px solid var(--p-content-border-color);
-  border-radius: 8px;
-  display: flex;
-
-  background-color: #10b981;
-  flex-direction: column;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
   overflow: hidden;
+  background: #f8fafc;
+  min-height: 560px;
 }
-.picker-search {
-  padding: 10px;
-  border-bottom: 1px solid var(--p-content-border-color);
 
-  background-color: #10b981;
-}
-.picker-filter-tags {
+/* ── Sidebar ─────────────────────────────────────── */
+.therapy-sidebar {
+  width: 188px;
+  flex-shrink: 0;
+  border-right: 1px solid #e2e8f0;
   display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+.sidebar-hdr {
+  display: flex;
+  align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f1f5f9;
+}
+.sidebar-hdr-icon {
+  color: #64748b;
+  font-size: 13px;
+}
+.sidebar-hdr-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  flex: 1;
+}
+.sidebar-count {
+  font-size: 10px !important;
+}
 
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--p-content-border-color);
-}
-.filter-tag {
-  font-size: 11px;
-  padding: 3px 10px;
-  background-color: #10b981;
-  border-radius: 20px;
-  border: 1px solid var(--p-content-border-color);
-  background: transparent;
-  color: white;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  background-color: #10b981;
-  font-family: inherit;
-}
-.filter-tag:hover {
-  border-color: var(--p-primary-color);
-  color: var(--p-primary-color);
-}
-.filter-tag.active {
-  background: var(--p-primary-color);
-  border-color: var(--p-primary-color);
-  color: #fff;
-}
-.picker-list {
+.sidebar-list {
   flex: 1;
   overflow-y: auto;
   padding: 8px;
@@ -1459,234 +1470,641 @@ onMounted(() => {
   flex-direction: column;
   gap: 6px;
 }
-.picker-empty {
+
+.sidebar-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  height: 100%;
-  min-height: 100px;
-  color: var(--p-text-muted-color);
-  font-size: 0.85rem;
+  gap: 6px;
+  padding: 24px 8px;
+  color: #94a3b8;
+  font-size: 11px;
+  text-align: center;
+}
+.sidebar-empty i {
+  font-size: 22px;
+}
+.sidebar-empty p {
+  margin: 0;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .header-container {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .status-section {
-    width: 100%;
-    margin-left: 0;
-  }
-
-  .status-tag {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .amount {
-    font-size: 20px;
-  }
+/* Resep Card */
+.resep-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  padding: 8px 9px;
+  background: #fff;
+  transition: box-shadow 0.15s;
+}
+.resep-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.resep-sent {
+  border-left: 3px solid #22c55e;
+}
+.resep-pending {
+  border-left: 3px solid #f97316;
 }
 
-:deep(.p-datatable .p-datatable-tbody > tr > td) {
-  padding: 0.1rem 0.5rem;
-}
-
-:deep(.p-datatable .p-datatable-thead > tr > th) {
-  padding: 0.5rem 1rem;
-}
-
-.patient-detail-dialog {
-  border-radius: 8px;
-}
-
-.dialog-footer {
+.resep-card-top {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.resep-date {
+  font-size: 10px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.resep-time {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.resep-status-row {
+  margin-bottom: 3px;
+}
+.resep-tag {
+  font-size: 10px !important;
+  padding: 2px 6px !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.resep-sent-time {
+  font-size: 9px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.resep-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.resep-btn {
+  font-size: 10px !important;
+  padding: 2px 6px !important;
+  height: 24px !important;
+}
+.resep-btn-del {
+  margin-left: auto;
+}
+
+/* ── Main content ────────────────────────────────── */
+.therapy-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+}
+
+/* Plafon bar */
+.plafon-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.plafon-ok {
+  background: #f0fdf4;
+}
+.plafon-exceeded {
+  background: #fff1f2;
+}
+
+.plafon-left {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.plafon-lbl {
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.plafon-amount {
+  font-size: 18px;
+  font-weight: 700;
+  color: #16a34a;
+}
+.plafon-amount-over {
+  color: #dc2626;
+}
+
+.plafon-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.plafon-max-lbl {
+  font-size: 11px;
+  color: #64748b;
+}
+
+/* Toolbar */
+.therapy-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
-.panel-footer {
-  border-top: 1px solid #e5e7eb;
-  padding-top: 16px;
-  margin-top: 16px;
-}
-
-.round-button2 {
-  border-radius: 6px;
-}
-
-.badge-success {
-  background-color: #10b981;
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.row {
+.toolbar-left {
   display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.toolbar-icon {
+  color: #64748b;
+  font-size: 14px;
+}
+.toolbar-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+.toolbar-count {
+  font-size: 10px !important;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
-.col-md-2 {
-  flex: 0 0 16.666667%;
-  max-width: 16.666667%;
+.btn-racikan {
+  background-color: #db2777 !important;
+  border-color: #db2777 !important;
+  color: #fff !important;
+}
+.btn-racikan:hover {
+  background-color: #be185d !important;
 }
 
-.col-md-4 {
-  flex: 0 0 33.333333%;
-  max-width: 33.333333%;
+/* Table tweaks */
+.therapy-table {
+  flex: 1;
 }
 
-.col-md-10 {
-  flex: 0 0 83.333333%;
-  max-width: 83.333333%;
+.obat-cell-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #1e293b;
+}
+.obat-cell-barcode {
+  font-size: 10px;
+  color: #94a3b8;
+  font-family: monospace;
 }
 
-.col-md-12 {
-  flex: 0 0 100%;
-  max-width: 100%;
+.qty-input {
+  width: 72px;
+  font-size: 12px !important;
+  padding: 4px 6px !important;
+  text-align: right;
 }
 
-@media (max-width: 768px) {
-  .col-md-2,
-  .col-md-4,
-  .col-md-10,
-  .col-md-12 {
-    flex: 0 0 100%;
-    max-width: 100%;
-  }
+.satuan-text {
+  font-size: 11px;
+  color: #475569;
 }
 
-.form-control {
-  display: block;
-  width: 100%;
-  padding: 0.375rem 0.75rem;
-  font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.5;
-  color: #212529;
-  background-color: #fff;
-  background-image: none;
-  border: 1px solid #ced4da;
-  border-radius: 0.25rem;
-  transition:
-    border-color 0.15s ease-in-out,
-    box-shadow 0.15s ease-in-out;
+.text-muted-sm {
+  color: #cbd5e1;
+  font-size: 13px;
 }
 
-.form-control:focus {
-  color: #212529;
-  background-color: #fff;
-  border-color: #86b7fe;
-  outline: 0;
-  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+.cara-pakai-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.cara-pakai-input {
+  flex: 1;
+  font-size: 11px !important;
+  padding: 4px 6px !important;
+  min-width: 0;
 }
 
-.btn {
-  display: inline-block;
-  font-weight: 400;
-  line-height: 1.5;
-  color: #212529;
-  text-align: center;
-  text-decoration: none;
-  vertical-align: middle;
+.price-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #16a34a;
+}
+
+/* Empty state */
+.tbl-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+.tbl-empty i {
+  font-size: 28px;
+}
+.tbl-empty p {
+  margin: 0;
+}
+
+/* Footer */
+.therapy-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.footer-info {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.footer-total-lbl {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+}
+.footer-total-amt {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.footer-items-lbl {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Recent Obat Poli ─────────────────────────────── */
+.recent-obat-section {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+}
+
+.recent-obat-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.recent-obat-hdr-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.recent-obat-hdr-left .pi-star-fill {
+  color: #f59e0b;
+  font-size: 13px;
+}
+.recent-loading {
+  font-size: 11px;
+  color: #92400e;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.recent-obat-empty {
+  font-size: 12px;
+  color: #a16207;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+}
+
+.recent-obat-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.recent-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 10px;
+  background: #fff;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
   cursor: pointer;
-  background-color: transparent;
-  border: 1px solid transparent;
-  padding: 0.375rem 0.75rem;
-  font-size: 1rem;
-  border-radius: 0.25rem;
-  transition:
-    color 0.15s ease-in-out,
-    background-color 0.15s ease-in-out,
-    border-color 0.15s ease-in-out,
-    box-shadow 0.15s ease-in-out;
+  min-width: 130px;
+  max-width: 200px;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.recent-chip:hover {
+  background: #fef9c3;
+  border-color: #f59e0b;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+  transform: translateY(-1px);
+}
+.recent-chip:active {
+  transform: translateY(0);
 }
 
-.btn-danger {
+.recent-chip-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.35;
+  white-space: normal;
+  word-break: break-word;
+}
+.recent-chip-price {
+  font-size: 11px;
+  font-weight: 700;
+  color: #16a34a;
+  margin-top: 2px;
+}
+.recent-chip-per {
+  font-size: 10px;
+  font-weight: 400;
+  color: #64748b;
+}
+.recent-chip-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+.recent-chip-satuan {
+  font-size: 10px;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.recent-chip-count {
+  font-size: 10px;
+  font-weight: 700;
+  color: #d97706;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.recent-chip-count .pi {
+  font-size: 9px;
+}
+
+/* ── Dialog: Cari Obat ─────────────────────────── */
+.obat-dialog-search {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.obat-search-wrap {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+}
+.obat-search-wrap i {
+  position: absolute;
+  left: 10px;
+  color: #94a3b8;
+  font-size: 13px;
+  pointer-events: none;
+  z-index: 1;
+}
+.obat-search-input {
+  padding-left: 32px !important;
+  width: 380px;
+  font-size: 13px;
+  height: 36px;
+}
+.obat-found-tag {
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* ── Table: List Obat — soft palette ─────────────── */
+:deep(.obat-list-table .p-datatable-thead > tr > th) {
+  background: #eef6ff;
+  color: #3b6fa0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  border-bottom: 2px solid #bfdbfe;
+  padding: 0.5rem 0.75rem;
+}
+
+:deep(.obat-list-table .p-datatable-tbody > tr) {
+  background: #ffffff;
+}
+:deep(.obat-list-table .p-datatable-tbody > tr:nth-child(even)) {
+  background: #f5f9ff;
+}
+:deep(.obat-list-table .p-datatable-tbody > tr > td) {
+  border-bottom: 1px solid #e8f0fa;
+  padding: 0.35rem 0.75rem;
+  color: #334155;
+}
+:deep(.obat-list-table .p-datatable-tbody > tr:hover > td) {
+  background: #dbeafe !important;
+  color: #1e40af;
+  transition: background 0.15s;
+}
+
+:deep(.obat-list-table .p-paginator) {
+  background: #f0f7ff;
+  border-top: 1px solid #bfdbfe;
+  padding: 6px 10px;
+}
+:deep(.obat-list-table .p-paginator .p-paginator-page.p-highlight) {
+  background: #3b82f6;
   color: #fff;
-  background-color: #dc3545;
-  border-color: #dc3545;
+  border-radius: 5px;
 }
 
-.btn-danger:hover {
-  color: #fff;
-  background-color: #c82333;
-  border-color: #bd2130;
+.obat-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #1e293b;
+}
+.batch-badge {
+  font-size: 10px;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 1px 5px;
+  border-radius: 4px;
 }
 
-.btn-xs {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  border-radius: 0.2rem;
+/* ── Dialog: Detail Resep ─────────────────────── */
+.detail-status-tag {
+  font-size: 12px !important;
+  padding: 5px 12px !important;
 }
 
-.btn-block {
-  display: block;
-  width: 100%;
+/* ── Dialog: Resep Racikan ────────────────────── */
+.racikan-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.mb-1 {
-  margin-bottom: 0.25rem;
+.racikan-header-fields {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+.racikan-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+.field-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+}
+.required {
+  color: #dc2626;
 }
 
-.mb-2 {
-  margin-bottom: 0.5rem;
+.racikan-items-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.racikan-items-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.mb-3 {
-  margin-bottom: 1rem;
+.racikan-item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.racikan-empty {
+  font-size: 12px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 0;
 }
 
-.mt-4 {
-  margin-top: 1.5rem;
+.racikan-item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.racikan-item-no {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  min-width: 18px;
+  text-align: right;
+}
+.racikan-item-input {
+  flex: 1;
+  font-size: 12px !important;
 }
 
-.mr-2 {
-  margin-right: 0.5rem;
+/* ── DataTable global tweaks ─────────────────── */
+:deep(.p-datatable .p-datatable-tbody > tr > td) {
+  padding: 0.25rem 0.6rem;
+  font-size: 12px;
+}
+:deep(.p-datatable .p-datatable-thead > tr > th) {
+  padding: 0.45rem 0.6rem;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  background: #f8fafc;
+  color: #475569;
 }
 
-.ml-1 {
-  margin-left: 0.25rem;
-}
-
+/* ── Misc utilities ────────────────────────────── */
 .w-full {
   width: 100%;
 }
-
-.w-32 {
-  width: 8rem;
+.mt-2 {
+  margin-top: 8px;
+}
+.mb-3 {
+  margin-bottom: 12px;
+}
+.text-xs {
+  font-size: 10px;
 }
 
-.text-center {
-  text-align: center;
-}
-
-.flex {
-  display: flex;
-}
-
-.justify-center {
-  justify-content: center;
-}
-
-.justify-end {
-  justify-content: flex-end;
-}
-
-.gap-4 {
-  gap: 1rem;
-}
-
-.gap-2 {
-  gap: 0.5rem;
+/* ── Responsive ────────────────────────────────── */
+@media (max-width: 768px) {
+  .therapy-wrapper {
+    flex-direction: column;
+  }
+  .therapy-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+    max-height: 200px;
+  }
+  .sidebar-list {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .resep-card {
+    min-width: 160px;
+  }
+  .racikan-header-fields {
+    flex-direction: column;
+  }
 }
 </style>

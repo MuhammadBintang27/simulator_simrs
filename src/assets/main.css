@@ -34,6 +34,21 @@ a,
   }
 }
 
+/* ── PrimeVue v4 DatePicker: year/month title buttons ── */
+.p-datepicker-select-year,
+.p-datepicker-select-month {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  user-select: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+.p-datepicker-select-year:hover,
+.p-datepicker-select-month:hover {
+  background: rgba(0, 0, 0, 0.06) !important;
+}
+
 /* ── Global Print: sembunyikan layout AdminLTE, hanya konten halaman yang tercetak ── */
 @media print {
   .main-sidebar,

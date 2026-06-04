@@ -135,7 +135,6 @@
           <div class="print-sig-name">( ......................... )</div>
         </div>
       </div>
-
       <div class="print-footer-note">Dicetak pada: {{ nowStr }} &nbsp;|&nbsp; {{ company }}</div>
     </template>
 

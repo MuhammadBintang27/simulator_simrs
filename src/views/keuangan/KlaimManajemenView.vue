@@ -726,7 +726,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, TransitionGroup, nextTick } from 'vue'
+import { ref, onMounted, computed, TransitionGroup, nextTick, watch } from 'vue'
 import { useConfigStore } from '@/stores/config'
 import axios from 'axios'
 import DatePicker from 'primevue/datepicker'
@@ -1033,6 +1033,38 @@ const loadColumnPreference = () => {
   }
 }
 
+const FILTER_STORAGE_KEY = 'klaimManajemen_filterParams'
+
+const saveFilterParams = () => {
+  try {
+    const params = {
+      startDate: startDate.value ? startDate.value.toISOString() : null,
+      endDate: endDate.value ? endDate.value.toISOString() : null,
+      jenisRawatSelected: jenisRawatSelected.value,
+      sttsPulangSelected: sttsPulangSelected.value,
+      caraBayarSelected: caraBayarSelected.value,
+    }
+    localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(params))
+  } catch (error) {
+    console.error('Error saving filter params:', error)
+  }
+}
+
+const loadFilterParams = () => {
+  try {
+    const saved = localStorage.getItem(FILTER_STORAGE_KEY)
+    if (!saved) return
+    const params = JSON.parse(saved)
+    if (params.startDate) startDate.value = new Date(params.startDate)
+    if (params.endDate) endDate.value = new Date(params.endDate)
+    if (params.jenisRawatSelected) jenisRawatSelected.value = params.jenisRawatSelected
+    if (params.sttsPulangSelected) sttsPulangSelected.value = params.sttsPulangSelected
+    if (params.caraBayarSelected) caraBayarSelected.value = params.caraBayarSelected
+  } catch (error) {
+    console.error('Error loading filter params:', error)
+  }
+}
+
 // const getUniqueValues = (field) => {
 //   return [...new Set(medicalData.value.map((item) => item[field]))]
 //     .filter((val) => val != null)
@@ -1112,8 +1144,8 @@ const exportToExcel = () => {
 }
 
 onMounted(() => {
-  // Initialize
   loadColumnPreference()
+  loadFilterParams()
 })
 
 const sttsPulangSelected = ref({
@@ -1151,6 +1183,12 @@ const jenis_rawat = ref([
     caption: 'JALAN',
   },
 ])
+
+watch(
+  [startDate, endDate, jenisRawatSelected, sttsPulangSelected, caraBayarSelected],
+  saveFilterParams,
+  { deep: true },
+)
 
 // Toast functions
 const showSuccess = (message = 'Operation successful') => {

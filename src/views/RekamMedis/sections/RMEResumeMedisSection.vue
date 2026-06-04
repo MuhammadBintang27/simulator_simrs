@@ -285,7 +285,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, inject } from 'vue'
 import { useConfigStore, useAuthStore } from '@/stores/config'
 import { storeToRefs } from 'pinia'
 import axios from 'axios'
@@ -298,6 +298,9 @@ const props = defineProps({
 const configStore = useConfigStore()
 const authStore = useAuthStore()
 const { id_client } = storeToRefs(authStore)
+
+const reportSectionData = inject('reportSectionData', () => {})
+const addTimelineEvent = inject('addTimelineEvent', () => {})
 
 // ── State ──────────────────────────────────────────────────────────────────────
 const loading = ref(true)
@@ -374,6 +377,19 @@ const fetchData = async () => {
     console.error(e)
   } finally {
     loading.value = false
+    const hasResume = !!data_ranap.value?.NOPENDAFTARAN
+    reportSectionData('resume', hasResume)
+    if (hasResume && data_ranap.value?.KELUARPOLY) {
+      addTimelineEvent('keluar', {
+        key: 'keluar',
+        label: 'Keluar / Pulang',
+        icon: '🏠',
+        color: '#1a6b4a',
+        datetime: data_ranap.value.KELUARPOLY,
+        meta: caraKeluarText.value || '',
+        duration: data_masuk.value?.display || '',
+      })
+    }
   }
 }
 

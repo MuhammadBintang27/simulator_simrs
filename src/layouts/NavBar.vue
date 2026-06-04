@@ -96,7 +96,11 @@ const configStore = useConfigStore()
 const { user_name, company } = storeToRefs(authStore)
 
 const toggleSidebar = () => {
-  configStore.toggleSidebar()
+  if (window.innerWidth <= 768) {
+    configStore.toggleMobileSidebar()
+  } else {
+    configStore.toggleSidebar()
+  }
 }
 
 const logout = () => {

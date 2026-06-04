@@ -55,6 +55,17 @@
           </div>
         </div>
 
+        <div class="remember-row">
+          <label class="remember-label">
+            <input
+              type="checkbox"
+              v-model="rememberMe"
+              class="remember-check"
+            />
+            <span>Ingat saya</span>
+          </label>
+        </div>
+
         <button type="submit" class="btn-submit" :disabled="loading">
           <span v-if="loading" class="spinner"></span>
           Masuk
@@ -90,6 +101,7 @@ const penugasanStore = usePenugasanLayananStore()
 // State
 const showPassword = ref(false)
 const loading = ref(false)
+const rememberMe = ref(false)
 
 const formData = reactive({
   name: '',
@@ -272,23 +284,38 @@ const handleSubmit = async () => {
 
       const userData = response.data.response
 
+      // Remember Me
+      if (rememberMe.value) {
+        localStorage.setItem('rm_username', formData.name)
+        localStorage.setItem('rm_password', formData.password)
+        localStorage.setItem('rm_flag', '1')
+      } else {
+        localStorage.removeItem('rm_username')
+        localStorage.removeItem('rm_password')
+        localStorage.removeItem('rm_flag')
+      }
+
       // 1. Save basic data to localStorage dan authStore FIRST
       localStorage.setItem('loggedIn', 'true')
       localStorage.setItem('id_client', userData.ID_CLIENT)
       localStorage.setItem('user_name', userData.NAMA_USER)
       localStorage.setItem('user_id', formData.name)
       localStorage.setItem('id_lokasi', userData.ID_LOKASI)
+      localStorage.setItem('group_user', userData.GROUP_USER)
+      localStorage.setItem('kd_dokter', userData.KD_DOKTER || '')
 
       // 2. Set minimal user data to authStore first (so id_client is available)
       authStore.setIdClient(
         userData.ID_CLIENT,
         userData.NAMA_USER,
         formData.name,
-        userData.NAMA_RS || 'RS', // fallback jika tidak ada di login
+        userData.NAMA_RS || 'RS',
         userData.ALAMAT || '',
         userData.LINK_LOGO || '',
         userData.ID_LOKASI,
-        userData.use_tte_bsre,
+        userData.USE_TTE_BSRE || userData.use_tte_bsre,
+        userData.DISABLE_JIKA_SEDIAAN_NOL || userData.disable_jika_sediaan_nol,
+        userData.GROUP_USER || userData.group_user,
       )
 
       // 3. Get job_code and bidang_id from userData
@@ -321,6 +348,7 @@ const handleSubmit = async () => {
         id_client: userData.ID_CLIENT,
         id_lokasi: userData.ID_LOKASI,
         group_user: userData.GROUP_USER,
+        kd_dokter: userData.KD_DOKTER || '',
       }
 
       // 6. Update authStore with complete user data
@@ -372,8 +400,11 @@ const handleSubmit = async () => {
 }
 
 onMounted(() => {
-  // Cek jika sudah login, langsung redirect ke dashboard
-  //check_jam_server_dan_local()
+  if (localStorage.getItem('rm_flag') === '1') {
+    formData.name     = localStorage.getItem('rm_username') || ''
+    formData.password = localStorage.getItem('rm_password') || ''
+    rememberMe.value  = true
+  }
 })
 </script>
 
@@ -601,6 +632,30 @@ input:focus {
 
 .toggle-icon:hover {
   color: #ec7c13;
+}
+
+.remember-row {
+  display: flex;
+  align-items: center;
+  margin-top: -0.4rem;
+}
+.remember-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: #374151;
+  user-select: none;
+}
+.remember-check {
+  width: 16px;
+  height: 16px;
+  accent-color: #ec7c13;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+  border: none;
 }
 
 .btn-submit {

@@ -294,7 +294,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, inject } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConfigStore, useAuthStore } from '@/stores/config'
 import axios from 'axios'
@@ -309,6 +309,9 @@ const props = defineProps({
 const configStore = useConfigStore()
 const authStore = useAuthStore()
 const { id_client } = storeToRefs(authStore)
+
+const reportSectionData = inject('reportSectionData', () => {})
+const addTimelineEvent = inject('addTimelineEvent', () => {})
 
 // ── Data State ─────────────────────────────────────────────────────────────────
 const loading = ref(true)
@@ -356,6 +359,18 @@ const fetchKajianAwal = async () => {
     console.error('[KajianAwalSection]', e)
   } finally {
     loading.value = false
+    const hasKajian = !!(data.value?.keluhan_utama || data.value?.dx_awal || data.value?.riwayat_peny_skrg)
+    reportSectionData('kajian-awal', hasKajian)
+    if (hasKajian) {
+      addTimelineEvent('kajian-awal', {
+        key: 'kajian-awal',
+        label: 'Kajian Awal Dokter',
+        icon: '🩻',
+        color: '#1565c0',
+        datetime: data.value?.last_update || '',
+        meta: data.value?.dx_awal || '',
+      })
+    }
   }
 }
 

@@ -595,8 +595,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: linear-gradient(135deg, #0f2942 0%, #1a56a8 100%);
-  border-radius: 10px;
+  background: linear-gradient(135deg, #1a3a5c 0%, #2563a8 100%);
+  border-radius: 4px;
   padding: 1rem 1.5rem;
   color: #fff;
 }
@@ -619,7 +619,7 @@ onMounted(() => {
 
 /* ====== Cards ====== */
 .ops-card {
-  border-radius: 10px;
+  border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   background: #fff;
@@ -639,17 +639,11 @@ onMounted(() => {
   font-weight: 400;
   opacity: 0.88;
 }
-.kondisi-header {
-  background: linear-gradient(135deg, #7f1d1d, #dc2626);
-}
-.persiapan-header {
-  background: linear-gradient(135deg, #1a3a5c, #2563a8);
-}
-.admin-header {
-  background: linear-gradient(135deg, #78350f, #d97706);
-}
+.kondisi-header,
+.persiapan-header,
+.admin-header,
 .otorisasi-header {
-  background: linear-gradient(135deg, #0f2942, #1a56a8);
+  background: linear-gradient(135deg, #1a3a5c, #2563a8);
 }
 .ops-card-body {
   padding: 1rem 1.1rem;
@@ -715,7 +709,7 @@ onMounted(() => {
   justify-content: space-between;
   padding: 0.45rem 0.75rem;
   background: #f9fafb;
-  border-radius: 7px;
+  border-radius: 4px;
   border: 1px solid #e5e7eb;
   gap: 0.75rem;
 }
@@ -737,7 +731,7 @@ onMounted(() => {
   flex-shrink: 0;
   width: 52px;
   height: 52px;
-  background: linear-gradient(135deg, #0f2942, #1a56a8);
+  background: linear-gradient(135deg, #1a3a5c, #2563a8);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -758,7 +752,7 @@ onMounted(() => {
   line-height: 1.5;
 }
 .btn-otorisasi {
-  background: linear-gradient(135deg, #0f2942, #1a56a8) !important;
+  background: linear-gradient(135deg, #1a3a5c, #2563a8) !important;
   border: none !important;
   font-weight: 600;
 }
@@ -900,7 +894,7 @@ onMounted(() => {
   gap: 0.5rem;
 }
 .btn-simpan {
-  background: linear-gradient(135deg, #0f2942, #1a56a8) !important;
+  background: linear-gradient(135deg, #1a3a5c, #2563a8) !important;
   border: none !important;
   font-weight: 600;
 }

@@ -74,16 +74,13 @@
                   <dt><span class="stat-label">Cara Bayar</span></dt>
                   <dd>
                     {{ fact?.CARABAYAR }}
-                    <strong>
-                      <Button
-                        @click="PrintSEP(fact?.NOSEP)"
-                        :label="fact?.NOSEP"
-                        severity="info"
-                        outlined
-                        size="small"
-                        class="ml-2 round-button2"
-                      />
-                    </strong>
+                    <a
+                      v-if="fact?.NOSEP"
+                      href="#"
+                      class="sep-link ml-2"
+                      @click.prevent="PrintSEP(fact?.NOSEP)"
+                      >{{ fact?.NOSEP }}</a
+                    >
                   </dd>
 
                   <dt><span class="stat-label">DPJP</span></dt>
@@ -130,15 +127,6 @@
                       Rincian Layanan
                     </button>
                   </dd>
-                  <dd style="margin-top:6px">
-                    <button
-                      @click="openRMEViewer"
-                      class="btn btn-primary btn-xs"
-                      title="Lihat Rekam Medis Elektronik lengkap"
-                    >
-                      📋 RME Viewer
-                    </button>
-                  </dd>
                 </dl>
               </div>
             </div>
@@ -146,7 +134,7 @@
         </Panel>
         <div class="row">
           <div class="col-md-12 mt-1">
-            <Tabs value="0" scrollable>
+            <Tabs v-model:value="activeTab" scrollable>
               <TabList>
                 <Tab value="0">PEMERIKSAAN</Tab>
                 <Tab
@@ -160,6 +148,7 @@
                   >HEMODIALISA</Tab
                 >
                 <Tab v-if="fact?.KODEPOLI == 'MAT'" value="7">VISUS MATA</Tab>
+                <Tab v-if="fact?.KODEPOLI == 'OBG'" value="9">OBGYN</Tab>
                 <Tab value="1">TINDAKAN</Tab>
                 <Tab value="2">TERAPHY</Tab>
                 <Tab value="3">LAMPIRAN FILE</Tab>
@@ -173,6 +162,23 @@
                     pasien. Data ini menjadi dasar dalam pemantauan klinis, evaluasi perawatan,
                     serta deteksi dini adanya perubahan status kesehatan.
                   </p>
+
+                  <!-- Hasil Lab Abnormal -->
+                  <div v-if="hasilLabPositif.length > 0" class="lab-compact-wrap mb-2">
+                    <span class="lab-compact-title">
+                      <i class="fas fa-flask"></i> Lab Abnormal:
+                    </span>
+                    <span
+                      v-for="item in hasilLabPositif"
+                      :key="item.ID"
+                      class="lab-compact-chip"
+                      :title="`${item.KATEGORI} | Normal: ${item.NORMAL}`"
+                    >
+                      {{ item.PEMERIKSAAN.split('\n')[0].trim() }}
+                      <strong>{{ item.HASIL }}</strong>
+                    </span>
+                  </div>
+
                   <div class="patient-detail-content">
                     <div class="detail-section">
                       <div class="detail-grid">
@@ -276,6 +282,55 @@
                               </InputGroup>
                             </div>
                           </div>
+                          <Transition name="bmi-fade">
+                            <div
+                              v-if="bmiData"
+                              class="bmi-card mt-3"
+                              :style="{
+                                background: bmiData.bgColor,
+                                borderColor: bmiData.barColor,
+                              }"
+                            >
+                              <div class="bmi-card-left">
+                                <span class="bmi-title">Indeks Massa Tubuh (BMI)</span>
+                                <span class="bmi-value" :style="{ color: bmiData.textColor }">{{
+                                  bmiData.value
+                                }}</span>
+                                <span class="bmi-unit">kg/m²</span>
+                              </div>
+                              <div class="bmi-card-center">
+                                <span
+                                  class="bmi-category-badge"
+                                  :style="{ background: bmiData.barColor, color: '#fff' }"
+                                >
+                                  {{ bmiData.category }}
+                                </span>
+                                <div class="bmi-bar-track mt-1">
+                                  <div
+                                    class="bmi-bar-fill"
+                                    :style="{
+                                      width: bmiData.percent + '%',
+                                      background: bmiData.barColor,
+                                    }"
+                                  ></div>
+                                  <div
+                                    class="bmi-bar-marker"
+                                    :style="{ left: bmiData.percent + '%' }"
+                                  ></div>
+                                </div>
+                                <div class="bmi-bar-labels">
+                                  <span>Kurang</span><span>Normal</span><span>Lebih</span
+                                  ><span>Obesitas</span>
+                                </div>
+                              </div>
+                              <div class="bmi-card-right">
+                                <span class="bmi-detail" :style="{ color: bmiData.textColor }">
+                                  BB {{ soap.berat_badan }} kg / TB {{ soap.tinggi_badan }} cm
+                                </span>
+                              </div>
+                            </div>
+                          </Transition>
+
                           <div class="row mt-5">
                             <div class="col-md-12">
                               <label style="color: darkblue">Tingkat kesadaran</label>
@@ -298,6 +353,7 @@
                                 </div>
                               </div>
                             </div>
+
                             <!-- Display selected value -->
                             <div v-if="selectedLevel" class="selected-info mt-3">
                               <p><strong>Display:</strong> {{ getSelectedLevel?.display }}</p>
@@ -346,11 +402,45 @@
                           style="height: 3px"
                         ></ProgressBar>
 
+                        <div v-if="hasDraftInStorage" class="draft-restore-banner mt-2 mb-2">
+                          <i class="pi pi-save mr-2"></i>
+                          <span>Ada draft yang belum tersimpan ke server.</span>
+                          <Button
+                            label="Pulihkan Draft"
+                            size="small"
+                            severity="warn"
+                            class="ml-2"
+                            @click="restoreDraft"
+                          />
+                          <Button
+                            label="Abaikan"
+                            size="small"
+                            severity="secondary"
+                            variant="text"
+                            class="ml-1"
+                            @click="dismissDraft"
+                          />
+                        </div>
+
                         <Panel class="mt-2">
                           <template #header>
                             <h6 style="color: darkcyan"><strong>SOAP</strong></h6>
                           </template>
                           <template #icons>
+                            <span
+                              v-if="draftStatus === 'draft'"
+                              class="draft-status-chip draft-unsaved mr-2"
+                            >
+                              <i class="pi pi-clock"></i> Draft
+                              {{ formatDraftTime(lastDraftSavedAt) }}
+                            </span>
+                            <!-- <span
+                              v-if="draftStatus === 'saved'"
+                              class="draft-status-chip draft-saved mr-2"
+                            >
+                              <i class="pi pi-check-circle"></i> Tersimpan
+                              {{ formatDraftTime(lastServerSavedAt) }}
+                            </span> -->
                             <Button
                               label="Template SOAP"
                               severity="error"
@@ -427,32 +517,12 @@
                               :rows="3"
                             ></Textarea>
                           </div>
-
-                          <template #footer>
-                            <Button
-                              label="Simpan Soap"
-                              @click="SimpaSoap()"
-                              class="w-full round-button2 mt-4"
-                              icon="pi pi-save"
-                            />
-                            <Button
-                              label="Tampilkan Icare"
-                              :loading="loadingICAre"
-                              @click="Call_icare()"
-                              severity="warn"
-                              icon="pi pi-history"
-                              class="w-full round-button2 mt-4 ml-1"
-                            />
-                            <Button
-                              label="Riwayat Kunjungan"
-                              severity="info"
-                              @click="get_riwayat_lengkap_pasien()"
-                              class="w-full round-button2 ml-1 mt-4"
-                              icon="pi pi-history"
-                            />
-                          </template>
                         </Panel>
                       </div>
+                      <SubHistoryRadiologComponent
+                        v-if="fact"
+                        :datapasien="fact"
+                      ></SubHistoryRadiologComponent>
                     </div>
                   </div>
                 </TabPanel>
@@ -496,6 +566,12 @@
                           v-if="fact"
                           :datapasien="fact"
                         ></PermintaanRadiologiComponent>
+                        <div class="mt-3">
+                          <SubHistoryRadiologComponent
+                            v-if="fact"
+                            :datapasien="fact"
+                          ></SubHistoryRadiologComponent>
+                        </div>
                       </TabPanel>
                       <TabPanel value="2">
                         <PermintaanFisioteraphyComponent v-if="fact" :datapasien="fact">
@@ -531,6 +607,9 @@
                     :noregister="route.query.noreg"
                     :dataset="fact"
                   />
+                </TabPanel>
+                <TabPanel value="9">
+                  <ObgynComponent v-if="fact" :datapasien="fact" />
                 </TabPanel>
               </TabPanels>
             </Tabs>
@@ -689,11 +768,51 @@
     :mode="10"
     @otpVerified="handleOtpSuccess"
   />
-
   <SoapTemplateComponent
     v-model:showFormSoap="showSoapTemplate"
     @templateSelected="onTemplateSelected"
   />
+
+  <div v-if="activeTab === '0'" class="sticky-action-bar">
+    <div class="sticky-bar-left">
+      <span v-if="draftStatus === 'draft'" class="draft-status-chip draft-unsaved">
+        <i class="pi pi-clock"></i> Draft {{ formatDraftTime(lastDraftSavedAt) }}
+      </span>
+      <span v-if="draftStatus === 'saved'" class="draft-status-chip draft-saved">
+        <i class="pi pi-check-circle"></i> Tersimpan {{ formatDraftTime(lastServerSavedAt) }}
+      </span>
+      <span v-if="draftStatus === 'clean'" class="draft-status-chip draft-clean">
+        <i class="pi pi-file"></i> Belum ada perubahan
+      </span>
+    </div>
+    <div class="sticky-bar-right">
+      <Button
+        label="Riwayat Kunjungan"
+        severity="info"
+        size="small"
+        @click="get_riwayat_lengkap_pasien()"
+        icon="pi pi-history"
+        class="round-button2"
+      />
+      <Button
+        label="Tampilkan Icare"
+        :loading="loadingICAre"
+        size="small"
+        @click="Call_icare()"
+        severity="warn"
+        icon="pi pi-history"
+        class="round-button2"
+      />
+      <Button
+        label="Simpan Soap"
+        size="small"
+        @click="SimpaSoap()"
+        icon="pi pi-save"
+        class="round-button2"
+      />
+    </div>
+  </div>
+
   <Toast />
 </template>
 
@@ -704,6 +823,7 @@ import TeraphyComponent from '@/components/PoliklinikComponent/TeraphyComponent.
 import LaboratoriumComponent from '@/views/Poliklinik/Penunjang/LaboratoriumComponent.vue'
 
 import PermintaanRadiologiComponent from '@/views/Poliklinik/Penunjang/PermintaanRadiologiComponent.vue'
+import SubHistoryRadiologComponent from '@/views/Poliklinik/Penunjang/SubHistoryRadiologComponent.vue'
 
 import PermintaanFisioteraphyComponent from '@/views/Poliklinik/Penunjang/PermintaanFisioteraphyComponent.vue'
 
@@ -716,6 +836,7 @@ import PermintaanRuangOperasiComponent from '@/views/Poliklinik/Penunjang/Permin
 import HemodiComponent from '@/components/PoliklinikComponent/HemodiComponent.vue'
 import PemeriksaanVisusPoliMata from '@/components/PoliklinikComponent/PemeriksaanVisusPoliMata.vue'
 import OdontogramComponent from '@/views/Poliklinik/Gigi/OdontogramComponent.vue'
+import ObgynComponent from '@/views/Poliklinik/Obgyn/ObgynComponent.vue'
 
 import ResikoJatuhComponent from '@/components/KajianAwal/ResikoJatuhComponent.vue'
 
@@ -724,7 +845,7 @@ import Pusher from 'pusher-js'
 import Badge from 'primevue/badge'
 
 import ProgressBar from 'primevue/progressbar'
-import { ref, onMounted, reactive, computed, toRaw, watch } from 'vue'
+import { ref, onMounted, reactive, computed, toRaw, watch, nextTick } from 'vue'
 import InputGroup from 'primevue/inputgroup'
 import InputGroupAddon from 'primevue/inputgroupaddon'
 import { useRoute } from 'vue-router'
@@ -784,6 +905,7 @@ const getStatus = (idStatus) => {
       return ''
   }
 }
+const activeTab = ref('0')
 const showSoapTemplate = ref(false)
 const call_template_soap = () => {
   showSoapTemplate.value = true
@@ -953,9 +1075,48 @@ const formatDateTime = (dateTimeString) => {
     return dateTimeString
   }
 }
-// Computed property to get selected level details
 const getSelectedLevel = computed(() => {
   return consciousnessLevels.value.find((level) => level.code === selectedLevel.value)
+})
+
+const bmiData = computed(() => {
+  const bb = soap.berat_badan
+  const tb = soap.tinggi_badan
+  if (!bb || !tb || bb <= 0 || tb <= 0) return null
+  const bmi = bb / Math.pow(tb / 100, 2)
+  const value = parseFloat(bmi.toFixed(1))
+
+  let category, bgColor, textColor, barColor
+  if (bmi < 18.5) {
+    category = 'Berat Badan Kurang'
+    bgColor = '#dbeafe'
+    textColor = '#1d4ed8'
+    barColor = '#3b82f6'
+  } else if (bmi < 25) {
+    category = 'Normal'
+    bgColor = '#dcfce7'
+    textColor = '#15803d'
+    barColor = '#22c55e'
+  } else if (bmi < 30) {
+    category = 'Kelebihan Berat Badan'
+    bgColor = '#fef9c3'
+    textColor = '#a16207'
+    barColor = '#eab308'
+  } else if (bmi < 35) {
+    category = 'Obesitas Kelas I'
+    bgColor = '#ffedd5'
+    textColor = '#c2410c'
+    barColor = '#f97316'
+  } else {
+    category = 'Obesitas Kelas II'
+    bgColor = '#fee2e2'
+    textColor = '#b91c1c'
+    barColor = '#ef4444'
+  }
+
+  // Skala BMI 10–45 → 0–100%
+  const percent = Math.min(Math.max(((bmi - 10) / 35) * 100, 0), 100)
+  return { value: value.toFixed(1), category, bgColor, textColor, barColor, percent }
 })
 
 const consciousnessLevels = ref([
@@ -1008,6 +1169,103 @@ const soap = reactive({
   id_client: id_client.value,
 })
 
+// ── Autosave Draft ──────────────────────────────────────────────────────────────
+const DRAFT_KEY_PREFIX = 'poli_soap_draft_'
+const draftKey = computed(() => `${DRAFT_KEY_PREFIX}${route.query.noreg}`)
+const draftStatus = ref('clean') // 'clean' | 'draft' | 'saved'
+const lastDraftSavedAt = ref(null)
+const lastServerSavedAt = ref(null)
+const hasDraftInStorage = ref(false)
+const isInitializing = ref(true)
+let draftTimer = null
+
+const saveDraft = () => {
+  const draft = {
+    soap: { ...toRaw(soap) },
+    selectedLevel: selectedLevel.value,
+    selectedKeluhan: toRaw(selectedKeluhan.value),
+    savedAt: new Date().toISOString(),
+  }
+  localStorage.setItem(draftKey.value, JSON.stringify(draft))
+  lastDraftSavedAt.value = new Date()
+  draftStatus.value = 'draft'
+}
+
+const debouncedSaveDraft = () => {
+  clearTimeout(draftTimer)
+  draftTimer = setTimeout(saveDraft, 2000)
+}
+
+const clearAllPoliklinikDrafts = () => {
+  clearTimeout(draftTimer)
+  draftTimer = null
+  const keysToRemove = []
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key && key.startsWith(DRAFT_KEY_PREFIX)) {
+      keysToRemove.push(key)
+    }
+  }
+  keysToRemove.forEach((key) => localStorage.removeItem(key))
+}
+
+const checkDraft = () => {
+  const raw = localStorage.getItem(draftKey.value)
+  if (raw) {
+    try {
+      JSON.parse(raw)
+      hasDraftInStorage.value = true
+    } catch {
+      localStorage.removeItem(draftKey.value)
+    }
+  }
+}
+
+const restoreDraft = () => {
+  const raw = localStorage.getItem(draftKey.value)
+  if (!raw) return
+  try {
+    const draft = JSON.parse(raw)
+    Object.assign(soap, draft.soap)
+    selectedLevel.value = draft.selectedLevel
+    selectedKeluhan.value = draft.selectedKeluhan || []
+
+    lastDraftSavedAt.value = new Date(draft.savedAt)
+    draftStatus.value = 'draft'
+    hasDraftInStorage.value = false
+    toast.add({
+      severity: 'success',
+      summary: 'Draft Dipulihkan',
+      detail: 'Data draft berhasil dimuat ke formulir',
+      life: 3000,
+    })
+  } catch {
+    localStorage.removeItem(draftKey.value)
+    hasDraftInStorage.value = false
+  }
+}
+
+const dismissDraft = () => {
+  localStorage.removeItem(draftKey.value)
+  hasDraftInStorage.value = false
+}
+
+const formatDraftTime = (date) => {
+  if (!date) return ''
+  return new Date(date).toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  })
+}
+
+// ────────────────────────────────────────────────────────────────────────────────
+// Autosave watch didaftarkan setelah selectedKeluhan dideklarasikan (di bawah)
+
 const go_to_list_pasien = () => {
   window.close()
 }
@@ -1017,6 +1275,9 @@ const url_icare = ref(null)
 const loadingICAre = ref(false)
 const Call_icare = async () => {
   // Prepare data for API
+  if (fact.value?.KODECARABAYAR != 5) {
+    return
+  }
 
   if (formatDateOnlyForAPI(new Date()) != fact.value?.TGLREG) {
     return
@@ -1098,9 +1359,10 @@ const SimpaSoap = async () => {
       soapData,
     )
 
-    console.log(response.data)
-
     if (response.data == 200) {
+      clearAllPoliklinikDrafts()
+      lastServerSavedAt.value = new Date()
+      draftStatus.value = 'saved'
       toast.add({
         severity: 'success',
         summary: 'Berhasil',
@@ -1117,7 +1379,7 @@ const SimpaSoap = async () => {
     }
 
     loaging_spinner.value = false
-    showDialog.value = true
+    // showDialog.value = true
   } catch (error) {
     console.error('Error saving SOAP:', error)
     loaging_spinner.value = false
@@ -1176,15 +1438,25 @@ const searchSnomad = async (event) => {
 // Watch perubahan pada selectedKeluhan
 watch(selectedKeluhan, (newVal) => {
   if (Array.isArray(newVal) && newVal.length > 0) {
-    // Ambil semua caption dari keluhan yang dipilih
     soap.subjek = newVal
       .map((item) => item?.caption || '')
-      .filter((caption) => caption !== '') // hilangkan kosong
+      .filter((caption) => caption !== '')
       .join(', ')
-  } else {
-    soap.subjek = ''
   }
+  // Jika selectedKeluhan dikosongkan, biarkan soap.subjek tetap (input manual)
 })
+
+// Autosave watch — didaftarkan di sini agar selectedKeluhan sudah terdeklarasi.
+// Menggunakan soap reactive object langsung (bukan getter spread) agar Vue
+// benar-benar tracking setiap property termasuk subjek yang diketik manual.
+watch(
+  [soap, () => selectedLevel.value, () => selectedKeluhan.value],
+  () => {
+    if (isInitializing.value) return
+    debouncedSaveDraft()
+  },
+  { deep: true },
+)
 
 const get_riwayat_lengkap_pasien = async () => {
   try {
@@ -1223,6 +1495,21 @@ const get_riwayat_lengkap_pasien = async () => {
   }
 }
 
+const hasilLabPositif = ref([])
+const getHasilLabPositif = async () => {
+  try {
+    const url = configStore.apiBaseUrl
+    const response = await axios.post(
+      `${url}/index.php/api/resumepulang/hasil_lab_positiv/${route.query.noreg}/${id_client.value}`,
+    )
+
+    console.log(response.data)
+    hasilLabPositif.value = Array.isArray(response.data) ? response.data : []
+  } catch (error) {
+    console.error('Error fetching hasil lab positif:', error)
+  }
+}
+
 const soap_loading = ref(false)
 const GetSoap = async () => {
   try {
@@ -1255,9 +1542,18 @@ const GetSoap = async () => {
     }
 
     soap_loading.value = false
+    await nextTick() // flush semua pending watch dari soap.* assignments
+    clearTimeout(draftTimer) // batalkan debounce yang mungkin terpanggil saat flush
+    draftTimer = null
+    isInitializing.value = false
+    checkDraft()
   } catch (error) {
     console.error('Error fetching SOAP data:', error)
     soap_loading.value = false
+    await nextTick()
+    clearTimeout(draftTimer)
+    draftTimer = null
+    isInitializing.value = false
   }
 }
 
@@ -1343,14 +1639,27 @@ onMounted(async () => {
   GetSoap()
   fetchData()
   getriwayatJKN()
+  getHasilLabPositif()
   await getListAlergi()
   await getelegiSelected()
-
-  // GetSoap()
 })
 </script>
 
 <style scoped>
+.sep-link {
+  font-size: 14px;
+  font-weight: 600;
+  color: #d4d4d4;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.sep-link:hover {
+  color: #ffffff;
+  text-decoration: underline solid;
+}
+
 .p-multiselect-trigger svg,
 .p-multiselect-filter-icon svg {
   pointer-events: none;
@@ -1645,6 +1954,240 @@ onMounted(async () => {
 
   .record-content {
     gap: 1rem;
+  }
+}
+
+.content {
+  padding-bottom: 70px;
+}
+
+.sticky-action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 250px;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border-top: 2px solid #e2e8f0;
+  padding: 0.6rem 1.5rem;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.1);
+  gap: 1rem;
+  transition: left 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sticky-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.sticky-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.draft-clean {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
+/* ── BMI Card ── */
+.bmi-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid;
+  border-radius: 8px;
+  padding: 0.3rem 0.65rem;
+  flex-wrap: wrap;
+}
+
+.bmi-card-left {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+
+.bmi-title {
+  font-size: 10px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.bmi-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.bmi-unit {
+  font-size: 9px;
+  color: #94a3b8;
+}
+
+.bmi-card-center {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 140px;
+}
+
+.bmi-category-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 0.1rem 0.45rem;
+  border-radius: 99px;
+}
+
+.bmi-bar-track {
+  position: relative;
+  height: 5px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 99px;
+  overflow: visible;
+}
+
+.bmi-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.5s ease;
+}
+
+.bmi-bar-marker {
+  position: absolute;
+  top: -3px;
+  width: 10px;
+  height: 10px;
+  background: white;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.bmi-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 8px;
+  color: #94a3b8;
+  margin-top: 1px;
+}
+
+.bmi-card-right {
+  display: flex;
+  align-items: center;
+}
+
+.bmi-detail {
+  font-size: 10px;
+  font-weight: 500;
+  opacity: 0.75;
+  white-space: nowrap;
+}
+
+.bmi-fade-enter-active,
+.bmi-fade-leave-active {
+  transition:
+    opacity 0.35s,
+    transform 0.35s;
+}
+.bmi-fade-enter-from,
+.bmi-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+.draft-restore-banner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+  border-left: 4px solid #f59e0b;
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  font-size: 13px;
+  color: #92400e;
+}
+
+.draft-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 11px;
+  padding: 0.2rem 0.6rem;
+  border-radius: 99px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.draft-unsaved {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffc107;
+}
+
+.draft-saved {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #10b981;
+}
+</style>
+
+<style>
+.lab-compact-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  background: #fff5f5;
+  border: 1px solid #feb2b2;
+  border-left: 3px solid #e53e3e;
+  border-radius: 5px;
+}
+.lab-compact-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #c53030;
+  white-space: nowrap;
+  margin-right: 0.25rem;
+}
+.lab-compact-chip {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.55rem;
+  background: #fff;
+  border: 1px solid #fc8181;
+  border-radius: 99px;
+  font-size: 0.7rem;
+  color: #4a5568;
+  cursor: default;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.lab-compact-chip strong {
+  color: #c53030 !important;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+body.sb-collapsed .sticky-action-bar {
+  left: 64px;
+}
+
+@media (max-width: 768px) {
+  .sticky-action-bar {
+    left: 0 !important;
   }
 }
 </style>

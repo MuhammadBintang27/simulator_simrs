@@ -617,7 +617,7 @@ defineExpose({ masterData, timeSlots, getFormattedData, loadData, clearData, sav
   align-items: center;
   gap: 1rem;
   background: linear-gradient(135deg, #0f172a 0%, #1e40af 100%);
-  border-radius: 10px;
+  border-radius: 4px;
   padding: 0.9rem 1.4rem;
   color: #fff;
 }
@@ -647,7 +647,7 @@ defineExpose({ masterData, timeSlots, getFormattedData, loadData, clearData, sav
   gap: 5px;
   font-size: 0.75rem;
   padding: 0.3rem 0.75rem;
-  border-radius: 20px;
+  border-radius: 4px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -669,7 +669,7 @@ defineExpose({ masterData, timeSlots, getFormattedData, loadData, clearData, sav
 }
 .anestesi-card {
   background: #fff;
-  border-radius: 10px;
+  border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   border: 1px solid #e9ecef;
@@ -693,7 +693,7 @@ defineExpose({ masterData, timeSlots, getFormattedData, loadData, clearData, sav
 .legend-chip {
   display: inline-block;
   padding: 0.15rem 0.6rem;
-  border-radius: 20px;
+  border-radius: 4px;
   font-size: 0.68rem;
   font-weight: 700;
   border: 1px solid;
@@ -710,13 +710,13 @@ defineExpose({ masterData, timeSlots, getFormattedData, loadData, clearData, sav
   color: #92400e;
   background: #fef3c7;
   padding: 0.2rem 0.5rem;
-  border-radius: 12px;
+  border-radius: 4px;
 }
 .tool-action-btn {
   display: flex;
   align-items: center;
   padding: 0.3rem 0.7rem;
-  border-radius: 6px;
+  border-radius: 4px;
   border: 1px solid #dee2e6;
   font-size: 0.78rem;
   font-weight: 500;

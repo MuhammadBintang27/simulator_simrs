@@ -35,21 +35,14 @@
     <!-- /.control-sidebar -->
   </div>
   <!-- ./wrapper -->
+
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
-import { useAuthStore, useConfigStore } from '@/stores/config' // Adjust path based on your project structure
-import { storeToRefs } from 'pinia'
-const authStore = useAuthStore()
-const { id_client, user_name, company } = storeToRefs(authStore) // Makes it reactive
+import { useConfigStore } from '@/stores/config'
+import { useIdleSession } from '@/composables/useIdleSession'
 
 const config = useConfigStore()
 
-const logout = () => {
-  localStorage.removeItem('token')
-  localStorage.removeItem('token_expires_at')
-  authStore.clearAuthData()
-  window.location.href = '/login' // Redirect to login
-}
+useIdleSession()
 </script>

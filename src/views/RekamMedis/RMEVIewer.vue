@@ -67,15 +67,43 @@
       <div class="rme-zoom-sep"></div>
       <div class="rme-tb-btns">
         <button class="rme-btn rme-btn-print" @click="doPrint">🖨️ Cetak</button>
+        <button
+          class="rme-btn rme-btn-pdf"
+          @click="exportToPDF"
+          :disabled="isExportingPDF"
+          :title="isExportingPDF ? exportProgress : 'Export semua form ke file PDF'"
+        >
+          <span v-if="isExportingPDF">
+            <i class="pi pi-spin pi-spinner" style="font-size: 11px"></i>
+            {{ exportProgress || 'Memproses...' }}
+          </span>
+          <span v-else>📥 Export PDF</span>
+        </button>
         <button class="rme-btn rme-btn-close" @click="goBack">✕ Tutup</button>
       </div>
     </div>
   </div>
 
-  <!-- ════════════════════════════════════════════════
-       STICKY NOTE NAVIGATION  (kanan, tengah layar)
-  ════════════════════════════════════════════════ -->
-  <nav class="rme-sticky-nav no-print" aria-label="Navigasi halaman RME">
+  <nav
+    class="rme-sticky-nav no-print"
+    :class="{ 'is-hover-mode': navMode === 'hover' }"
+    aria-label="Navigasi halaman RME"
+  >
+    <!-- Toggle mode: selalu tampil vs hover -->
+    <button
+      class="rme-sticky-tab rme-nav-mode-toggle"
+      @click.stop="toggleNavMode"
+      :title="
+        navMode === 'always'
+          ? 'Mode: Selalu Tampil — klik untuk ubah ke Hover'
+          : 'Mode: Hover Only — klik untuk ubah ke Selalu Tampil'
+      "
+      style="--tc: #555"
+    >
+      <span class="rst-icon">{{ navMode === 'always' ? '👁️' : '🫥' }}</span>
+      <span class="rst-label">{{ navMode === 'always' ? 'Selalu' : 'Hover' }}</span>
+    </button>
+
     <!-- Cover tab -->
     <button
       class="rme-sticky-tab"
@@ -92,16 +120,38 @@
     <template v-for="sec in sections" :key="sec.key">
       <button
         class="rme-sticky-tab"
-        :class="{ 'is-active': activeSection === sec.key, 'is-hidden-sec': !sec.visible }"
+        :class="{
+          'is-active': activeSection === sec.key,
+          'is-hidden-sec': !sec.visible,
+          'is-no-data': sectionDataStatus[sec.key] === false,
+        }"
         :style="`--tc:${sec.color}`"
         @click="scrollToSection(sec.key)"
-        :title="sec.label + (!sec.visible ? ' (tersembunyi)' : '')"
+        :title="
+          sec.label +
+          (sectionDataStatus[sec.key] === false ? ' — Tidak ada data' : '') +
+          (!sec.visible ? ' (tersembunyi)' : '')
+        "
       >
         <span class="rst-icon">{{ sec.icon }}</span>
         <span class="rst-label">{{ sec.shortLabel }}</span>
       </button>
     </template>
   </nav>
+
+  <!-- ════════════════════════════════════════════════
+       FLOATING SPEED DIAL  (kanan bawah, tidak tercetak)
+  ════════════════════════════════════════════════ -->
+  <div class="rme-speeddial-wrap no-print">
+    <SpeedDial
+      :model="speedDialItems"
+      direction="up"
+      :transitionDelay="50"
+      showIcon="pi pi-ellipsis-v"
+      hideIcon="pi pi-times"
+      :tooltipOptions="{ position: 'left' }"
+    />
+  </div>
 
   <!-- ════════════════════════════════════════════════
        AREA CETAK
@@ -123,7 +173,11 @@
     </div>
 
     <!-- Halaman 2: Triase IGD -->
-    <div class="rme-a4-page" data-section="triase" v-if="sectionVisible('triase')">
+    <div
+      class="rme-a4-page"
+      data-section="triase"
+      v-if="sectionVisible('triase') || dataPasien.JENISRAWAT == 'INAP'"
+    >
       <div class="rme-page-header-repeat">
         <span class="rme-phr-rm">RM: {{ dataPasien?.NOMR }}</span>
         <span class="rme-phr-name">{{ dataPasien?.NAMAPASIEN }}</span>
@@ -133,7 +187,11 @@
     </div>
 
     <!-- Halaman: Kajian Awal Dokter -->
-    <div class="rme-a4-page" data-section="kajian-awal" v-if="sectionVisible('kajian-awal')">
+    <div
+      class="rme-a4-page"
+      data-section="kajian-awal"
+      v-if="sectionVisible('kajian-awal') || dataPasien.JENISRAWAT == 'INAP'"
+    >
       <div class="rme-page-header-repeat">
         <span class="rme-phr-rm">RM: {{ dataPasien?.NOMR }}</span>
         <span class="rme-phr-name">{{ dataPasien?.NAMAPASIEN }}</span>
@@ -150,6 +208,16 @@
         <span class="rme-phr-reg">Reg: {{ noreg }}</span>
       </div>
       <RMECPPTSection :noreg="noreg" :dataPasien="dataPasien" />
+    </div>
+
+    <!-- Halaman: Siriraj Stroke Score -->
+    <div class="rme-a4-page" data-section="siriraj" v-if="sectionVisible('siriraj')">
+      <div class="rme-page-header-repeat">
+        <span class="rme-phr-rm">RM: {{ dataPasien?.NOMR }}</span>
+        <span class="rme-phr-name">{{ dataPasien?.NAMAPASIEN }}</span>
+        <span class="rme-phr-reg">Reg: {{ noreg }}</span>
+      </div>
+      <RMESirirajSection :noreg="noreg" :dataPasien="dataPasien" />
     </div>
 
     <!-- Halaman 4: Laboratorium -->
@@ -183,14 +251,14 @@
     </div>
 
     <!-- Halaman 7: Terapi / Obat -->
-    <div class="rme-a4-page" data-section="terapi" v-if="sectionVisible('terapi')">
+    <!-- <div class="rme-a4-page" data-section="terapi" v-if="sectionVisible('terapi')">
       <div class="rme-page-header-repeat">
         <span class="rme-phr-rm">RM: {{ dataPasien?.NOMR }}</span>
         <span class="rme-phr-name">{{ dataPasien?.NAMAPASIEN }}</span>
         <span class="rme-phr-reg">Reg: {{ noreg }}</span>
       </div>
       <RMETeraphySection :noreg="noreg" :dataPasien="dataPasien" />
-    </div>
+    </div> -->
 
     <!-- Halaman: Kartu Catatan Obat Pasien -->
     <div
@@ -204,6 +272,16 @@
         <span class="rme-phr-reg">Reg: {{ noreg }}</span>
       </div>
       <KartuCatatanObatView :noreg="noreg" :dataPasien="dataPasien" :embedded="true" />
+    </div>
+
+    <!-- Halaman: Resume Medis Rawat Jalan -->
+    <div class="rme-a4-page" data-section="resume-rajal" v-if="sectionVisible('resume-rajal')">
+      <div class="rme-page-header-repeat">
+        <span class="rme-phr-rm">RM: {{ dataPasien?.NOMR }}</span>
+        <span class="rme-phr-name">{{ dataPasien?.NAMAPASIEN }}</span>
+        <span class="rme-phr-reg">Reg: {{ noreg }}</span>
+      </div>
+      <RMEResumeRawatJalan :noreg="noreg" :dataPasien="dataPasien" />
     </div>
 
     <!-- Halaman 8: Resume Medis / Discharge Summary -->
@@ -229,7 +307,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, computed, reactive, provide, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useConfigStore, useAuthStore } from '@/stores/config'
@@ -247,6 +325,37 @@ import RMEResumeMedisSection from './sections/RMEResumeMedisSection.vue'
 import RMEBillingSection from './sections/RMEBillingSection.vue'
 import RMEKajianAwalDokterSection from './sections/RMEKajianAwalDokterSection.vue'
 import RMESEPSection from './sections/RMESEPSection.vue'
+import RMESirirajSection from './sections/RMESirirajSection.vue'
+import RMEResumeRawatJalan from './sections/RMEResumeRawatJalan.vue'
+import SpeedDial from 'primevue/speeddial'
+
+// ── Section data status (untuk sticky nav dimming) ───────────────────────────
+const sectionDataStatus = reactive({})
+provide('reportSectionData', (key, hasData) => {
+  sectionDataStatus[key] = hasData
+})
+
+// ── Timeline perjalanan perawatan ─────────────────────────────────────────────
+const timelineMap = reactive({})
+provide('addTimelineEvent', (key, data) => {
+  timelineMap[key] = data
+})
+
+const ORDER = ['registrasi', 'triase', 'kajian-awal', 'cppt', 'tindakan', 'keluar']
+const timelineEvents = computed(() => {
+  return ORDER.flatMap((key) => (timelineMap[key] ? [timelineMap[key]] : []))
+})
+
+const timelineDuration = computed(() => {
+  return timelineMap['keluar']?.duration || ''
+})
+
+// ── Nav display mode ──────────────────────────────────────────────────────────
+const navMode = ref(localStorage.getItem('rme_nav_mode') || 'always')
+const toggleNavMode = () => {
+  navMode.value = navMode.value === 'always' ? 'hover' : 'always'
+  localStorage.setItem('rme_nav_mode', navMode.value)
+}
 
 // ── Zoom ──────────────────────────────────────────────────────────────────────
 const ZOOM_STEP = 10
@@ -318,7 +427,17 @@ const fetchPatient = async () => {
       id_client: id_client.value,
     })
 
-    if (res.data?.response?.length > 0) dataPasien.value = res.data.response[0]
+    if (res.data?.response?.length > 0) {
+      dataPasien.value = res.data.response[0]
+      timelineMap['registrasi'] = {
+        key: 'registrasi',
+        label: 'Registrasi Masuk',
+        icon: '🏥',
+        color: '#162d4e',
+        datetime: dataPasien.value.MASUKPOLY || dataPasien.value.TGLREG || '',
+        meta: dataPasien.value.POLI || dataPasien.value.JENISRAWAT || '',
+      }
+    }
   } catch (e) {
     console.error('Gagal memuat data pasien', e)
   } finally {
@@ -369,6 +488,16 @@ const sections = ref([
     visible: true,
   },
   {
+    key: 'siriraj',
+    shortLabel: 'Siriraj',
+    label: 'Siriraj Stroke Score',
+    icon: '🧠',
+    color: '#7b1fa2',
+    bgColor: '#f3e5f5',
+    borderColor: '#ce93d8',
+    visible: true,
+  },
+  {
     key: 'lab',
     shortLabel: 'Lab',
     label: 'Laboratorium',
@@ -398,16 +527,7 @@ const sections = ref([
     borderColor: '#ffab91',
     visible: true,
   },
-  {
-    key: 'terapi',
-    shortLabel: 'Terapi',
-    label: 'Terapi / Obat',
-    icon: '💊',
-    color: '#33691e',
-    bgColor: '#f4faf0',
-    borderColor: '#a5d6a7',
-    visible: true,
-  },
+
   {
     key: 'kartu-obat',
     shortLabel: 'Kartu Obat',
@@ -416,6 +536,16 @@ const sections = ref([
     color: '#4a7ab5',
     bgColor: '#f0f6fc',
     borderColor: '#b2c8dd',
+    visible: true,
+  },
+  {
+    key: 'resume-rajal',
+    shortLabel: 'Resume Rajal',
+    label: 'Resume Medis Rawat Jalan',
+    icon: '🏥',
+    color: '#1a6b4a',
+    bgColor: '#f0fdf4',
+    borderColor: '#b2dfce',
     visible: true,
   },
   {
@@ -490,6 +620,203 @@ watch(sections, () => nextTick(setupObserver), { deep: true })
 const doPrint = () => window.print()
 const goBack = () => (window.history.length > 1 ? router.back() : window.close())
 
+// ── Export PDF ────────────────────────────────────────────────────────────────
+const isExportingPDF = ref(false)
+const exportProgress = ref('')
+
+// Cache base64 agar URL yang sama tidak di-fetch berkali-kali
+const _imgBase64Cache = new Map()
+
+const _blobToBase64 = (blob) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
+  })
+
+const _tryFetch = async (url) => {
+  try {
+    const resp = await fetch(url, { cache: 'force-cache' })
+    if (resp.ok) return await _blobToBase64(await resp.blob())
+  } catch {
+    /* gagal */
+  }
+  return null
+}
+
+const _fetchImageBase64 = async (src) => {
+  if (_imgBase64Cache.has(src)) return _imgBase64Cache.get(src)
+
+  let b64 = null
+
+  // 1) Untuk URL ws-simrs.net: gunakan dev-proxy DULU agar tidak memicu CORS error di console.
+  //    Di production, URL proxy tidak akan tersedia — langsung lanjut ke step 2.
+  if (src.includes('ws-simrs.net')) {
+    const proxyUrl = src.replace('https://ws-simrs.net', '/ws-simrs-assets')
+    b64 = await _tryFetch(proxyUrl)
+  }
+
+  // 2) Fetch langsung (berhasil jika server punya header CORS, atau URL same-origin)
+  if (!b64) b64 = await _tryFetch(src)
+
+  // 3) Fallback canvas: berlaku jika img sudah ter-load dengan crossOrigin="anonymous"
+  if (!b64) {
+    try {
+      const img = Array.from(document.querySelectorAll('img')).find((i) => i.src === src)
+      if (img?.complete && img.naturalWidth > 0) {
+        const c = document.createElement('canvas')
+        c.width = img.naturalWidth
+        c.height = img.naturalHeight
+        c.getContext('2d').drawImage(img, 0, 0)
+        b64 = c.toDataURL('image/png')
+      }
+    } catch {
+      /* canvas tainted — skip */
+    }
+  }
+
+  _imgBase64Cache.set(src, b64)
+  return b64
+}
+
+// Konversi semua <img> di dalam elemen ke base64, kembalikan fungsi restore
+const _prepareImages = async (el) => {
+  const imgs = [...el.querySelectorAll('img[src]')]
+  const toRestore = []
+  for (const img of imgs) {
+    const src = img.getAttribute('src')
+    if (!src || src.startsWith('data:') || src.startsWith('blob:')) continue
+    const b64 = await _fetchImageBase64(src)
+    if (b64) {
+      toRestore.push({ img, origSrc: src })
+      img.src = b64
+    }
+  }
+  return () => toRestore.forEach(({ img, origSrc }) => (img.src = origSrc))
+}
+
+const exportToPDF = async () => {
+  if (isExportingPDF.value) return
+  isExportingPDF.value = true
+  exportProgress.value = 'Mempersiapkan...'
+
+  const prevZoom = zoom.value
+  zoom.value = 100
+  await nextTick()
+
+  try {
+    const [{ jsPDF }, { default: html2canvas }] = await Promise.all([
+      import('jspdf'),
+      import('html2canvas'),
+    ])
+
+    const pages = document.querySelectorAll('.rme-a4-page')
+    if (!pages.length) throw new Error('Tidak ada halaman untuk diekspor')
+
+    let pdf = null
+
+    for (let i = 0; i < pages.length; i++) {
+      const page = pages[i]
+      const isLandscape = page.classList.contains('rme-landscape-page')
+      const orientation = isLandscape ? 'landscape' : 'portrait'
+      const sectionKey = page.dataset.section || `halaman-${i + 1}`
+
+      exportProgress.value = `Memproses ${i + 1}/${pages.length}: ${sectionKey}...`
+
+      // Konversi gambar ke base64 agar tidak terblokir CORS canvas-taint
+      const restoreImages = await _prepareImages(page)
+
+      const canvas = await html2canvas(page, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: false,
+        logging: false,
+        backgroundColor: '#ffffff',
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: page.scrollWidth,
+        windowHeight: page.scrollHeight,
+      })
+
+      // Kembalikan src asli setelah capture
+      restoreImages()
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95)
+
+      if (i === 0) {
+        pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation })
+      } else {
+        pdf.addPage('a4', orientation)
+      }
+
+      const pdfW = pdf.internal.pageSize.getWidth()
+      const pdfH = pdf.internal.pageSize.getHeight()
+      const imgW = pdfW
+      const imgH = (canvas.height * imgW) / canvas.width
+
+      pdf.addImage(imgData, 'JPEG', 0, 0, imgW, Math.min(imgH, pdfH))
+    }
+
+    const patientName = (dataPasien.value?.NAMAPASIEN || 'Pasien').replace(/\s+/g, '_')
+    const nomr = dataPasien.value?.NOMR || noreg.value
+    exportProgress.value = 'Menyimpan PDF...'
+    pdf.save(`RME_${nomr}_${patientName}_${noreg.value}.pdf`)
+  } catch (err) {
+    console.error('Export PDF gagal:', err)
+    alert('Gagal mengekspor PDF: ' + err.message)
+  } finally {
+    zoom.value = prevZoom
+    isExportingPDF.value = false
+    exportProgress.value = ''
+    _imgBase64Cache.clear()
+  }
+}
+
+// ── Speed Dial items ─────────────────────────────────────────────────────────────
+const speedDialItems = computed(() => [
+  {
+    label: 'Cetak Dokumen',
+    icon: 'pi pi-print',
+    command: () => doPrint(),
+  },
+  {
+    label: isExportingPDF.value ? exportProgress.value : 'Export ke PDF',
+    icon: isExportingPDF.value ? 'pi pi-spin pi-spinner' : 'pi pi-file-pdf',
+    command: () => exportToPDF(),
+  },
+  {
+    label: 'Ke Atas',
+    icon: 'pi pi-angle-double-up',
+    command: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
+  },
+  {
+    label: 'Perbesar Tampilan',
+    icon: 'pi pi-plus-circle',
+    command: () => zoomIn(),
+  },
+  {
+    label: 'Reset Zoom',
+    icon: 'pi pi-undo',
+    command: () => zoomReset(),
+  },
+  {
+    label: 'Perkecil Tampilan',
+    icon: 'pi pi-minus-circle',
+    command: () => zoomOut(),
+  },
+  {
+    label: navMode.value === 'always' ? 'Nav: Ubah ke Mode Hover' : 'Nav: Ubah ke Selalu Tampil',
+    icon: navMode.value === 'always' ? 'pi pi-eye-slash' : 'pi pi-eye',
+    command: () => toggleNavMode(),
+  },
+  {
+    label: 'Tutup RME',
+    icon: 'pi pi-sign-out',
+    command: () => goBack(),
+  },
+])
+
 // ── Lifecycle ────────────────────────────────────────────────────────────────────
 onMounted(async () => {
   await fetchPatient()
@@ -509,7 +836,6 @@ onUnmounted(() => {
 body {
   background: #e3e8f0;
   margin: 0;
-  font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   font-size: 13px;
   color: #1a1a2e;
 }
@@ -522,7 +848,7 @@ body {
   right: 0;
   z-index: 1000;
   height: 60px;
-  background: linear-gradient(90deg, #162d4e 0%, #1a3a5f 60%, #1e4475 100%);
+  background: linear-gradient(135deg, #2d1b69 0%, #11998e 100%);
   color: #fff;
   display: flex;
   align-items: center;
@@ -551,7 +877,7 @@ body {
 }
 .rme-tb-module {
   font-size: 11px;
-  opacity: 0.7;
+  opacity: 1;
 }
 .rme-toolbar-patient {
   flex: 1;
@@ -566,7 +892,7 @@ body {
 }
 .rme-tb-meta {
   font-size: 11px;
-  opacity: 0.7;
+  opacity: 1;
 }
 .rme-toolbar-actions {
   display: flex;
@@ -577,7 +903,7 @@ body {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  max-width: 420px;
+  max-width: 20px;
 }
 .rme-toggle-label {
   display: flex;
@@ -606,6 +932,20 @@ body {
 .rme-btn-print:hover {
   background: #2e7d32;
 }
+.rme-btn-pdf {
+  background: #1565c0;
+  color: #fff;
+  min-width: 110px;
+  transition: background 0.15s;
+}
+.rme-btn-pdf:hover:not(:disabled) {
+  background: #0d47a1;
+}
+.rme-btn-pdf:disabled {
+  background: #5c8fc7;
+  cursor: not-allowed;
+  opacity: 0.85;
+}
 .rme-btn-close {
   background: #e53935;
   color: #fff;
@@ -617,7 +957,7 @@ body {
 /* ── Print area ── */
 .rme-print-area {
   margin-top: 68px;
-  padding: 20px 0 40px;
+  padding: 20px 148px 40px 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1151,9 +1491,48 @@ body {
   opacity: 0.7;
 }
 
+/* Section tanpa data — border tipis mengikuti bentuk arrow via drop-shadow */
+.rme-sticky-tab.is-no-data {
+  opacity: 1;
+  background: rgba(248, 248, 248, 0.82);
+  color: #bfbfbf;
+  filter: drop-shadow(-1.5px 0px 0 #c8c8c8) drop-shadow(0px -1.5px 0 #c8c8c8)
+    drop-shadow(0px 1.5px 0 #c8c8c8);
+}
+.rme-sticky-tab.is-no-data:hover {
+  opacity: 0.75;
+  filter: drop-shadow(-2px 0px 0 #aaa) drop-shadow(0px -2px 0 #aaa) drop-shadow(0px 2px 0 #aaa);
+}
+.rme-sticky-tab.is-no-data.is-active {
+  opacity: 1;
+  filter: none;
+}
+
 /* Efek klik */
 .rme-sticky-tab:active {
   transform: scale(0.97);
+}
+
+/* ── Hover mode: nav tersembunyi sebagian di kanan, muncul saat di-hover ── */
+.rme-sticky-nav.is-hover-mode {
+  transform: translateX(105px);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.rme-sticky-nav.is-hover-mode:hover {
+  transform: translateX(0);
+}
+
+/* Tombol toggle mode nav */
+.rme-nav-mode-toggle {
+  background: rgba(230, 230, 230, 0.85) !important;
+  color: #666 !important;
+  opacity: 0.65;
+  margin-bottom: 2px;
+}
+.rme-nav-mode-toggle:hover {
+  opacity: 1 !important;
+  background: rgba(220, 220, 220, 0.98) !important;
+  color: #333 !important;
 }
 
 /* Flash outline saat navigate */
@@ -1195,7 +1574,7 @@ body {
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #fff;
-  border-radius: 4px;
+  border-radius: 2px;
   width: 24px;
   height: 24px;
   font-size: 15px;
@@ -1281,6 +1660,58 @@ body {
   size: A4 landscape;
 }
 
+/* ── Speed Dial Floating ── */
+.rme-speeddial-wrap {
+  position: fixed;
+  bottom: 24px;
+  right: 39px;
+  z-index: 960;
+}
+
+/* Tombol utama (bulat, gradien toolbar) */
+.rme-speeddial-wrap .p-speeddial-button.p-button {
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 50% !important;
+  border: none !important;
+  background: linear-gradient(135deg, #2d1b69 0%, #11998e 100%) !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.42) !important;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease !important;
+}
+.rme-speeddial-wrap .p-speeddial-button.p-button:hover {
+  transform: scale(1.1) !important;
+  box-shadow: 0 6px 26px rgba(0, 0, 0, 0.55) !important;
+  background: linear-gradient(135deg, #3d2b79 0%, #19a89e 100%) !important;
+}
+
+/* Item action (lingkaran kecil di atasnya) */
+.rme-speeddial-wrap .p-speeddial-action {
+  width: 40px !important;
+  height: 40px !important;
+  background: #fff !important;
+  color: #2d1b69 !important;
+  border: 1px solid #ddd !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18) !important;
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease !important;
+}
+.rme-speeddial-wrap .p-speeddial-action:hover {
+  background: linear-gradient(135deg, #2d1b69 0%, #11998e 100%) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+  transform: scale(1.12) !important;
+}
+
+/* Tooltip label di kiri item */
+.rme-speeddial-wrap .p-speeddial-item .p-tooltip .p-tooltip-text {
+  font-size: 11px !important;
+  padding: 3px 8px !important;
+  white-space: nowrap !important;
+}
+
 /* ════ PRINT MEDIA ══════════════════════════════════════════════════════════ */
 @media print {
   .no-print,
@@ -1296,6 +1727,7 @@ body {
 
   .rme-print-area {
     margin-top: 0 !important;
+    margin-left: 0 !important;
     padding: 0 !important;
     gap: 0 !important;
     align-items: stretch !important;

@@ -1160,7 +1160,6 @@ const formData = ref({
   NOJAMINAN: '',
   NOSEP: '',
   MASUKPOLY: null,
-  IDDOKTER: null,
   IDDIAGNOSA: null,
   CATATAN: '',
 })
@@ -1513,7 +1512,7 @@ const searchDiagnose = async (event) => {
 // Handle dokter change
 const onDokterChange = () => {
   if (dokterSelected.value) {
-    formData.value.IDDOKTER = dokterSelected.value
+    formData.value.DOKTER = dokterSelected.value
   }
 }
 
@@ -1744,6 +1743,8 @@ const saveData = async () => {
       MASUKPOLY: formatDateTimeForAPI(formData.value),
       ...formData.value,
     }
+
+    console.log('data save', JSON.stringify(formData.value))
     const response = await axios.post(
       `${configStore.apiBaseUrl}/index.php/api/transaksi_pasien/update_sep_pasien_v2`,
       formData.value,

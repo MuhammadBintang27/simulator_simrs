@@ -296,15 +296,27 @@
                 <p class="card-label">No Registrasi</p>
                 <p class="card-noreg">{{ item.NOPENDAFTARAN }}</p>
               </div>
-              <div class="text-right">
-                <span v-if="item.BATAL === '0'" class="status-badge status-aktif">
-                  <i class="pi pi-check-circle mr-1"></i>Aktif
-                </span>
-                <span v-else class="status-badge status-batal">
-                  <i class="pi pi-times-circle mr-1"></i>Batal
-                </span>
-                <p class="card-date mt-1">{{ item.MASUKPOLY_DISPLAY }}</p>
+
+              <div class="card-header-time">
+                <div class="time-chip time-chip--masuk">
+                  <i class="pi pi-sign-in"></i>
+                  <span class="time-chip-lbl">Masuk</span>
+                  <span class="time-chip-val">{{ item.MASUKPOLY_DISPLAY || '-' }}</span>
+                </div>
+                <div class="time-chip-divider"></div>
+                <div class="time-chip time-chip--keluar">
+                  <i class="pi pi-sign-out"></i>
+                  <span class="time-chip-lbl">Keluar</span>
+                  <span class="time-chip-val">{{ item.KELUARPOLY || '-' }}</span>
+                </div>
               </div>
+
+              <span v-if="item.BATAL === '0'" class="status-badge status-aktif">
+                <i class="pi pi-check-circle mr-1"></i>Aktif
+              </span>
+              <span v-else class="status-badge status-batal">
+                <i class="pi pi-times-circle mr-1"></i>Batal
+              </span>
             </div>
 
             <div class="card-mobile-body">
@@ -320,6 +332,14 @@
                     MR:{{ item.NOMR }} &bull; NIK:{{ item.NOKTP }} &bull; BPJS:{{
                       item.NOJAMINAN || '-'
                     }}
+                    <button
+                      v-if="item.NOJAMINAN"
+                      class="riwayat-bpjs-btn"
+                      @click.stop="openRiwayatBPJS(item.NOJAMINAN)"
+                      v-tooltip.top="'Lihat Riwayat BPJS'"
+                    >
+                      <i class="pi pi-history"></i>
+                    </button>
                   </p>
                 </div>
               </div>
@@ -552,6 +572,8 @@
         </div>
       </template>
     </Dialog>
+
+    <RiwayatBPJSComponent :no-kartu="selectedNoBPJS" :view-only="true" ref="riwayatBpjsRef" />
   </div>
 </template>
 
@@ -564,6 +586,7 @@ import { storeToRefs } from 'pinia'
 import DatePicker from 'primevue/datepicker'
 import { useToast } from 'primevue/usetoast'
 import { useRouter } from 'vue-router'
+import RiwayatBPJSComponent from '@/views/Pendaftaran/RiwayatBPJSComponent.vue'
 
 const configStore = useConfigStore()
 const authStore = useAuthStore()
@@ -575,6 +598,13 @@ const loading = ref(false)
 const ShowRiwayatPendaftaran = ref(false)
 const searchKeyword = ref('')
 const showDeleteConfirm = ref(false)
+const riwayatBpjsRef = ref(null)
+const selectedNoBPJS = ref(null)
+
+const openRiwayatBPJS = (noKartu) => {
+  selectedNoBPJS.value = noKartu
+  riwayatBpjsRef.value.open()
+}
 const selectedRow = ref(null)
 const fact = ref([])
 const txtalasan_batal = ref('')
@@ -1195,10 +1225,21 @@ onMounted(() => {})
 
 .card-mobile-header {
   display: flex;
+  flex-direction: row;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-start;
-  padding: 0.4rem 0.6rem;
+  padding: 0.45rem 0.6rem 0.5rem;
   background: linear-gradient(135deg, #2d1b69 0%, #11998e 100%);
+}
+.card-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.card-header-time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .card-label {
@@ -1229,6 +1270,44 @@ onMounted(() => {})
   font-size: 0.7rem;
   color: rgba(255, 255, 255, 0.8);
   margin: 0;
+}
+.time-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 3px 9px;
+  white-space: nowrap;
+}
+.time-chip i {
+  font-size: 8px;
+  opacity: 0.8;
+  color: #fff;
+}
+.time-chip-lbl {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.time-chip-val {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  font-family: monospace;
+}
+.time-chip--masuk {
+  border-color: rgba(134, 239, 172, 0.4);
+}
+.time-chip--keluar {
+  border-color: rgba(253, 186, 116, 0.4);
+}
+.time-chip-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .mt-1 {
@@ -1267,9 +1346,31 @@ onMounted(() => {})
   color: #6b7280;
   margin-top: 0.1rem;
   line-height: 1.4;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.riwayat-bpjs-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #eff6ff;
+  color: #3b82f6;
+  border: 1px solid #bfdbfe;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.65rem;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.riwayat-bpjs-btn:hover {
+  background: #3b82f6;
+  color: #fff;
+  border-color: #3b82f6;
 }
 
 .card-detail-grid-compact {

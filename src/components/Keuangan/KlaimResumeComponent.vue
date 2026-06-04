@@ -653,6 +653,7 @@ const printResumePasien = () => {
 }
 
 const PrintRekamMedisEl = () => {
+  //onHide()
   const routeData = router.resolve({
     name: 'RMEViewer',
     query: { noreg: props.noregister },
@@ -767,8 +768,6 @@ const get_procedure = async (event) => {
       `${configStore.apiBaseUrl}/index.php/api/data_referensi/get_tindakan_v2`,
       { mode: 1, param: query },
     )
-
-    console.log(res.data)
 
     const results = res.data ?? []
     const uniqueMap = new Map()

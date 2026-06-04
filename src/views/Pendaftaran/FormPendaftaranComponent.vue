@@ -27,7 +27,11 @@
             iconDisplay="input"
             class="w-100"
             :class="{ 'p-invalid': formErrors.TanggalRawat }"
+            @update:modelValue="formErrors.TanggalRawat = ''"
           />
+          <small v-if="formErrors.TanggalRawat" class="reg-field-error">
+            <i class="pi pi-exclamation-circle"></i> {{ formErrors.TanggalRawat }}
+          </small>
         </div>
         <div class="reg-field" v-if="carabayarSelected?.KODE == 5">
           <label class="reg-label">Tanggal SEP <span class="req">*</span></label>
@@ -39,7 +43,11 @@
             iconDisplay="input"
             class="w-100"
             :class="{ 'p-invalid': formErrors.TanggalSEP }"
+            @update:modelValue="formErrors.TanggalSEP = ''"
           />
+          <small v-if="formErrors.TanggalSEP" class="reg-field-error">
+            <i class="pi pi-exclamation-circle"></i> {{ formErrors.TanggalSEP }}
+          </small>
         </div>
       </div>
     </Panel>
@@ -62,7 +70,11 @@
             placeholder="Pilih Jenis Rawat"
             class="w-100"
             :class="{ 'p-invalid': formErrors.jenisrawatSelected }"
+            @change="formErrors.jenisrawatSelected = ''"
           />
+          <small v-if="formErrors.jenisrawatSelected" class="reg-field-error">
+            <i class="pi pi-exclamation-circle"></i> {{ formErrors.jenisrawatSelected }}
+          </small>
         </div>
         <div class="reg-field">
           <label class="reg-label">Cara Bayar <span class="req">*</span></label>
@@ -75,7 +87,11 @@
             filter
             showClear
             :class="{ 'p-invalid': formErrors.carabayarSelected }"
+            @change="formErrors.carabayarSelected = ''"
           />
+          <small v-if="formErrors.carabayarSelected" class="reg-field-error">
+            <i class="pi pi-exclamation-circle"></i> {{ formErrors.carabayarSelected }}
+          </small>
         </div>
         <div class="reg-field">
           <label class="reg-label">DPJP <span class="req">*</span></label>
@@ -88,7 +104,11 @@
             filter
             showClear
             :class="{ 'p-invalid': formErrors.dokterSelected }"
+            @change="formErrors.dokterSelected = ''"
           />
+          <small v-if="formErrors.dokterSelected" class="reg-field-error">
+            <i class="pi pi-exclamation-circle"></i> {{ formErrors.dokterSelected }}
+          </small>
         </div>
         <div class="reg-field">
           <label class="reg-label">Diagnosa Pasien</label>
@@ -129,7 +149,11 @@
           appendTo="body"
           class="w-100"
           :class="{ 'p-invalid': formErrors.poliSelected }"
+          @change="formErrors.poliSelected = ''"
         />
+        <small v-if="formErrors.poliSelected" class="reg-field-error">
+          <i class="pi pi-exclamation-circle"></i> {{ formErrors.poliSelected }}
+        </small>
       </div>
 
       <!-- Ruang Rawat Inap -->
@@ -153,6 +177,7 @@
             appendTo="body"
             class="flex-grow-1"
             :class="{ 'p-invalid': formErrors.ruanganSelected }"
+            @change="formErrors.ruanganSelected = ''"
           >
             <template #option="slotProps">
               <div class="ruang-option">
@@ -177,6 +202,9 @@
             v-tooltip.top="'Perbarui daftar ruangan'"
           />
         </div>
+        <small v-if="formErrors.ruanganSelected" class="reg-field-error">
+          <i class="pi pi-exclamation-circle"></i> {{ formErrors.ruanganSelected }}
+        </small>
       </div>
 
       <!-- SPRI -->
@@ -230,7 +258,13 @@
         </div>
         <div class="reg-field reg-field-full">
           <label class="reg-label">Catatan</label>
-          <Textarea v-model="Catatan" class="w-100" rows="3" placeholder="Catatan tambahan..." />
+          <Textarea
+            v-model="Catatan"
+            class="w-100"
+            rows="3"
+            placeholder="Catatan tambahan..."
+            @keydown.ctrl.enter.prevent="openConfirmDialog"
+          />
         </div>
         <div class="reg-field reg-field-full">
           <div class="reg-checkbox-row">
@@ -288,7 +322,11 @@
             placeholder="Pilih Tanggal KLL"
             class="w-100"
             :class="{ 'p-invalid': formErrors.tanggalKLL }"
+            @update:modelValue="formErrors.tanggalKLL = ''"
           />
+          <small v-if="formErrors.tanggalKLL" class="reg-field-error">
+            <i class="pi pi-exclamation-circle"></i> {{ formErrors.tanggalKLL }}
+          </small>
         </div>
         <div class="reg-field">
           <label class="reg-label">Provinsi Lokasi KLL <span class="req">*</span></label>
@@ -303,6 +341,9 @@
             class="w-100"
             :class="{ 'p-invalid': formErrors.provinsiKLL }"
           />
+          <small v-if="formErrors.provinsiKLL" class="reg-field-error">
+            <i class="pi pi-exclamation-circle"></i> {{ formErrors.provinsiKLL }}
+          </small>
         </div>
         <div class="reg-field">
           <label class="reg-label">Kabupaten / Kota <span class="req">*</span></label>
@@ -319,6 +360,9 @@
             class="w-100"
             :class="{ 'p-invalid': formErrors.kabupatenKLL }"
           />
+          <small v-if="formErrors.kabupatenKLL" class="reg-field-error">
+            <i class="pi pi-exclamation-circle"></i> {{ formErrors.kabupatenKLL }}
+          </small>
         </div>
         <div class="reg-field">
           <label class="reg-label">Kecamatan <span class="req">*</span></label>
@@ -333,7 +377,11 @@
             placeholder="Pilih Kecamatan"
             class="w-100"
             :class="{ 'p-invalid': formErrors.kecamatanKLL }"
+            @change="formErrors.kecamatanKLL = ''"
           />
+          <small v-if="formErrors.kecamatanKLL" class="reg-field-error">
+            <i class="pi pi-exclamation-circle"></i> {{ formErrors.kecamatanKLL }}
+          </small>
         </div>
       </div>
     </Panel>
@@ -352,6 +400,20 @@
           </span>
         </div>
         <button class="bpjs-banner-dismiss" @click="hanyaSimpanKeBPJS = false" title="Nonaktifkan">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+    </Transition>
+
+    <!-- ── DRAFT RESTORED NOTICE ── -->
+    <Transition name="draft-banner">
+      <div v-if="draftRestoredNotice" class="draft-restored-notice">
+        <div class="draft-notice-icon"><i class="pi pi-history"></i></div>
+        <div class="draft-notice-body">
+          <strong>Draft dipulihkan</strong>
+          <span>Data inputan sebelumnya berhasil dimuat dari penyimpanan lokal.</span>
+        </div>
+        <button class="draft-notice-dismiss" @click="draftRestoredNotice = false" title="Tutup">
           <i class="pi pi-times"></i>
         </button>
       </div>
@@ -391,16 +453,200 @@
         /> -->
       </div>
       <div class="reg-action-right">
+        <Transition name="draft-indicator">
+          <div v-if="hasDraft" class="draft-saved-indicator">
+            <i class="pi pi-cloud-upload"></i>
+            <span>Draft tersimpan</span>
+            <button class="draft-clear-btn" @click="resetForm" title="Hapus draft & reset form">
+              <i class="pi pi-trash"></i> Hapus
+            </button>
+          </div>
+        </Transition>
+        <span class="reg-kbd-hint"> <kbd>Ctrl</kbd><span>+</span><kbd>↵</kbd> untuk submit </span>
         <Button
           label="Simpan Pendaftaran"
           icon="pi pi-save"
           severity="success"
           :loading="loading"
-          @click="submitForm"
+          @click="openConfirmDialog"
         />
       </div>
     </div>
   </div>
+
+  <!-- ── DIALOG KONFIRMASI PENDAFTARAN ── -->
+  <Dialog
+    v-model:visible="showConfirmDialog"
+    header="Konfirmasi Pendaftaran Pasien"
+    :style="{ width: '540px', maxWidth: '95vw' }"
+    modal
+    :closable="!loading"
+  >
+    <div class="confirm-body">
+      <!-- Patient identity card -->
+      <div class="confirm-patient-card" v-if="props.os?.nama">
+        <div class="confirm-patient-avatar">{{ props.os.nama?.charAt(0)?.toUpperCase() }}</div>
+        <div class="confirm-patient-info">
+          <div class="confirm-patient-name">{{ props.os.nama }}</div>
+          <div class="confirm-patient-meta">
+            <span v-if="props.os.noKartu"
+              ><i class="pi pi-id-card"></i> {{ props.os.noKartu }}</span
+            >
+            <span v-if="props.os.nik"
+              ><i class="pi pi-credit-card"></i> NIK: {{ props.os.nik }}</span
+            >
+            <span v-if="props.os.tglLahir"
+              ><i class="pi pi-calendar"></i> {{ props.os.tglLahir
+              }}<template v-if="props.os.umur?.umurSekarang">
+                · {{ props.os.umur.umurSekarang }}</template
+              ></span
+            >
+          </div>
+          <div class="confirm-patient-badges">
+            <span class="confirm-patient-badge confirm-badge-mr">
+              <i class="pi pi-folder-open"></i> RM: {{ norm || '-' }}
+            </span>
+            <span v-if="props.os.sex" class="confirm-patient-badge">
+              <i :class="props.os.sex === 'L' ? 'pi pi-mars' : 'pi pi-venus'"></i>
+              {{ props.os.sex === 'L' ? 'Laki-laki' : 'Perempuan' }}
+            </span>
+            <span
+              class="confirm-patient-badge"
+              :class="
+                props.os.statusPeserta?.keterangan === 'AKTIF'
+                  ? 'confirm-badge-aktif'
+                  : 'confirm-badge-nonaktif'
+              "
+            >
+              <i
+                :class="
+                  props.os.statusPeserta?.keterangan === 'AKTIF'
+                    ? 'pi pi-check-circle'
+                    : 'pi pi-times-circle'
+                "
+              ></i>
+              {{ props.os.statusPeserta?.keterangan || '-' }}
+            </span>
+            <span v-if="props.os.hakKelas?.keterangan" class="confirm-patient-badge">
+              <i class="pi pi-star"></i> {{ props.os.hakKelas.keterangan }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info reminder -->
+      <div class="confirm-info-banner">
+        <i class="pi pi-info-circle"></i>
+        <span>Periksa kembali data berikut sebelum pendaftaran disimpan.</span>
+      </div>
+
+      <!-- Data pendaftaran -->
+      <div class="confirm-grid">
+        <!-- Waktu -->
+        <div class="confirm-section-head"><i class="pi pi-clock"></i> Waktu</div>
+        <div class="confirm-row">
+          <span class="confirm-lbl">Tanggal Masuk</span>
+          <span class="confirm-val">{{ formatDateTimeForAPI(TanggalRawat) }}</span>
+        </div>
+        <div class="confirm-row" v-if="carabayarSelected?.KODE == 5">
+          <span class="confirm-lbl">Tanggal SEP</span>
+          <span class="confirm-val">{{ formatDateOnlyForAPI(TanggalSEP) }}</span>
+        </div>
+
+        <!-- Pelayanan -->
+        <div class="confirm-section-head"><i class="pi pi-sitemap"></i> Pelayanan</div>
+        <div class="confirm-row">
+          <span class="confirm-lbl">Jenis Rawat</span>
+          <span class="confirm-val">{{ jenisrawatSelected?.caption }}</span>
+        </div>
+        <div class="confirm-row">
+          <span class="confirm-lbl">Cara Bayar</span>
+          <span class="confirm-val">{{ carabayarSelected?.NAMA }}</span>
+        </div>
+        <div class="confirm-row">
+          <span class="confirm-lbl">DPJP</span>
+          <span class="confirm-val">{{ dokterSelected?.NAMADOKTER }}</span>
+        </div>
+        <div class="confirm-row" v-if="jenisrawatSelected?.code == 1 && ruanganSelected">
+          <span class="confirm-lbl">Ruang Rawat Inap</span>
+          <span class="confirm-val">
+            {{ ruanganSelected?.NAMA }}
+            <small class="confirm-val-sub"
+              >{{ ruanganSelected?.TERSEDIA }} TT tersedia dari
+              {{ ruanganSelected?.JUMLAH_TT }}</small
+            >
+          </span>
+        </div>
+        <div class="confirm-row" v-if="jenisrawatSelected?.code == 2 && poliSelected">
+          <span class="confirm-lbl">Poli Klinik</span>
+          <span class="confirm-val">{{ poliSelected?.nama }}</span>
+        </div>
+        <div class="confirm-row" v-if="diagnoseSelected">
+          <span class="confirm-lbl">Diagnosa</span>
+          <span class="confirm-val">{{ diagnoseSelected?.dx }}</span>
+        </div>
+        <div class="confirm-row" v-if="selectedKelas">
+          <span class="confirm-lbl">Naik Kelas</span>
+          <span class="confirm-val">{{ selectedKelas?.caption }}</span>
+        </div>
+        <div class="confirm-row" v-if="NoSPRI">
+          <span class="confirm-lbl">No. SPRI</span>
+          <span class="confirm-val mono">{{ NoSPRI }}</span>
+        </div>
+        <div class="confirm-row" v-if="props.os?.provUmum?.nmProvider">
+          <span class="confirm-lbl">Faskes Tk. I</span>
+          <span class="confirm-val">{{ props.os.provUmum.nmProvider }}</span>
+        </div>
+
+        <!-- Tambahan -->
+        <template
+          v-if="Catatan || lakaLantasSelected?.code > 0 || hanyaSimpanKeBPJS || pasienkatarak"
+        >
+          <div class="confirm-section-head"><i class="pi pi-list"></i> Informasi Tambahan</div>
+          <div class="confirm-row" v-if="Catatan">
+            <span class="confirm-lbl">Catatan</span>
+            <span class="confirm-val">{{ Catatan }}</span>
+          </div>
+          <div class="confirm-row" v-if="pasienkatarak">
+            <span class="confirm-lbl">Pasien Katarak</span>
+            <span class="confirm-val">Ya</span>
+          </div>
+          <div class="confirm-row" v-if="lakaLantasSelected?.code > 0">
+            <span class="confirm-lbl">Status KLL</span>
+            <span class="confirm-val">{{ lakaLantasSelected?.caption }}</span>
+          </div>
+          <div class="confirm-row" v-if="lakaLantasSelected?.code > 0 && provinsiKLL">
+            <span class="confirm-lbl">Lokasi KLL</span>
+            <span class="confirm-val"
+              >{{ kecamatanKLL?.nama || '-' }}, {{ kabupatenKLL?.nama || '-' }},
+              {{ provinsiKLL?.nama }}</span
+            >
+          </div>
+          <div class="confirm-row confirm-row-warn" v-if="hanyaSimpanKeBPJS">
+            <span class="confirm-lbl">Mode</span>
+            <span class="confirm-val">Hanya simpan ke BPJS (tidak ke SIMRS)</span>
+          </div>
+        </template>
+      </div>
+    </div>
+    <template #footer>
+      <Button
+        label="Batal, Periksa Kembali"
+        icon="pi pi-arrow-left"
+        severity="secondary"
+        outlined
+        @click="showConfirmDialog = false"
+        :disabled="loading"
+      />
+      <Button
+        label="Konfirmasi & Daftar"
+        icon="pi pi-save"
+        severity="success"
+        :loading="loading"
+        @click="submitForm"
+      />
+    </template>
+  </Dialog>
 
   <RecentPendaftaranView ref="childRef" />
 
@@ -728,7 +974,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, defineEmits, onBeforeUnmount } from 'vue'
+import { ref, onMounted, watch, defineEmits, onBeforeUnmount, nextTick } from 'vue'
 import DatePicker from 'primevue/datepicker'
 import Select from 'primevue/select'
 import InputText from 'primevue/inputtext'
@@ -790,7 +1036,7 @@ const jenisrawatSelected = ref({
   caption: 'INAP',
 })
 
-const emit = defineEmits(['fungsiInduk'])
+const emit = defineEmits(['fungsiInduk', 'restorePatient', 'clearPatient'])
 
 const ShowFormPendaftaran = async () => {
   emit('fungsiInduk')
@@ -1332,9 +1578,14 @@ const submitForm = async () => {
       user_id: user_id.value,
     }
 
+    console.log('Response from createSEP:', payload)
+
     const response = await axios.post(`${url}/index.php/api/Bpjs_api/createSEP`, payload)
 
+    console.log('Response from createSEP:', response.data)
+
     if (response.data.metadata.code == '200') {
+      showConfirmDialog.value = false
       showSuccess(response.data.metadata.message)
 
       if (hanyaSimpanKeBPJS.value == 1) {
@@ -1398,107 +1649,89 @@ const onKabupatenChange = () => {
 
 // ===== FORM ERRORS STATE =====
 const formErrors = ref({
-  TanggalRawat: false,
-  TanggalSEP: false,
-  jenisrawatSelected: false,
-  carabayarSelected: false,
-  dokterSelected: false,
-  diagnoseSelected: false,
-  ruanganSelected: false,
-  poliSelected: false,
-  selectedKelas: false,
-  tanggalKLL: false,
-  provinsiKLL: false,
-  kabupatenKLL: false,
-  kecamatanKLL: false,
+  TanggalRawat: '',
+  TanggalSEP: '',
+  jenisrawatSelected: '',
+  carabayarSelected: '',
+  dokterSelected: '',
+  diagnoseSelected: '',
+  ruanganSelected: '',
+  poliSelected: '',
+  selectedKelas: '',
+  tanggalKLL: '',
+  provinsiKLL: '',
+  kabupatenKLL: '',
+  kecamatanKLL: '',
 })
 // ===== VALIDATION =====
 const validateForm = () => {
-  // Reset all errors
   Object.keys(formErrors.value).forEach((key) => {
-    formErrors.value[key] = false
+    formErrors.value[key] = ''
   })
 
   let isValid = true
 
-  if (!norm.value) {
-    // Validate Tanggal Masuk RS
-    isValid = false
-  }
+  if (!norm.value) isValid = false
 
-  // Validate Tanggal Masuk RS
   if (!TanggalRawat.value) {
-    formErrors.value.TanggalRawat = true
+    formErrors.value.TanggalRawat = 'Tanggal & jam masuk RS wajib diisi'
     isValid = false
   }
 
-  // Validate Jenis Rawat
   if (!jenisrawatSelected.value) {
-    formErrors.value.jenisrawatSelected = true
+    formErrors.value.jenisrawatSelected = 'Jenis rawat wajib dipilih'
     isValid = false
   }
 
-  // Validate Cara Bayar
   if (!carabayarSelected.value) {
-    formErrors.value.carabayarSelected = true
+    formErrors.value.carabayarSelected = 'Cara bayar wajib dipilih'
     isValid = false
   }
 
-  // Validate DPJP
   if (!dokterSelected.value) {
-    formErrors.value.dokterSelected = true
+    formErrors.value.dokterSelected = 'DPJP wajib dipilih'
     isValid = false
   }
 
-  // Validate Diagnosis
-  // if (!diagnoseSelected.value) {
-  //   formErrors.value.diagnoseSelected = true
-  //   isValid = false
-  // }
-
-  // Validate SEP date if cara bayar is BPJS (code 5)
   if (carabayarSelected.value?.KODE === 5) {
     if (!TanggalSEP.value) {
-      formErrors.value.TanggalSEP = true
+      formErrors.value.TanggalSEP = 'Tanggal SEP wajib diisi untuk pasien BPJS'
       isValid = false
     }
   }
-  // Validate room selection for Inap
+
   if (jenisrawatSelected.value.code === 1) {
     if (!ruanganSelected.value) {
-      formErrors.value.ruanganSelected = true
+      formErrors.value.ruanganSelected = 'Ruang rawat inap wajib dipilih'
       isValid = false
     } else if (ruanganSelected.value.TERSEDIA <= 0) {
-      showInfo('Ruang rawat inap yang dipilih tidak tersedia')
-      formErrors.value.ruanganSelected = true
+      formErrors.value.ruanganSelected = 'Ruangan ini sudah penuh, pilih ruangan lain'
       isValid = false
     }
   }
 
-  // Validate poli selection for Jalan
   if (jenisrawatSelected.value.code === 2) {
     if (!poliSelected.value) {
-      formErrors.value.poliSelected = true
+      formErrors.value.poliSelected = 'Poli klinik wajib dipilih'
       isValid = false
     }
   }
 
-  // Validate KLL fields if applicable
   if (lakaLantasSelected.value?.code > 0) {
     if (!tanggalKLL.value) {
-      formErrors.value.tanggalKLL = true
+      formErrors.value.tanggalKLL = 'Tanggal KLL wajib diisi'
       isValid = false
     }
     if (!provinsiKLL.value) {
-      formErrors.value.provinsiKLL = true
+      formErrors.value.provinsiKLL = 'Provinsi KLL wajib dipilih'
       isValid = false
     }
     if (!kabupatenKLL.value) {
-      formErrors.value.kabupatenKLL = true
+      formErrors.value.kabupatenKLL = 'Kabupaten/Kota KLL wajib dipilih'
       isValid = false
     }
     if (!kecamatanKLL.value) {
-      formErrors.value.kecamatanKLL = true
+      formErrors.value.kecamatanKLL = 'Kecamatan KLL wajib dipilih'
       isValid = false
     }
   }
@@ -1510,16 +1743,24 @@ const validateForm = () => {
   return isValid
 }
 
+// ===== CONFIRM DIALOG =====
+const showConfirmDialog = ref(false)
+
+const openConfirmDialog = () => {
+  if (!validateForm()) return
+  showConfirmDialog.value = true
+}
+
 const resetForm = () => {
   // ── Tanggal ──
   TanggalRawat.value = new Date()
   TanggalSEP.value = new Date()
 
   // ── Pelayanan ──
-  jenisrawatSelected.value = { code: 1, caption: 'INAP' }
+  // jenisrawatSelected.value = { code: 1, caption: 'INAP' }
   dokterSelected.value = null
   diagnoseSelected.value = null
-  carabayarSelected.value = null
+  // carabayarSelected.value = null
 
   // ── Penempatan ──
   ruanganSelected.value = null
@@ -1558,25 +1799,16 @@ const resetForm = () => {
   Object.keys(formErrors.value).forEach((key) => {
     formErrors.value[key] = false
   })
+
+  isResetting.value = true
+  clearDraft()
+  emit('clearPatient')
+  nextTick(() => {
+    isResetting.value = false
+  })
 }
 
 const loadingCetakSEP = ref(false)
-const cetakSEPButton = async () => {
-  // const noreg = tempNoregister.value || ''
-  // if (!noreg) {
-  //   showError('Nomor register tidak ditemukan. Pastikan pasien sudah terdaftar.')
-  //   return
-  // }
-  try {
-    loadingCetakSEP.value = true
-    //await PrintSEP(null, noreg, norm.value)
-    PrintSEP('', '112605424604', '654308')
-  } catch (error) {
-    showError('Gagal mencetak SEP: ' + error.message)
-  } finally {
-    loadingCetakSEP.value = false
-  }
-}
 
 const loadingPrint = ref(false)
 const cetakSPRI = async (data) => {
@@ -1620,42 +1852,118 @@ watch(
   },
   { deep: true, immediate: true }, // biar trigger langsung & deteksi perubahan dalam objek
 )
-// Watch for localStorage
-watch(carabayarSelected, (newVal) => {
-  if (newVal) {
-    try {
-      localStorage.setItem('carabayarSelected', JSON.stringify(newVal))
-    } catch (error) {
-      console.error('Error saving to localStorage:', error)
-    }
-  } else {
-    localStorage.removeItem('carabayarSelected')
-  }
-})
+// ===== DRAFT / LOCALSTORAGE =====
+const DRAFT_KEY = 'pendaftaran_form_draft'
+const hasDraft = ref(false)
+const draftRestoredNotice = ref(false)
+const isResetting = ref(false)
 
-watch(jenisrawatSelected, (newVal) => {
-  if (newVal) {
-    try {
-      localStorage.setItem('jenisrawatSelected', JSON.stringify(newVal))
-    } catch (error) {
-      console.error('Error saving to localStorage:', error)
+const saveDraft = () => {
+  if (isResetting.value) return
+  try {
+    const draft = {
+      TanggalRawat: TanggalRawat.value ? new Date(TanggalRawat.value).toISOString() : null,
+      TanggalSEP: TanggalSEP.value ? new Date(TanggalSEP.value).toISOString() : null,
+      jenisrawatSelected: jenisrawatSelected.value,
+      carabayarSelected: carabayarSelected.value,
+      dokterSelected: dokterSelected.value,
+      diagnoseSelected: diagnoseSelected.value,
+      ruanganSelected: ruanganSelected.value,
+      poliSelected: poliSelected.value,
+      selectedKelas: selectedKelas.value,
+      lakaLantasSelected: lakaLantasSelected.value,
+      tanggalKLL: tanggalKLL.value ? new Date(tanggalKLL.value).toISOString() : null,
+      provinsiKLL: provinsiKLL.value,
+      kabupatenKLL: kabupatenKLL.value,
+      kecamatanKLL: kecamatanKLL.value,
+      Catatan: Catatan.value,
+      NoSPRI: NoSPRI.value,
+      pasienkatarak: pasienkatarak.value,
+      hanyaSimpanKeBPJS: hanyaSimpanKeBPJS.value,
+      norm: norm.value,
+      os: props.os ? JSON.parse(JSON.stringify(props.os)) : null,
+      savedAt: new Date().toISOString(),
     }
-  } else {
-    localStorage.removeItem('jenisrawatSelected')
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+    hasDraft.value = true
+  } catch (error) {
+    console.error('Error saving draft:', error)
   }
-})
+}
 
-watch(poliSelected, (newVal) => {
-  if (newVal) {
-    try {
-      localStorage.setItem('poliSelected', JSON.stringify(newVal))
-    } catch (error) {
-      console.error('Error saving to localStorage:', error)
+const loadDraft = () => {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY)
+    if (!raw) return
+    const d = JSON.parse(raw)
+
+    if (d.TanggalRawat) TanggalRawat.value = new Date(d.TanggalRawat)
+    if (d.TanggalSEP) TanggalSEP.value = new Date(d.TanggalSEP)
+    if (d.jenisrawatSelected) jenisrawatSelected.value = d.jenisrawatSelected
+    if (d.carabayarSelected) carabayarSelected.value = d.carabayarSelected
+    if (d.dokterSelected) dokterSelected.value = d.dokterSelected
+    if (d.diagnoseSelected) {
+      diagnoseSelected.value = d.diagnoseSelected
+      listDiagnose.value = [d.diagnoseSelected]
     }
-  } else {
-    localStorage.removeItem('poliSelected')
+    if (d.ruanganSelected) ruanganSelected.value = d.ruanganSelected
+    if (d.poliSelected) poliSelected.value = d.poliSelected
+    if (d.selectedKelas) selectedKelas.value = d.selectedKelas
+    if (d.lakaLantasSelected) lakaLantasSelected.value = d.lakaLantasSelected
+    if (d.tanggalKLL) tanggalKLL.value = new Date(d.tanggalKLL)
+    if (d.provinsiKLL) provinsiKLL.value = d.provinsiKLL
+    if (d.kabupatenKLL) kabupatenKLL.value = d.kabupatenKLL
+    if (d.kecamatanKLL) kecamatanKLL.value = d.kecamatanKLL
+    if (d.Catatan !== undefined) Catatan.value = d.Catatan
+    if (d.NoSPRI !== undefined) NoSPRI.value = d.NoSPRI
+    if (d.pasienkatarak !== undefined) pasienkatarak.value = d.pasienkatarak
+    if (d.hanyaSimpanKeBPJS !== undefined) hanyaSimpanKeBPJS.value = d.hanyaSimpanKeBPJS
+    if (d.norm) norm.value = d.norm
+    if (d.os) nextTick(() => emit('restorePatient', d.os))
+
+    hasDraft.value = true
+    draftRestoredNotice.value = true
+  } catch (error) {
+    console.error('Error loading draft:', error)
   }
-})
+}
+
+const clearDraft = () => {
+  localStorage.removeItem(DRAFT_KEY)
+  // juga bersihkan key lama individual
+  localStorage.removeItem('carabayarSelected')
+  localStorage.removeItem('jenisrawatSelected')
+  localStorage.removeItem('poliSelected')
+  hasDraft.value = false
+  draftRestoredNotice.value = false
+}
+
+watch(
+  [
+    TanggalRawat,
+    TanggalSEP,
+    jenisrawatSelected,
+    carabayarSelected,
+    dokterSelected,
+    diagnoseSelected,
+    ruanganSelected,
+    poliSelected,
+    selectedKelas,
+    lakaLantasSelected,
+    tanggalKLL,
+    provinsiKLL,
+    kabupatenKLL,
+    kecamatanKLL,
+    Catatan,
+    NoSPRI,
+    pasienkatarak,
+    hanyaSimpanKeBPJS,
+    () => props.os,
+    norm,
+  ],
+  saveDraft,
+  { deep: true },
+)
 
 const listPolyKlinik = ref([])
 const LoadDataPoly = async () => {
@@ -1678,8 +1986,16 @@ const LoadDataPoly = async () => {
     loading.value = false
   }
 }
+const handleGlobalKeydown = (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault()
+    openConfirmDialog()
+  }
+}
+
 onBeforeUnmount(() => {
   window.removeEventListener('resize', checkMobile)
+  document.removeEventListener('keydown', handleGlobalKeydown)
 })
 // Lifecycle
 onMounted(() => {
@@ -1691,33 +2007,9 @@ onMounted(() => {
 
   checkMobile()
   window.addEventListener('resize', checkMobile)
+  document.addEventListener('keydown', handleGlobalKeydown)
 
-  // Load from localStorage
-  try {
-    const saved = localStorage.getItem('carabayarSelected')
-    if (saved) {
-      carabayarSelected.value = JSON.parse(saved)
-    }
-  } catch (error) {
-    console.error('Error loading from localStorage:', error)
-  }
-
-  try {
-    const saved = localStorage.getItem('jenisrawatSelected')
-    if (saved) {
-      jenisrawatSelected.value = JSON.parse(saved)
-    }
-  } catch (error) {
-    console.error('Error loading from localStorage:', error)
-  }
-  try {
-    const saved = localStorage.getItem('poliSelected')
-    if (saved) {
-      poliSelected.value = JSON.parse(saved)
-    }
-  } catch (error) {
-    console.error('Error loading from localStorage:', error)
-  }
+  loadDraft()
 })
 </script>
 
@@ -1956,9 +2248,14 @@ onMounted(() => {
   padding: 12px 16px;
   background: #f8f9fa;
   border: 1px solid #dee2e6;
-  border-radius: 8px;
+  border-top: 2px solid #198754;
+  border-radius: 0;
   gap: 10px;
   flex-wrap: wrap;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
 }
 .reg-action-left {
   display: flex;
@@ -1967,7 +2264,35 @@ onMounted(() => {
 }
 .reg-action-right {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
+}
+.reg-kbd-hint {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: #9ca3af;
+  user-select: none;
+}
+.reg-kbd-hint kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-family: monospace;
+  color: #6b7280;
+  line-height: 1.4;
+}
+@media (max-width: 480px) {
+  .reg-kbd-hint {
+    display: none;
+  }
 }
 
 .kll-details {
@@ -2120,5 +2445,278 @@ onMounted(() => {
   .info-row .label {
     margin-bottom: 2px;
   }
+}
+
+/* ── Inline Field Error ── */
+.reg-field-error {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #dc3545;
+  margin-top: 3px;
+  line-height: 1.3;
+}
+.reg-field-error .pi {
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+/* ── Confirm Dialog ── */
+.confirm-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.confirm-patient-card {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  border-radius: 10px;
+  padding: 0.9rem 1.1rem;
+}
+.confirm-patient-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.confirm-patient-info {
+  flex: 1;
+  min-width: 0;
+}
+.confirm-patient-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 3px;
+}
+.confirm-patient-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 6px;
+}
+.confirm-patient-meta i {
+  margin-right: 2px;
+}
+.confirm-patient-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.confirm-patient-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+.confirm-badge-mr {
+  background: rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+}
+.confirm-badge-aktif {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+}
+.confirm-badge-nonaktif {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+.confirm-info-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.82rem;
+  color: #1e40af;
+}
+.confirm-grid {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.confirm-section-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.35rem 0.85rem;
+  background: #f3f4f6;
+  font-size: 10px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid #e5e7eb;
+}
+.confirm-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.45rem 0.85rem;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.82rem;
+}
+.confirm-row:last-child {
+  border-bottom: none;
+}
+.confirm-row:nth-child(even) {
+  background: #f9fafb;
+}
+.confirm-row-warn {
+  background: #fff7ed !important;
+  border-left: 3px solid #f59e0b;
+}
+.confirm-row-warn .confirm-val {
+  color: #b45309;
+}
+.confirm-lbl {
+  flex: 0 0 130px;
+  color: #6b7280;
+  font-weight: 500;
+}
+.confirm-val {
+  flex: 1;
+  font-weight: 600;
+  color: #111827;
+  word-break: break-word;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.confirm-val.mono {
+  font-family: monospace;
+  font-size: 0.85rem;
+}
+.confirm-val-sub {
+  font-size: 10px;
+  font-weight: 400;
+  color: #6b7280;
+}
+
+/* ── Draft / localStorage UI ── */
+.draft-restored-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  background: #eff6ff;
+  border: 1.5px solid #93c5fd;
+  border-left: 5px solid #3b82f6;
+  border-radius: 8px;
+  padding: 0.65rem 0.9rem;
+  font-size: 12px;
+}
+.draft-notice-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  background: #3b82f6;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+}
+.draft-notice-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  color: #1e40af;
+}
+.draft-notice-body strong {
+  font-size: 12px;
+}
+.draft-notice-body span {
+  font-size: 11px;
+  opacity: 0.8;
+}
+.draft-notice-dismiss {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+.draft-notice-dismiss:hover {
+  background: #dbeafe;
+}
+
+.draft-saved-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #059669;
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+  border-radius: 6px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+.draft-clear-btn {
+  background: none;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border-left: 1px solid #a7f3d0;
+  margin-left: 4px;
+  padding-left: 8px;
+}
+.draft-clear-btn:hover {
+  color: #b91c1c;
+  text-decoration: underline;
+}
+
+.draft-banner-enter-active,
+.draft-banner-leave-active {
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+.draft-banner-enter-from,
+.draft-banner-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+.draft-indicator-enter-active,
+.draft-indicator-leave-active {
+  transition: opacity 0.25s ease;
+}
+.draft-indicator-enter-from,
+.draft-indicator-leave-to {
+  opacity: 0;
 }
 </style>

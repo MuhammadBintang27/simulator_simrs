@@ -161,7 +161,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, inject } from 'vue'
 import { useConfigStore, useAuthStore } from '@/stores/config'
 import { storeToRefs } from 'pinia'
 import axios from 'axios'
@@ -174,6 +174,8 @@ const props = defineProps({
 const configStore = useConfigStore()
 const authStore = useAuthStore()
 const { id_client } = storeToRefs(authStore)
+
+const reportSectionData = inject('reportSectionData', () => {})
 
 // ── State ──────────────────────────────────────────────────────────────────────
 const loading = ref(true)
@@ -235,6 +237,7 @@ const fetchData = async () => {
     console.error(e)
   } finally {
     loading.value = false
+    reportSectionData('billing', !!billing.value?.NOREGISTER)
   }
 }
 

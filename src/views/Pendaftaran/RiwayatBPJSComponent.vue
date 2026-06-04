@@ -21,8 +21,8 @@
             placeholder="Pilih tanggal mulai"
             showIcon
             iconDisplay="input"
-            :minDate="minDate"
-            :maxDate="maxDate"
+            :minDate="viewOnly ? null : minDate"
+            :maxDate="viewOnly ? null : maxDate"
             class="filter-datepicker"
           />
         </div>
@@ -37,8 +37,8 @@
             placeholder="Pilih tanggal selesai"
             showIcon
             iconDisplay="input"
-            :minDate="minDate"
-            :maxDate="maxDate"
+            :minDate="viewOnly ? null : minDate"
+            :maxDate="viewOnly ? null : maxDate"
             class="filter-datepicker"
           />
         </div>
@@ -96,6 +96,7 @@
               <span class="card-date ml-2">{{ item.tglSep }}</span>
             </div>
             <Button
+              v-if="!viewOnly"
               icon="pi pi-trash"
               severity="danger"
               size="small"
@@ -155,7 +156,7 @@
               <th style="width: 22%">Diagnosa</th>
               <th style="width: 12%">Poli / Unit</th>
               <th style="width: 9%">No. Rujukan</th>
-              <th style="width: 6%; text-align: center">Aksi</th>
+              <th v-if="!viewOnly" style="width: 6%; text-align: center">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -197,7 +198,7 @@
               <td>
                 <code style="font-size: 0.72rem">{{ item.noRujukan || '-' }}</code>
               </td>
-              <td class="text-center">
+              <td v-if="!viewOnly" class="text-center">
                 <Button
                   icon="pi pi-trash"
                   severity="danger"
@@ -260,6 +261,10 @@ const props = defineProps({
     type: String,
     default: null,
   },
+  viewOnly: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 // ── State ──────────────────────────────────────────────────
@@ -271,7 +276,7 @@ const isMobile = ref(false)
 const now = new Date()
 const maxDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 const minDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3)
-const startDate = ref(minDate)
+const startDate = ref(props.viewOnly ? new Date(now.getFullYear(), now.getMonth() - 1, 1) : minDate)
 const endDate = ref(maxDate)
 
 // ── Helpers ────────────────────────────────────────────────

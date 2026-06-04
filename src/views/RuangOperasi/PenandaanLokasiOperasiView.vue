@@ -485,7 +485,7 @@ const saveAsImage = async () => {
   align-items: center;
   gap: 1rem;
   background: linear-gradient(135deg, #0f2942 0%, #1a56a8 100%);
-  border-radius: 10px;
+  border-radius: 4px;
   padding: 1rem 1.5rem;
   color: #fff;
 }
@@ -509,7 +509,7 @@ const saveAsImage = async () => {
   flex-shrink: 0;
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 20px;
+  border-radius: 4px;
   padding: 0.25rem 0.75rem;
   font-size: 0.78rem;
   font-weight: 600;
@@ -519,7 +519,7 @@ const saveAsImage = async () => {
 /* ====== Main Card ====== */
 .marking-card {
   background: #fff;
-  border-radius: 10px;
+  border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   border: 1px solid #e9ecef;
