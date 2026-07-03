@@ -58,6 +58,7 @@ const EditPendaftaranComponent = () => import('@/views/Pendaftaran/EditPendaftar
 const FormStockOpnameView = () => import('@/views/Persediaan/StockOpname/FormStockOpnameView.vue')
 //setting
 const JadwalDokterView = () => import('@/views/setting/JadwalDokterView.vue')
+const GantiPasswordView = () => import('@/views/setting/GantiPasswordView.vue')
 
 //Laboratorium
 const PermintaanLabView = () => import('@/views/Laboratorium/PermintaanLabView.vue')
@@ -89,10 +90,13 @@ const ImunisasiView = () => import('@/views/Imunisasi/ImunisasiView.vue')
 const EntriImunisasiView = () => import('@/views/Imunisasi/EntriImunisasiView.vue')
 
 const MonitoringRMEBPJS = () => import('@/views/Rme/MonitoringRMEBPJS.vue')
+const SirirajView = () => import('@/views/Rme/SirirajView.vue')
 
 const MasterAssetView = () => import('@/views/Asset/MasterAssetView.vue')
 
 const FormIGDView = () => import('@/views/IGD/FormIGDView.vue')
+const MonitoringTriaseView = () => import('@/views/IGD/MonitoringTriaseView.vue')
+const ListPasienIGDView = () => import('@/views/IGD/ListPasienIGDView.vue')
 
 const TindakLanjutPasienView = () => import('@/views/TindakLanjut/TindakLanjutPasienView.vue')
 const ResumeRanapView = () => import('@/views/keuangan/ResumeRanapView.vue')
@@ -104,6 +108,9 @@ const MenuItemsView = () => import('@/views/Manajemen/MenuItemsView.vue')
 const MonitoringPasienRanapView = () => import('@/views/RawatInap/MonitoringPasienRanapView.vue')
 const KajianAwalDPJPView = () => import('@/views/RawatInap/KajianAwalDPJPView.vue')
 const CPPTView = () => import('@/views/RawatInap/CPPTView.vue')
+const DiagnosaAkhirDPJP = () => import('@/views/RawatInap/DiagnosaAkhirDPJP.vue')
+const JawabKonsulView = () => import('@/views/RawatInap/KonsultasiDokter/JawabKonsul.vue')
+const KonsultasiFormView = () => import('@/views/RawatInap/KonsultasiDokter/KonsultasiFormView.vue')
 
 // Fisioterapi
 const HomeFisioterapiView = () => import('@/views/Poliklinik/Fisioteraphi/HomeFisioterapiView.vue')
@@ -122,6 +129,30 @@ const KartuCatatanObatView = () => import('@/views/RekamMedis/KartuCatatanObatVi
 
 // Persalinan
 const PartografView = () => import('@/views/Persalinan/PartografView.vue')
+
+// Inventory - Supplier
+const SupplierListView = () => import('@/views/inventory/Supplier/SupplierListView.vue')
+const SupplierFormView = () => import('@/views/inventory/Supplier/SupplierFormView.vue')
+
+// Inventory - Master Barang (form as modal, 3 separate list views)
+const ObatListView = () => import('@/views/inventory/barang/ObatListView.vue')
+const AtkListView = () => import('@/views/inventory/barang/AtkListView.vue')
+const JasaListView = () => import('@/views/inventory/barang/JasaListView.vue')
+
+// Pemesanan
+const PemesananListView = () => import('@/views/pemesanan/PemesananListView.vue')
+const PemesananFormPage = () => import('@/views/pemesanan/PemesananCreateView.vue')
+const PemesananEditView = () => import('@/views/pemesanan/PemesananEditView.vue')
+const PrintSuratPesananView = () => import('@/views/pemesanan/PrintSuratPesananView.vue')
+
+// Penerimaan
+const PenerimaanListView = () => import('@/views/penerimaan/PenerimaanListView.vue')
+const PenerimaanFormView = () => import('@/views/penerimaan/PenerimaanFormView.vue')
+const PenerimaanTanpaSPView = () => import('@/views/penerimaan/PenerimaanTanpaSPView.vue')
+const RekapSupplierView = () => import('@/views/penerimaan/RekapSupplierView.vue')
+const RekapSupplierDetailView = () => import('@/views/penerimaan/RekapSupplierDetailView.vue')
+const RekapBarangView = () => import('@/views/penerimaan/RekapBarangView.vue')
+const RekapBarangDetailView = () => import('@/views/penerimaan/RekapBarangDetailView.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -185,6 +216,11 @@ const router = createRouter({
       path: '/keuangan/print-bill/:norm/:noreg',
       name: 'KasilPrintBill',
       component: KasilPrintBill,
+    },
+    {
+      path: '/pemesanan/print-sp/:id_pemesanan',
+      name: 'PrintSuratPesanan',
+      component: PrintSuratPesananView,
     },
 
     {
@@ -348,6 +384,12 @@ const router = createRouter({
           component: JadwalDokterView,
         },
         {
+          path: 'setting/ganti-password',
+          name: 'GantiPasswordView',
+          meta: { requiresAuth: true },
+          component: GantiPasswordView,
+        },
+        {
           path: 'persediaan/stock-opname',
           name: 'FormStockOpnameView',
           meta: { redirectPath: true },
@@ -390,7 +432,6 @@ const router = createRouter({
           meta: { redirectPath: true },
           component: DashboardCostControl,
         },
-
         // Penugasan Layanan Routes
         {
           path: 'penugasan-layanan',
@@ -447,6 +488,12 @@ const router = createRouter({
           component: MonitoringRMEBPJS,
         },
         {
+          path: 'rme/siriraj-score/:noreg',
+          name: 'SirirajView',
+          meta: { requiresAuth: true },
+          component: SirirajView,
+        },
+        {
           path: 'asset/master-asset',
           name: 'MasterAssetView',
           meta: { requiresAuth: true },
@@ -459,10 +506,28 @@ const router = createRouter({
           component: FormIGDView,
         },
         {
+          path: 'igd/monitoring-triase',
+          name: 'MonitoringTriaseView',
+          meta: { requiresAuth: true },
+          component: MonitoringTriaseView,
+        },
+        {
+          path: 'igd/list-pasien',
+          name: 'ListPasienIGDView',
+          meta: { requiresAuth: true },
+          component: ListPasienIGDView,
+        },
+        {
           path: 'tindak-lanjut/pemindahan-pasien',
           name: 'TindakLanjutPasienView',
           meta: { requiresAuth: true },
           component: TindakLanjutPasienView,
+        },
+        {
+          path: 'tindak-lanjut/rujuk-rawat-inap',
+          name: 'HomeProsesPasienView',
+          meta: { requiresAuth: true },
+          component: () => import('@/views/Poliklinik/TindakLanjutPasien/HomeProsesPasienView.vue'),
         },
         {
           path: 'keuangan/resume-ranap',
@@ -487,6 +552,24 @@ const router = createRouter({
           name: 'CPPTView',
           meta: { requiresAuth: true },
           component: CPPTView,
+        },
+        {
+          path: 'rawat-inap/jawab-konsul',
+          name: 'JawabKonsulView',
+          meta: { requiresAuth: true },
+          component: JawabKonsulView,
+        },
+        {
+          path: 'rawat-inap/form-konsultasi',
+          name: 'KonsultasiFormView',
+          meta: { requiresAuth: true },
+          component: KonsultasiFormView,
+        },
+        {
+          path: 'rawat-inap/diagnosa-akhir-dpjp/:noregister',
+          name: 'DiagnosaAkhirDPJP',
+          meta: { requiresAuth: true },
+          component: DiagnosaAkhirDPJP,
         },
         {
           path: 'fisioterapi/home',
@@ -517,6 +600,32 @@ const router = createRouter({
           component: MenuItemsView,
         },
 
+        // Inventory / Sales
+        {
+          path: 'inventory/list-resep',
+          name: 'ListResepSalesView',
+          meta: { requiresAuth: true },
+          component: () => import('@/views/Inventory/Sales/LIstResepView.vue'),
+        },
+        {
+          path: 'inventory/proses-resep/:trans',
+          name: 'ProsesResepView',
+          meta: { requiresAuth: true },
+          component: () => import('@/views/Inventory/Sales/ProsesResepView.vue'),
+        },
+        {
+          path: 'inventory/cetak-resep/:trans',
+          name: 'CetakResepView',
+          meta: { requiresAuth: true },
+          component: () => import('@/views/Inventory/Sales/CetakResepView.vue'),
+        },
+        {
+          path: 'inventory/cetak-etiket/:trans',
+          name: 'CetakEtiketView',
+          meta: { requiresAuth: true },
+          component: () => import('@/views/Inventory/Sales/CetakEtiketView.vue'),
+        },
+
         // UTD
         {
           path: 'utd/penerimaan-darah',
@@ -529,6 +638,111 @@ const router = createRouter({
           name: 'SesiDonorView',
           meta: { requiresAuth: true },
           component: SesiDonorView,
+        },
+        {
+          path: 'supplier/list',
+          name: 'SupplierListView',
+          meta: { requiresAuth: true },
+          component: SupplierListView,
+        },
+        {
+          path: 'supplier/form',
+          name: 'SupplierFormView',
+          meta: { requiresAuth: true },
+          component: SupplierFormView,
+        },
+        {
+          path: 'supplier/form/:id',
+          name: 'SupplierFormViewEdit',
+          meta: { requiresAuth: true },
+          component: SupplierFormView,
+        },
+        // Inventory - Obat & BMHP
+        {
+          path: 'inventory/obat/list',
+          name: 'BarangObatListView',
+          meta: { requiresAuth: true },
+          component: ObatListView,
+        },
+
+        // Inventory - ATK
+        {
+          path: 'inventory/atk/list',
+          name: 'BarangAtkListView',
+          meta: { requiresAuth: true },
+          component: AtkListView,
+        },
+
+        // Inventory - Jasa & Tindakan
+        {
+          path: 'inventory/jasa/list',
+          name: 'BarangJasaListView',
+          meta: { requiresAuth: true },
+          component: JasaListView,
+        },
+
+        // Pemesanan
+        {
+          path: 'pemesanan/surat-pesanan',
+          name: 'PemesananListView',
+          meta: { requiresAuth: true },
+          component: PemesananListView,
+        },
+        {
+          path: 'pemesanan/buat-sp',
+          name: 'PemesananBuatSP',
+          meta: { requiresAuth: true },
+          component: PemesananFormPage,
+        },
+        {
+          path: 'pemesanan/sp/:id_pemesanan',
+          name: 'PemesananDetailSP',
+          meta: { requiresAuth: true },
+          component: PemesananEditView,
+        },
+
+        // Penerimaan
+        {
+          path: 'penerimaan/list',
+          name: 'PenerimaanList',
+          meta: { requiresAuth: true },
+          component: PenerimaanListView,
+        },
+        {
+          path: 'penerimaan/form/:id_pemesanan',
+          name: 'PenerimaanForm',
+          meta: { requiresAuth: true },
+          component: PenerimaanFormView,
+        },
+        {
+          path: 'penerimaan/tanpa-sp',
+          name: 'PenerimaanTanpaSP',
+          meta: { requiresAuth: true },
+          component: PenerimaanTanpaSPView,
+        },
+        {
+          path: 'penerimaan/rekap-supplier',
+          name: 'RekapSupplier',
+          meta: { requiresAuth: true },
+          component: RekapSupplierView,
+        },
+        {
+          path: 'penerimaan/rekap-supplier/detail',
+          name: 'RekapSupplierDetail',
+          meta: { requiresAuth: true },
+          component: RekapSupplierDetailView,
+        },
+        {
+          path: 'penerimaan/rekap-barang',
+          name: 'RekapBarang',
+          meta: { requiresAuth: true },
+          component: RekapBarangView,
+        },
+        {
+          path: 'penerimaan/rekap-barang/detail',
+          name: 'RekapBarangDetail',
+          meta: { requiresAuth: true },
+          component: RekapBarangDetailView,
         },
       ],
     },

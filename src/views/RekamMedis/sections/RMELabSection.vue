@@ -1,11 +1,6 @@
 <template>
-  <div class="rme-section">
-    <div class="rme-section-title">
-      <i class="pi pi-database no-print" style="color: #6a1b9a"></i>
-      HASIL PEMERIKSAAN LABORATORIUM
-    </div>
-
-    <!-- Loading awal -->
+  <div class="rme-section rme-lab-root">
+    <!-- Loading -->
     <div v-if="loading" class="rme-loading-row">
       <span class="rme-loading-dot"></span> Memuat data laboratorium...
     </div>
@@ -18,116 +13,196 @@
       <i class="pi pi-minus-circle"></i> Tidak ada data pemeriksaan laboratorium.
     </div>
 
+    <!-- Satu dokumen per permintaan -->
     <div v-else>
-      <!-- Ringkasan jumlah transaksi -->
-      <div class="lab-summary-bar">
-        <span class="lab-summary-count">{{ permintaan.length }} permintaan lab</span>
-        <span class="lab-summary-item-count"> {{ totalItems }} item pemeriksaan </span>
-      </div>
-
-      <!-- Loop setiap permintaan lab -->
-      <div v-for="perm in permintaan" :key="perm.TRANS" class="rme-lab-card">
-        <!-- Card header -->
-        <div class="rme-lab-card-header">
-          <div class="lab-hdr-left">
-            <strong>{{ perm.NAMA_PEMERIKSAAN || perm.NAMABARANG || 'Pemeriksaan Lab' }}</strong>
-            <span class="rme-lab-no mono">{{ perm.TRANS }}</span>
-            <span
-              :class="['rme-badge', perm.STATUS_PROSES ? 'rme-badge-success' : 'rme-badge-warning']"
-            >
-              {{ perm.STATUS_PROSES ? 'Selesai' : 'Proses' }}
-            </span>
-          </div>
-          <div class="rme-lab-meta">
-            <span v-if="perm._pasien?.DPJP || perm.DPJP || perm.NAMADOKTER" class="lab-meta-dokter">
-              {{ perm._pasien?.DPJP || perm.DPJP || perm.NAMADOKTER }}
-            </span>
-            <span
-              v-if="perm._pasien"
-              :class="[
-                'rme-badge',
-                perm._pasien.IS_VERIFIED == 1 ? 'rme-badge-success' : 'rme-badge-warning',
-              ]"
-            >
-              {{ perm._pasien.IS_VERIFIED == 1 ? '✓ Terverifikasi' : '⏳ Belum Diverifikasi' }}
-            </span>
-            <span
-              v-if="perm._pasien?.IS_VERIFIED == 1 && perm._pasien?.PETUGAS_OTENTIKASI"
-              class="lab-verif-by"
-            >
-              {{ perm._pasien.PETUGAS_OTENTIKASI }}
-            </span>
+      <div
+        v-for="(perm, idx) in permintaan"
+        :key="perm.TRANS"
+        class="lab-doc"
+        :class="{ 'lab-doc-break': idx < permintaan.length - 1 }"
+      >
+        <!-- ── Header RS ──────────────────────────────────────────────────── -->
+        <div class="lab-doc-header">
+          <img v-if="LINK_LOGO" :src="LINK_LOGO" alt="Logo RS" class="lab-doc-logo" />
+          <div class="lab-doc-rs-info">
+            <div class="lab-doc-rs-name">{{ company || 'Rumah Sakit' }}</div>
+            <div class="lab-doc-rs-addr">{{ ALAMAT || '' }}</div>
           </div>
         </div>
 
-        <!-- Info baris: tanggal, jenis rawat, poli/ruang -->
-        <div class="lab-info-bar">
-          <span class="lab-info-item">
-            <span class="lab-info-icon">📅</span>
-            {{ fmtDate(perm._pasien?.TANGGAL || perm.TANGGAL || perm.CREATED_AT) }}
-          </span>
-          <span v-if="perm._pasien?.JENISRAWAT || perm.JENISRAWAT" class="lab-info-item">
-            <span class="lab-info-icon">🏥</span>
-            {{ perm._pasien?.JENISRAWAT || perm.JENISRAWAT }}
-          </span>
-          <span
-            v-if="perm._pasien?.POLI_RUANG || perm.POLI_RUANG || perm.POLI || perm.RUANG"
-            class="lab-info-item"
-          >
-            <span class="lab-info-icon">🚪</span>
-            {{ perm._pasien?.POLI_RUANG || perm.POLI_RUANG || perm.POLI || perm.RUANG }}
-          </span>
+        <hr class="lab-doc-hr" />
+
+        <!-- ── Judul ─────────────────────────────────────────────────────── -->
+        <div class="lab-doc-title">Hasil Pemeriksaan Laboratorium</div>
+
+        <hr class="lab-doc-hr" />
+
+        <!-- ── Info Pasien 2 kolom ───────────────────────────────────────── -->
+        <div class="lab-doc-info-grid">
+          <div class="lab-doc-info-col">
+            <div class="lab-info-row">
+              <span class="lab-info-lbl">R.M</span>
+              <span class="lab-info-sep">:</span>
+              <span class="lab-info-val">{{ perm._pasien?.NOMR || dataPasien?.NOMR || '-' }}</span>
+            </div>
+            <div class="lab-info-row">
+              <span class="lab-info-lbl">Nama</span>
+              <span class="lab-info-sep">:</span>
+              <span class="lab-info-val">{{
+                perm._pasien?.NAMAPASIEN || dataPasien?.NAMAPASIEN || '-'
+              }}</span>
+            </div>
+            <div class="lab-info-row">
+              <span class="lab-info-lbl">JK &amp; Usia</span>
+              <span class="lab-info-sep">:</span>
+              <span class="lab-info-val">{{ fmtJkUsia(perm._pasien || dataPasien) }}</span>
+            </div>
+            <div class="lab-info-row">
+              <span class="lab-info-lbl">Domisili</span>
+              <span class="lab-info-sep">:</span>
+              <span class="lab-info-val">{{
+                perm._pasien?.ALAMAT || dataPasien?.ALAMAT || '-'
+              }}</span>
+            </div>
+            <div class="lab-info-row">
+              <span class="lab-info-lbl">Dokter Pengirim</span>
+              <span class="lab-info-sep">:</span>
+              <span class="lab-info-val">{{
+                perm._pasien?.DPJP || perm._pasien?.NAMADOKTER || dataPasien?.DPJP || '-'
+              }}</span>
+            </div>
+          </div>
+
+          <div class="lab-doc-info-col">
+            <div class="lab-info-row">
+              <span class="lab-info-lbl">No Pemeriksaan</span>
+              <span class="lab-info-sep">:</span>
+              <span class="lab-info-val">{{ perm.TRANS || noreg || '-' }}</span>
+            </div>
+            <div class="lab-info-row">
+              <span class="lab-info-lbl">Jenis Rawat</span>
+              <span class="lab-info-sep">:</span>
+              <span class="lab-info-val">{{
+                perm._pasien?.JENISRAWAT || dataPasien?.JENISRAWAT || '-'
+              }}</span>
+            </div>
+            <div class="lab-info-row">
+              <span class="lab-info-lbl">Cara Bayar</span>
+              <span class="lab-info-sep">:</span>
+              <span class="lab-info-val">{{
+                perm._pasien?.CARABAYAR || perm._pasien?.CARA_BAYAR || dataPasien?.CARABAYAR || '-'
+              }}</span>
+            </div>
+            <div class="lab-info-row">
+              <span class="lab-info-lbl">Tgl Permintaan</span>
+              <span class="lab-info-sep">:</span>
+              <span class="lab-info-val">{{
+                fmtDateShort(perm._pasien?.TANGGAL || perm.TANGGAL)
+              }}</span>
+            </div>
+            <div class="lab-info-row">
+              <span class="lab-info-lbl">Poli/Ruangan</span>
+              <span class="lab-info-sep">:</span>
+              <span class="lab-info-val">{{
+                perm._pasien?.POLI_RUANG ||
+                perm._pasien?.POLI ||
+                perm._pasien?.RUANG ||
+                dataPasien?.POLI ||
+                '-'
+              }}</span>
+            </div>
+          </div>
         </div>
 
-        <!-- Loading detail per card -->
-        <div v-if="perm._loading" class="rme-loading-row" style="padding: 8px 12px">
-          <span class="rme-loading-dot"></span> Memuat hasil...
+        <!-- Loading detail per dokumen -->
+        <div v-if="perm._loading" class="rme-loading-row" style="padding: 6px 0">
+          <span class="rme-loading-dot"></span> Memuat hasil pemeriksaan...
         </div>
 
-        <!-- Tabel hasil -->
+        <!-- ── Tabel Hasil ────────────────────────────────────────────────── -->
         <template v-else-if="perm._detail && perm._detail.length > 0">
-          <table class="rme-tbl-data lab-result-table">
+          <table class="lab-doc-table">
             <thead>
               <tr>
-                <th style="width: 35%">Pemeriksaan</th>
-                <th style="width: 14%">Hasil</th>
-                <th style="width: 22%">Nilai Normal</th>
-                <th style="width: 10%">Satuan</th>
-                <th>Keterangan</th>
+                <th class="col-pem">PEMERIKSAAN</th>
+                <th class="col-met">METODE</th>
+                <th class="col-has">HASIL</th>
+                <th class="col-nor">NORMAL</th>
+                <th class="col-sat">SATUAN</th>
               </tr>
             </thead>
             <tbody>
               <template v-for="(group, groupName) in groupedDetail(perm._detail)" :key="groupName">
-                <!-- Group header -->
-                <tr v-if="groupName && groupName !== 'Umum'" class="rme-tbl-group-hdr">
+                <tr class="lab-doc-group-row">
                   <td colspan="5">{{ groupName }}</td>
                 </tr>
-                <!-- Items -->
-                <tr v-for="item in group" :key="item.ID || item.KODE_PEMERIKSAAN">
-                  <td class="pl-3">
+                <tr
+                  v-for="(item, iidx) in group"
+                  :key="item.ID || item.KODE_PEMERIKSAAN || iidx"
+                  :class="['lab-doc-data-row', iidx % 2 === 0 ? 'row-even' : 'row-odd']"
+                >
+                  <td class="td-pem">
                     {{ item.PEMERIKSAAN || item.NAMA_PEMERIKSAAN || item.CAPTION || '-' }}
                   </td>
-                  <td :class="{ 'lab-abnormal': isAbnormal(item) }">
+                  <td>{{ item.METODE || '-' }}</td>
+                  <td :class="{ 'td-abnormal': isAbnormal(item) }">
                     {{ item.HASIL ?? item.RESULT ?? '-' }}
-                    <span v-if="isAbnormal(item)" class="lab-flag">↑↓</span>
                   </td>
-                  <td class="lab-normal-range">{{ item.NORMAL || item.NILAI_NORMAL || '-' }}</td>
+                  <td class="td-normal">{{ item.NORMAL || item.NILAI_NORMAL || '-' }}</td>
                   <td>{{ item.SATUAN || item.UNIT || '-' }}</td>
-                  <td>{{ item.KETERANGAN || item.KETERANGAN_REMARK || item.REMARK || '-' }}</td>
                 </tr>
               </template>
             </tbody>
           </table>
 
-          <!-- Ringkasan abnormal -->
-          <div v-if="countAbnormal(perm._detail) > 0" class="lab-abnormal-bar">
-            <span class="lab-abn-icon">⚠</span>
-            {{ countAbnormal(perm._detail) }} nilai di luar rentang normal
+          <!-- ── Footer dokumen ────────────────────────────────────────────── -->
+          <div class="lab-doc-footer">
+            <div class="lab-doc-kesan-area">
+              <div class="lab-doc-kesan-row">
+                <span class="lab-kesan-lbl">Kesan :</span>
+                <div class="lab-kesan-box">{{ perm._pasien?.KESAN || '' }}</div>
+              </div>
+              <div class="lab-doc-notes">
+                <p>
+                  1. Interpretasi hasil laboratorium hanya dapat diberikan oleh Dokter yang memiliki
+                  data klinis pasien.
+                </p>
+                <p>2. Tanda warna merah menunjukkan nilai di atas atau dibawah nilai normal.</p>
+                <p>3. Bila ada yang kurang jelas, hubungi laboratorium</p>
+              </div>
+            </div>
+
+            <div class="lab-doc-sig-area">
+              <div class="lab-doc-sig-title">Dokter Pemeriksa</div>
+              <div class="lab-doc-sig-date">
+                {{ fmtDateShort(perm._pasien?.TGL_VERIFIED || perm._pasien?.TANGGAL) }}
+              </div>
+              <div class="lab-doc-qr-wrap">
+                <QrcodeVue
+                  v-if="perm._pasien?.PETUGAS_OTENTIKASI || perm._pasien?.NAMA_PETUGAS"
+                  :value="perm._pasien?.PETUGAS_OTENTIKASI || perm._pasien?.NAMA_PETUGAS || ''"
+                  :size="40"
+                  level="H"
+                />
+                <div v-else class="lab-doc-qr-placeholder"></div>
+              </div>
+              <div class="lab-doc-sig-name">
+                {{ perm._pasien?.PETUGAS_OTENTIKASI || perm._pasien?.NAMA_PETUGAS || '-' }}
+              </div>
+              <div class="lab-doc-sig-sub">-</div>
+            </div>
           </div>
         </template>
 
-        <div v-else class="rme-empty-note" style="padding: 8px 12px">
+        <div v-else class="rme-empty-note" style="margin-top: 8px">
           <i class="pi pi-minus-circle"></i> Detail hasil belum tersedia.
+        </div>
+
+        <!-- ── Print footer ──────────────────────────────────────────────── -->
+        <div class="lab-doc-print-footer">
+          <span>Print date : {{ printDateTime }}</span>
+          <!-- <span>Petugas : {{ user_name || '' }}</span> -->
+          <span>Halaman : {{ perm.TRANS || idx + 1 }}/{{ idx + 1 }}</span>
         </div>
       </div>
     </div>
@@ -139,6 +214,7 @@ import { ref, computed, onMounted, inject } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConfigStore, useAuthStore } from '@/stores/config'
 import axios from 'axios'
+import QrcodeVue from 'qrcode.vue'
 
 const props = defineProps({
   noreg: { type: String, required: true },
@@ -147,7 +223,7 @@ const props = defineProps({
 
 const configStore = useConfigStore()
 const authStore = useAuthStore()
-const { id_client } = storeToRefs(authStore)
+const { id_client, company, ALAMAT, LINK_LOGO, user_name } = storeToRefs(authStore)
 
 const reportSectionData = inject('reportSectionData', () => {})
 
@@ -155,25 +231,28 @@ const loading = ref(true)
 const error = ref(null)
 const permintaan = ref([])
 
-// Total item pemeriksaan dari semua transaksi
-const totalItems = computed(() =>
-  permintaan.value.reduce((sum, p) => sum + (p._detail?.length || 0), 0),
-)
+const printDateTime = computed(() => {
+  const now = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
+})
 
-const fmtDate = (d) => {
+const fmtDateShort = (d) => {
   if (!d) return '-'
   try {
-    return new Date(d).toLocaleString('id-ID', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    })
+    const dt = new Date(d)
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${pad(dt.getDate())}/${pad(dt.getMonth() + 1)}/${dt.getFullYear()}`
   } catch {
     return d
   }
+}
+
+const fmtJkUsia = (p) => {
+  if (!p) return '-'
+  const jk = p.JENISKELAMIN === 'P' ? 'P' : p.JENISKELAMIN === 'L' ? 'L' : p.JENISKELAMIN || ''
+  const usia = p.USIA_LENGKAP || p.USIA || ''
+  return [jk, usia].filter(Boolean).join(' / ') || '-'
 }
 
 const groupedDetail = (detail) => {
@@ -193,15 +272,11 @@ const isAbnormal = (item) =>
   item.IS_ABNORMAL === 1 ||
   item.FLAG_ABNORMAL === '1'
 
-const countAbnormal = (detail) => detail?.filter(isAbnormal).length || 0
-
-// Fetch detail per-transaksi, return { pasien, items }
 const fetchDetail = async (noTransaksi) => {
   const url = configStore.apiApotikUrl
   const res = await axios.get(
     `${url}/index.php/api/sales/get_item_lab_master_detail/${noTransaksi}/${id_client.value}`,
   )
-
   const data = res.data
   const pasien = data?.pasien || null
   let items = []
@@ -222,16 +297,12 @@ const fetchData = async () => {
       noregister: props.noreg,
       mode: 1,
     }
-
     const url = configStore.apiApotikUrl
     const response = await axios.post(
       `${url}/index.php/api/sales/get_list_labor_dan_radiologi_v3`,
       payload,
     )
-
     const list = response.data?.response || []
-
-    // Set list dulu dengan loading flag per-card agar UI langsung tampil
     permintaan.value = list.map((p) => ({ ...p, _detail: [], _loading: true }))
   } catch (e) {
     error.value = 'Gagal memuat daftar laboratorium: ' + (e.message || '')
@@ -241,7 +312,6 @@ const fetchData = async () => {
     reportSectionData('lab', permintaan.value.length > 0)
   }
 
-  // Fetch detail setiap transaksi secara paralel, update reaktif per-card
   if (permintaan.value.length > 0) {
     await Promise.all(
       permintaan.value.map(async (perm, idx) => {
@@ -270,99 +340,288 @@ onMounted(fetchData)
 </script>
 
 <style scoped>
-/* Summary bar */
-.lab-summary-bar {
+.rme-lab-root {
+  padding: 0;
+}
+
+/* ── Dokumen ────────────────────────────────────────────────────────────── */
+.lab-doc {
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  color: #1a1a1a;
+  padding: 4px 0 0;
+}
+
+.lab-doc-break {
+  page-break-after: always;
+  border-bottom: 2px dashed #ccc;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+}
+
+/* ── Header RS ──────────────────────────────────────────────────────────── */
+.lab-doc-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 5px 10px;
-  margin-bottom: 8px;
-  background: #f7f0ff;
-  border-left: 3px solid #6a1b9a;
-  border-radius: 2px;
-  font-size: 11px;
-}
-.lab-summary-count {
-  font-weight: 700;
-  color: #4a148c;
-}
-.lab-summary-item-count {
-  color: #7b1fa2;
+  padding-bottom: 6px;
 }
 
-/* Nama petugas verifikasi */
-.lab-verif-by {
-  font-size: 10px;
-  color: #2e7d32;
-  font-style: italic;
+.lab-doc-logo {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
-/* Card header */
-.lab-hdr-left {
+.lab-doc-rs-info {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  flex-direction: column;
 }
-.lab-meta-dokter {
+
+.lab-doc-rs-name {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant: small-caps;
+  letter-spacing: 0.04em;
+  color: #111;
+}
+
+.lab-doc-rs-addr {
+  font-size: 10px;
+  color: #444;
+  margin-top: 1px;
+}
+
+/* ── Divider ────────────────────────────────────────────────────────────── */
+.lab-doc-hr {
+  border: none;
+  border-top: 1.5px solid #333;
+  margin: 5px 0;
+}
+
+/* ── Judul ──────────────────────────────────────────────────────────────── */
+.lab-doc-title {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+  padding: 4px 0;
+}
+
+/* ── Info Pasien ────────────────────────────────────────────────────────── */
+.lab-doc-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 24px;
+  padding: 6px 0 4px;
+}
+
+.lab-doc-info-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.lab-info-row {
+  display: flex;
+  align-items: flex-start;
   font-size: 11px;
+  line-height: 1.55;
+}
+
+.lab-info-lbl {
+  min-width: 100px;
+  flex-shrink: 0;
+  color: #222;
+}
+
+.lab-info-sep {
+  width: 14px;
+  flex-shrink: 0;
+  color: #222;
+}
+
+.lab-info-val {
+  color: #111;
+  flex: 1;
+}
+
+/* ── Tabel ──────────────────────────────────────────────────────────────── */
+.lab-doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 4px;
+  font-size: 11px;
+}
+
+.lab-doc-table thead tr {
+  background: #fff;
+  border-top: 2px solid #333;
+  border-bottom: 2px solid #333;
+}
+
+.lab-doc-table thead th {
+  padding: 4px 6px;
+  font-weight: 700;
+  font-size: 10.5px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.col-pem {
+  width: 34%;
+}
+.col-met {
+  width: 16%;
+}
+.col-has {
+  width: 12%;
+}
+.col-nor {
+  width: 24%;
+}
+.col-sat {
+  width: 14%;
+}
+
+/* Group header */
+.lab-doc-group-row td {
+  padding: 3px 6px;
+  font-weight: 700;
+  font-size: 11px;
+  background: #fff;
+  color: #111;
+  border-bottom: 1px solid #bbb;
+}
+
+/* Data rows */
+.lab-doc-data-row td {
+  padding: 3px 6px;
+  border-bottom: none;
+  vertical-align: top;
+}
+
+.row-even {
+  background: #f0f0f0;
+}
+
+.row-odd {
+  background: #fff;
+}
+
+.td-pem {
+  padding-left: 10px !important;
+}
+
+.td-abnormal {
+  color: #c62828;
+  font-weight: 700;
+}
+
+.td-normal {
+  color: #444;
+  font-size: 10.5px;
+}
+
+/* ── Footer dokumen ─────────────────────────────────────────────────────── */
+.lab-doc-footer {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 10px;
+  border-top: 1px solid #bbb;
+  padding-top: 8px;
+}
+
+.lab-doc-kesan-area {
+  flex: 1;
+}
+
+.lab-doc-kesan-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.lab-kesan-lbl {
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  padding-top: 2px;
+}
+
+.lab-kesan-box {
+  flex: 1;
+  min-height: 50px;
+  border: 1px solid #aaa;
+  padding: 4px 6px;
+  font-size: 10.5px;
+  background: #fff;
+}
+
+.lab-doc-notes {
+  font-size: 9.5px;
+  color: #333;
+  line-height: 1.5;
+}
+
+.lab-doc-notes p {
+  margin: 0;
+}
+
+/* Signature / QR area */
+.lab-doc-sig-area {
+  min-width: 110px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 10.5px;
+}
+
+.lab-doc-sig-title {
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.lab-doc-sig-date {
+  font-size: 10px;
+  margin-bottom: 4px;
+}
+
+.lab-doc-qr-wrap {
+  margin: 3px 0;
+}
+
+.lab-doc-qr-placeholder {
+  width: 72px;
+  height: 72px;
+  border: 1px solid #bbb;
+  background: #f5f5f5;
+}
+
+.lab-doc-sig-name {
+  font-size: 10.5px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.lab-doc-sig-sub {
+  font-size: 10px;
   color: #555;
 }
 
-/* Info bar: tanggal, jenis rawat, poli/ruang */
-.lab-info-bar {
+/* ── Print footer ───────────────────────────────────────────────────────── */
+.lab-doc-print-footer {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  padding: 5px 10px;
-  background: #faf7ff;
-  border-bottom: 1px solid #ede7f6;
-  font-size: 11px;
-  color: #4a148c;
-}
-.lab-info-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.lab-info-icon {
-  font-size: 11px;
-  opacity: 0.75;
-}
-
-/* Result table */
-.lab-result-table {
-  margin-bottom: 0;
-}
-
-/* Nilai abnormal */
-.lab-abnormal {
-  color: #c62828;
-  font-weight: 700;
-}
-.lab-flag {
-  font-size: 9px;
-  margin-left: 3px;
-  vertical-align: super;
-}
-.lab-normal-range {
-  color: #546e7a;
-  font-size: 11px;
-}
-
-/* Bar abnormal di bawah tabel */
-.lab-abnormal-bar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  background: #fff5f5;
-  border-top: 1px solid #ffcdd2;
-  font-size: 11px;
-  color: #c62828;
-  font-weight: 600;
-}
-.lab-abn-icon {
-  font-size: 12px;
+  justify-content: space-between;
+  border-top: 1px solid #aaa;
+  margin-top: 10px;
+  padding-top: 4px;
+  font-size: 9.5px;
+  color: #444;
 }
 </style>

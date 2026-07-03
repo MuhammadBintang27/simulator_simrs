@@ -6,7 +6,7 @@
     <div class="hero-section">
       <div class="hero-content">
         <div class="hero-text">
-          <h1 class="hero-title">Pendaftaran Pasien</h1>
+          <h1 class="hero-title">{{ pageTitle }}</h1>
           <p class="hero-description">
             Pendaftaran pasien merupakan langkah awal dalam proses pelayanan kesehatan.
           </p>
@@ -370,6 +370,80 @@
                 </div>
               </div>
 
+              <!-- Rujukan bar (POLIKLINIK mode only) -->
+              <div v-if="isPoliklinikMode" class="pd-rujukan-bar">
+                <div class="pd-rujukan-title">
+                  <i class="pi pi-send"></i> Data Rujukan
+                  <i v-if="loadingRujukan" class="pi pi-spin pi-spinner pd-rujukan-spinner"></i>
+                </div>
+                <template v-if="!loadingRujukan">
+                  <div v-if="listRujukan.length === 0" class="pd-rujukan-none">
+                    Belum ada data rujukan
+                  </div>
+                  <div
+                    v-for="item in listRujukan"
+                    :key="item.jenis_rujukan"
+                    class="pd-rujukan-group"
+                  >
+                    <div class="pd-rujukan-group-header">
+                      <span
+                        class="pd-rujukan-type"
+                        :class="item.jenis_rujukan === 'RS' ? 'pd-rtype-rs' : 'pd-rtype-pkm'"
+                      >
+                        {{ item.jenis_rujukan === 'RS' ? 'Faskes II (RS)' : 'Faskes I (PKM)' }}
+                      </span>
+                    </div>
+
+                    <div class="pd-rujukan-content">
+                      <template v-if="Array.isArray(item.data?.response?.rujukan)">
+                        <div
+                          v-for="rj in (rujukanExpanded[item.jenis_rujukan]
+                            ? item.data.response.rujukan
+                            : item.data.response.rujukan.slice(0, 5))"
+                          :key="rj.noKunjungan"
+                          class="pd-rujukan-row"
+                          :class="{ 'pd-rujukan-row--expired': isRujukanExpired(rj.tglKunjungan) }"
+                        >
+                          <span
+                            v-if="isRujukanExpired(rj.tglKunjungan)"
+                            class="pd-rj-expired-badge"
+                          >
+                            <i class="pi pi-clock"></i> EXPIRED
+                          </span>
+                          <span class="pd-rj-val pd-mono">{{ rj.noKunjungan }}</span>
+                          <span class="pd-rj-sep">·</span>
+                          <span class="pd-rj-val">{{ rj.tglKunjungan }}</span>
+                          <span class="pd-rj-sep">·</span>
+                          <span class="pd-rj-val">{{ rj.provPerujuk?.nama }}</span>
+                          <span class="pd-rj-sep">·</span>
+                          <span class="pd-rj-poli">{{ rj.poliRujukan?.nama }}</span>
+                          <span class="pd-rj-sep">·</span>
+                          <span class="pd-rj-diag">Dx: {{ rj.diagnosa?.kode }}</span>
+                        </div>
+                        <button
+                          v-if="item.data.response.rujukan.length > 5"
+                          class="pd-rujukan-seemore"
+                          @click="toggleRujukanExpand(item.jenis_rujukan)"
+                        >
+                          <i
+                            class="pi"
+                            :class="rujukanExpanded[item.jenis_rujukan] ? 'pi-chevron-up' : 'pi-chevron-down'"
+                          ></i>
+                          {{
+                            rujukanExpanded[item.jenis_rujukan]
+                              ? 'Sembunyikan'
+                              : `${item.data.response.rujukan.length - 5} rujukan lainnya`
+                          }}
+                        </button>
+                      </template>
+                      <div v-else class="pd-rujukan-none">
+                        {{ item.data?.metaData?.message || 'Tidak ada rujukan' }}
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+
               <!-- Info sections grid -->
               <div class="pd-sections">
                 <!-- Pribadi & Rekam Medis -->
@@ -502,7 +576,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import DatePicker from 'primevue/datepicker'
 import TabView from 'primevue/tabview'
 import TabPanel from 'primevue/tabpanel'
@@ -515,15 +589,25 @@ import { useConfigStore, useAuthStore } from '@/stores/config'
 import { storeToRefs } from 'pinia'
 import axios from 'axios'
 import { useToast } from 'primevue/usetoast'
+import { useRoute } from 'vue-router'
 
 import FormPendaftaranComponent from '@/views/Pendaftaran/FormPendaftaranComponent.vue'
 import FormInputPasienComponent from '@/views/Pendaftaran/FormInputPasienComponent.vue'
 import ListPasienComponent from '@/views/Pendaftaran/ListPasienComponent.vue'
 import RiwayatBPJSComponent from '@/views/Pendaftaran/RiwayatBPJSComponent.vue'
 
+const route = useRoute()
 const configStore = useConfigStore()
 const authStore = useAuthStore()
 const { id_client } = storeToRefs(authStore)
+
+const pageTitle = computed(() =>
+  route.query.mode === 'IGDRANAP'
+    ? 'Pendaftaran Pasien IGD/Rawat Inap'
+    : 'Pendaftaran Pasien Poliklinik',
+)
+
+const isPoliklinikMode = computed(() => route.query.mode !== 'IGDRANAP')
 
 const toast = useToast()
 
@@ -611,6 +695,7 @@ function resetPeserta() {
     informasi: { dinsos: null, prolanisPRB: null, noSKTM: null, eSEP: null },
     cob: { noAsuransi: null, nmAsuransi: null, tglTMT: null, tglTAT: null },
   }
+  listRujukan.value = []
 }
 
 // search helpers
@@ -662,6 +747,7 @@ const callDataOnlinOfline = async () => {
 
   if (peserta.value?.noKartu) {
     await GetDataPasienLocal(1, peserta.value?.noKartu)
+    await getRujukan(peserta.value?.noKartu)
   }
 }
 // API calls
@@ -709,6 +795,7 @@ const GetDataPasienLocal = async (mode, parameter) => {
   try {
     const url = configStore.apiBaseUrl
     const payload = { mode: mode, noka: parameter, nomr: parameter, id_client: id_client.value }
+
     const response = await axios.post(
       `${url}/index.php/api/data_referensi/GetDataPasien_v3`,
       payload,
@@ -747,6 +834,43 @@ const GetDataPasienLocal = async (mode, parameter) => {
 
 const isLoading = ref(false)
 const carabayarSelected = ref(null)
+
+// Rujukan
+const listRujukan = ref([])
+const loadingRujukan = ref(false)
+
+const rujukanExpanded = ref({})
+const toggleRujukanExpand = (jenisRujukan) => {
+  rujukanExpanded.value[jenisRujukan] = !rujukanExpanded.value[jenisRujukan]
+}
+
+const isRujukanExpired = (tglKunjungan) => {
+  if (!tglKunjungan) return false
+  const expiry = new Date(tglKunjungan)
+  expiry.setMonth(expiry.getMonth() + 3)
+  return new Date() > expiry
+}
+
+const getRujukan = async (noKartu) => {
+  if (!isPoliklinikMode.value || !noKartu) return
+  loadingRujukan.value = true
+  listRujukan.value = []
+  try {
+    const url = configStore.apiBaseUrl
+    const response = await axios.post(`${url}/index.php/api/bpjs_api/get_rujukan_rs_pkm`, {
+      no_kartu: noKartu,
+      id_client: String(id_client.value),
+    })
+
+    if (Array.isArray(response.data)) {
+      listRujukan.value = response.data
+    }
+  } catch (error) {
+    console.error('Error getRujukan:', error)
+  } finally {
+    loadingRujukan.value = false
+  }
+}
 
 watch(carabayarSelected, (newVal) => {
   if (newVal) {
@@ -1015,7 +1139,7 @@ onMounted(() => {
 }
 
 .hero-title {
-  font-weight: 700;
+  font-weight: 500;
   margin: 0 0 0.5rem 0;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -1294,5 +1418,136 @@ onMounted(() => {
   background: rgba(168, 85, 247, 0.18);
   color: #d8b4fe;
   border: 1px solid rgba(168, 85, 247, 0.28);
+}
+
+/* ── Rujukan Bar ── */
+.pd-rujukan-bar {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 8px 14px 10px;
+}
+
+.pd-rujukan-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 6px;
+}
+
+.pd-rujukan-spinner {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.pd-rujukan-group {
+  margin-bottom: 6px;
+}
+
+.pd-rujukan-group-header {
+  margin-bottom: 3px;
+}
+
+.pd-rujukan-content {
+  padding-left: 2px;
+}
+
+.pd-rujukan-type {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 1px;
+}
+
+.pd-rtype-rs {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.pd-rtype-pkm {
+  background: rgba(34, 197, 94, 0.18);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.28);
+}
+
+.pd-rujukan-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.pd-rj-sep {
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 10px;
+}
+
+.pd-rj-val {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.pd-rj-poli {
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+.pd-rj-diag {
+  color: #fde68a;
+  font-weight: 600;
+}
+
+.pd-rujukan-none {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
+  font-style: italic;
+  padding: 1px 0;
+}
+
+.pd-rujukan-seemore {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 10px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: all 0.15s;
+}
+.pd-rujukan-seemore:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.pd-rujukan-row--expired {
+  opacity: 0.6;
+}
+
+.pd-rj-expired-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  background: rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  letter-spacing: 0.04em;
 }
 </style>

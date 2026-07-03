@@ -18,7 +18,6 @@
     </div>
 
     <div v-else class="bill-body">
-
       <!-- ── Info Pasien & Transaksi ─────────────────────────────────────────── -->
       <div class="bill-info-row">
         <!-- Kiri: Data Pasien -->
@@ -45,7 +44,9 @@
                 <td class="bi-lbl">Alamat</td>
                 <td class="bi-sep">:</td>
                 <td class="bi-val">
-                  {{ billing.PASIEN?.ALAMAT }}{{ billing.PASIEN?.namakecamatan ? ', ' + billing.PASIEN.namakecamatan : '' }}{{ billing.PASIEN?.namakota ? ', ' + billing.PASIEN.namakota : '' }}
+                  {{ billing.PASIEN?.ALAMAT
+                  }}{{ billing.PASIEN?.namakecamatan ? ', ' + billing.PASIEN.namakecamatan : ''
+                  }}{{ billing.PASIEN?.namakota ? ', ' + billing.PASIEN.namakota : '' }}
                 </td>
               </tr>
             </tbody>
@@ -145,7 +146,7 @@
       <!-- ── Footer TTD Kasir ────────────────────────────────────────────────── -->
       <div class="bill-footer">
         <div class="bill-footer-inner">
-          <div class="bill-footer-city">{{ tanggalCetak }}</div>
+          <div class="bill-footer-city">{{ formatDateTime(billing.KELUARPOLY) }}</div>
           <div class="bill-footer-title">Petugas Kasir</div>
           <div class="bill-footer-space"></div>
           <div class="bill-footer-line"></div>
@@ -212,7 +213,7 @@ const formatDateTime = (date) => {
   if (!date) return '—'
   const d = new Date(date)
   if (isNaN(d)) return date
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 // ── Fetch ──────────────────────────────────────────────────────────────────────
@@ -244,7 +245,9 @@ const fetchData = async () => {
 // Tunggu NOMR tersedia (async dari parent) lalu fetch
 watch(
   () => props.dataPasien?.NOMR,
-  (nomr) => { if (nomr && props.noreg) fetchData() },
+  (nomr) => {
+    if (nomr && props.noreg) fetchData()
+  },
   { immediate: true },
 )
 </script>
@@ -311,8 +314,12 @@ watch(
   font-weight: 500;
   padding-right: 10px !important;
 }
-.bi-accent { color: #bf360c; }
-.bi-bold { font-weight: 700; }
+.bi-accent {
+  color: #bf360c;
+}
+.bi-bold {
+  font-weight: 700;
+}
 
 /* ── Rincian table ──────────────────────────────────────────────── */
 .bill-tbl-wrap {
@@ -334,10 +341,21 @@ watch(
   border-bottom: 2px solid #ffd5b0;
   white-space: nowrap;
 }
-.col-harga, .col-sub { text-align: right !important; }
-.col-qty, .col-sat   { text-align: center !important; width: 50px; }
-.col-tgl             { width: 90px; }
-.col-item            { min-width: 160px; }
+.col-harga,
+.col-sub {
+  text-align: right !important;
+}
+.col-qty,
+.col-sat {
+  text-align: center !important;
+  width: 50px;
+}
+.col-tgl {
+  width: 90px;
+}
+.col-item {
+  min-width: 160px;
+}
 
 /* Kategori header row */
 .bill-kategori-row td {
@@ -355,8 +373,12 @@ watch(
 }
 
 /* Detail rows — striped orange */
-.bill-row-even td { background: #fffaf5; }
-.bill-row-odd td  { background: #fff3e8; }
+.bill-row-even td {
+  background: #fffaf5;
+}
+.bill-row-odd td {
+  background: #fff3e8;
+}
 .bill-tbl td {
   padding: 3px 8px;
   border-bottom: 1px solid #f5e6d8;
@@ -375,8 +397,12 @@ watch(
   font-style: italic;
 }
 
-.text-right  { text-align: right; }
-.text-center { text-align: center; }
+.text-right {
+  text-align: right;
+}
+.text-center {
+  text-align: center;
+}
 
 /* ── Total box ──────────────────────────────────────────────────── */
 .bill-total-box {
@@ -410,7 +436,9 @@ watch(
   justify-content: flex-end;
   padding: 14px 20px 6px;
 }
-.bill-footer-inner { text-align: center; }
+.bill-footer-inner {
+  text-align: center;
+}
 .bill-footer-city {
   font-size: 11px;
   color: #6c757d;
@@ -422,7 +450,9 @@ watch(
   color: #bf360c;
   margin-bottom: 4px;
 }
-.bill-footer-space { height: 40px; }
+.bill-footer-space {
+  height: 40px;
+}
 .bill-footer-line {
   width: 160px;
   border-top: 1px solid #343a40;
@@ -445,10 +475,22 @@ watch(
 
 /* ── Print ──────────────────────────────────────────────────────── */
 @media print {
-  .bill-kategori-row td { background: #ffecd2 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .bill-row-even td     { background: #fffaf5 !important; }
-  .bill-row-odd td      { background: #fff3e8 !important; }
-  .bill-total-box       { background: #ffecd2 !important; }
-  .bill-section-title   { background: #bf360c !important; }
+  .bill-kategori-row td {
+    background: #ffecd2 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .bill-row-even td {
+    background: #fffaf5 !important;
+  }
+  .bill-row-odd td {
+    background: #fff3e8 !important;
+  }
+  .bill-total-box {
+    background: #ffecd2 !important;
+  }
+  .bill-section-title {
+    background: #bf360c !important;
+  }
 }
 </style>

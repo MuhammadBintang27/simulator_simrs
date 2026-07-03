@@ -7,7 +7,6 @@
         :src="LINK_LOGO || '/img/logo.png'"
         class="rme-rs-logo"
         alt="Logo RS"
-        crossorigin="anonymous"
       />
       <div class="rme-rs-info">
         <h2 class="rme-rs-name">{{ company || 'RUMAH SAKIT' }}</h2>

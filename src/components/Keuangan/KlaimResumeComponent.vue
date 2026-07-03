@@ -131,6 +131,7 @@
                   placeholder="Ketik kode / nama diagnosa..."
                   appendTo="body"
                   class="flex-grow-1"
+                  :disabled="isReadOnly"
                 >
                   <template #option="{ option }">
                     <div class="dx-option">
@@ -156,6 +157,7 @@
                   text
                   severity="success"
                   @click="tambahDxSekunder"
+                  :disabled="isReadOnly"
                 />
               </div>
               <div v-if="listDxSekunder.length === 0" class="kd-empty-dx">
@@ -177,6 +179,7 @@
                   @filter="searchDiagnose"
                   :placeholder="`Sekunder ${idx + 1}...`"
                   appendTo="body"
+                  :disabled="isReadOnly"
                   class="flex-grow-1"
                 >
                   <template #option="{ option }">
@@ -196,6 +199,7 @@
                   severity="danger"
                   size="small"
                   @click="hapusDxSekunder(idx)"
+                  :disabled="isReadOnly"
                 />
               </div>
             </div>
@@ -212,6 +216,7 @@
                   text
                   severity="info"
                   @click="tambahProsedur"
+                  :disabled="isReadOnly"
                 />
               </div>
               <div v-if="listProsedur.length === 0" class="kd-empty-dx">
@@ -228,12 +233,14 @@
                   :options="listProsedurOptions"
                   optionLabel="proc"
                   dataKey="kode"
+                  :filterFields="['kode', 'proc', 'search_key']"
                   filter
                   showClear
                   @filter="get_procedure"
                   :placeholder="`Ketik nama / kode prosedur ${idx + 1}...`"
                   appendTo="body"
                   class="flex-grow-1"
+                  :disabled="isReadOnly"
                 >
                   <template #option="{ option }">
                     <div class="dx-option">
@@ -249,6 +256,7 @@
                   severity="danger"
                   size="small"
                   @click="hapusProsedur(idx)"
+                  :disabled="isReadOnly"
                 />
               </div>
             </div>
@@ -265,6 +273,7 @@
                   text
                   severity="success"
                   @click="tambahDokter"
+                  :disabled="isReadOnly"
                 />
               </div>
               <div v-if="listDokterRawat.length === 0" class="kd-empty-dx">
@@ -288,6 +297,7 @@
                   :placeholder="`Cari nama dokter ${idx + 1}...`"
                   appendTo="body"
                   class="flex-grow-1"
+                  :disabled="isReadOnly"
                 >
                   <template #option="{ option }">
                     <div class="dx-option">
@@ -307,6 +317,7 @@
                   severity="danger"
                   size="small"
                   @click="hapusDokter(idx)"
+                  :disabled="isReadOnly"
                 />
               </div>
             </div>
@@ -326,7 +337,7 @@
                     'kd-status-opt-active': statusKlaim === opt.value,
                     [`kd-status-opt-${opt.value}`]: true,
                   }"
-                  @click="statusKlaim = opt.value"
+                  @click="!isReadOnly && (statusKlaim = opt.value)"
                 >
                   <i :class="opt.icon"></i>
                   <div>
@@ -349,32 +360,680 @@
                 class="w-100"
                 placeholder="Tuliskan perbaikan yang diperlukan pada rekam medis..."
                 :class="{ 'p-invalid': showValidasiCatatan && !catatanPerbaikan.trim() }"
+                :disabled="isReadOnly"
               />
               <small v-if="showValidasiCatatan && !catatanPerbaikan.trim()" class="kd-err-msg">
                 Catatan perbaikan wajib diisi
               </small>
-            </div>
-
-            <!-- Catatan Umum -->
-            <div class="kd-section">
-              <div class="kd-section-title">
-                <i class="pi pi-pencil" style="color: #6c757d"></i>
-                Catatan Tambahan
-              </div>
-              <Textarea
-                v-model="catatanUmum"
-                rows="3"
-                class="w-100"
-                placeholder="Catatan atau komentar tambahan (opsional)..."
-              />
             </div>
           </div>
           <!-- /kd-form-card -->
         </div>
         <!-- /kd-col-left -->
 
-        <!-- ══ KANAN: Resume Medis ══ -->
-        <div class="kd-col-right">
+        <!-- ══ KANAN: Resume Rawat Jalan (non-IGD) ══ -->
+        <div v-if="isRajalNonIGD" class="kd-col-right">
+          <div class="kd-resume-panel">
+            <Tag class="kd-resume-panel-title" style="background-color: darkorange">
+              <i class="pi pi-file-check"></i> Resume Rawat Jalan
+            </Tag>
+
+            <!-- Skeleton Resume Rawat Jalan -->
+            <div v-if="loadingRajal">
+              <!-- Skeleton: Pasien -->
+              <div class="kd-rs-group">
+                <Skeleton width="30%" height="0.65rem" class="mb-3"></Skeleton>
+                <div v-for="i in 5" :key="i" class="kd-rs-row" style="margin-bottom: 6px">
+                  <Skeleton
+                    width="32%"
+                    height="0.6rem"
+                    style="flex-shrink: 0; margin-right: 8px"
+                  ></Skeleton>
+                  <Skeleton width="60%" height="0.6rem"></Skeleton>
+                </div>
+              </div>
+
+              <!-- Skeleton: TTV -->
+              <div class="kd-rs-group">
+                <Skeleton width="20%" height="0.65rem" class="mb-3"></Skeleton>
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px">
+                  <div
+                    v-for="i in 8"
+                    :key="i"
+                    style="
+                      border: 1px solid #e9ecef;
+                      border-radius: 6px;
+                      padding: 6px 4px;
+                      text-align: center;
+                    "
+                  >
+                    <Skeleton width="60%" height="0.5rem" style="margin: 0 auto 4px"></Skeleton>
+                    <Skeleton width="75%" height="0.9rem" style="margin: 0 auto"></Skeleton>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Skeleton: Keluhan -->
+              <div class="kd-rs-group">
+                <Skeleton width="28%" height="0.65rem" class="mb-3"></Skeleton>
+                <div v-for="i in 3" :key="i" class="kd-rs-row" style="margin-bottom: 6px">
+                  <Skeleton
+                    width="36%"
+                    height="0.6rem"
+                    style="flex-shrink: 0; margin-right: 8px"
+                  ></Skeleton>
+                  <Skeleton :width="i === 1 ? '55%' : '70%'" height="0.6rem"></Skeleton>
+                </div>
+              </div>
+
+              <!-- Skeleton: SOAP -->
+              <div class="kd-rs-group">
+                <Skeleton width="22%" height="0.65rem" class="mb-3"></Skeleton>
+                <div v-for="i in 4" :key="i" style="margin-bottom: 8px">
+                  <div class="kd-rs-row" style="margin-bottom: 3px">
+                    <Skeleton
+                      width="14%"
+                      height="0.6rem"
+                      style="flex-shrink: 0; margin-right: 8px"
+                    ></Skeleton>
+                    <Skeleton :width="i % 2 === 0 ? '75%' : '60%'" height="0.6rem"></Skeleton>
+                  </div>
+                  <div v-if="i <= 2" style="padding-left: calc(14% + 8px)">
+                    <Skeleton width="50%" height="0.55rem"></Skeleton>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Skeleton: Diagnosa & Prosedur -->
+              <div v-for="sec in 3" :key="'sec' + sec" class="kd-rs-group">
+                <Skeleton
+                  :width="sec === 1 ? '28%' : sec === 2 ? '35%' : '20%'"
+                  height="0.65rem"
+                  class="mb-3"
+                ></Skeleton>
+                <Skeleton width="100%" height="48px" border-radius="4px"></Skeleton>
+              </div>
+            </div>
+
+            <!-- Konten Resume Rawat Jalan -->
+            <template v-if="!loadingRajal">
+              <!-- Pasien -->
+              <div class="kd-rs-group">
+                <div class="kd-rs-group-lbl">Pasien</div>
+                <div class="kd-rs-row">
+                  <span class="kd-rs-lbl">Nama</span
+                  ><span class="kd-rs-val"
+                    >{{ ranapData.NAMAPASIEN || '—' }}
+                    <span
+                      v-if="ranapData.JENISPASIEN"
+                      class="kd-jenis-badge"
+                      :class="
+                        ranapData.JENISPASIEN?.toLowerCase() === 'baru'
+                          ? 'kd-jenis-baru'
+                          : 'kd-jenis-lama'
+                      "
+                      >{{ ranapData.JENISPASIEN }}</span
+                    ></span
+                  >
+                </div>
+                <div class="kd-rs-row">
+                  <span class="kd-rs-lbl">No. RM</span
+                  ><span class="kd-rs-val kd-rs-accent">{{ ranapData.NOMR || '—' }}</span>
+                </div>
+                <div class="kd-rs-row">
+                  <span class="kd-rs-lbl">Dokter</span
+                  ><span class="kd-rs-val">{{ ranapData.NAMADOKTER || '—' }}</span>
+                </div>
+                <div class="kd-rs-row">
+                  <span class="kd-rs-lbl">NOSEP</span
+                  ><span class="kd-rs-val">{{ ranapData.NOSEP || '—' }}</span>
+                </div>
+                <div class="kd-rs-row" v-if="rajalDataMasuk">
+                  <span class="kd-rs-lbl">Kunjungan</span
+                  ><span class="kd-rs-val">{{ rajalDataMasuk.display || '—' }}</span>
+                </div>
+              </div>
+
+              <!-- TTV -->
+              <div class="kd-rs-group" v-if="ResumeRawatJalan">
+                <div class="kd-rs-group-lbl">TTV</div>
+                <div class="kd-ttv-mini">
+                  <div class="kd-ttv-item">
+                    <div class="kd-ttv-lbl">TD</div>
+                    <div class="kd-ttv-val">{{ ResumeRawatJalan.tensi || '—' }}</div>
+                  </div>
+                  <div class="kd-ttv-item">
+                    <div class="kd-ttv-lbl">Nadi</div>
+                    <div class="kd-ttv-val">{{ ResumeRawatJalan.nadi_permenit || '—' }}</div>
+                  </div>
+                  <div class="kd-ttv-item">
+                    <div class="kd-ttv-lbl">Suhu</div>
+                    <div class="kd-ttv-val">{{ ResumeRawatJalan.suhu || '—' }}</div>
+                  </div>
+                  <div class="kd-ttv-item">
+                    <div class="kd-ttv-lbl">SpO2</div>
+                    <div class="kd-ttv-val">{{ ResumeRawatJalan.sp2o || '—' }}%</div>
+                  </div>
+                  <div class="kd-ttv-item">
+                    <div class="kd-ttv-lbl">RR</div>
+                    <div class="kd-ttv-val">{{ ResumeRawatJalan.respirasi_perm || '—' }}</div>
+                  </div>
+                  <div class="kd-ttv-item">
+                    <div class="kd-ttv-lbl">GCS</div>
+
+                    <div class="kd-ttv-val">{{ ResumeRawatJalan.cgs || '—' }}</div>
+                  </div>
+                  <div class="kd-ttv-item">
+                    <div class="kd-ttv-lbl">BB/TB</div>
+                    <div class="kd-ttv-val">
+                      {{ ResumeRawatJalan.berat_badan || '—' }}/{{
+                        ResumeRawatJalan.tinggi_badan || '—'
+                      }}
+                    </div>
+                  </div>
+                  <div class="kd-ttv-item">
+                    <div class="kd-ttv-lbl">Kesadaran</div>
+                    <div class="kd-ttv-val">{{ ResumeRawatJalan.kesadaran || '—' }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Keluhan -->
+              <div class="kd-rs-group" v-if="ResumeRawatJalan?.keluhan_utama">
+                <div class="kd-rs-group-lbl">Keluhan</div>
+                <div class="kd-rs-row">
+                  <span class="kd-rs-lbl">Keluhan Utama</span
+                  ><span class="kd-rs-val">{{ ResumeRawatJalan.keluhan_utama }}</span>
+                </div>
+                <div class="kd-rs-row" v-if="ResumeRawatJalan.riwayat_peny_kel">
+                  <span class="kd-rs-lbl">Riwayat Penyakit</span
+                  ><span class="kd-rs-val">{{ ResumeRawatJalan.riwayat_peny_kel }}</span>
+                </div>
+                <div class="kd-rs-row" v-if="ResumeRawatJalan.riwayat_elergi">
+                  <span class="kd-rs-lbl">Alergi</span
+                  ><span class="kd-rs-val">{{ ResumeRawatJalan.riwayat_elergi }}</span>
+                </div>
+              </div>
+
+              <!-- SOAP -->
+              <div class="kd-rs-group" v-if="ResumeRawatJalan">
+                <div class="kd-rs-group-lbl">SOAP</div>
+                <div class="kd-rs-row">
+                  <span class="kd-rs-lbl">S</span
+                  ><span class="kd-rs-val">{{ ResumeRawatJalan.subjek || '—' }}</span>
+                </div>
+                <div class="kd-rs-row">
+                  <span class="kd-rs-lbl">O</span
+                  ><span class="kd-rs-val">{{ ResumeRawatJalan.objek || '—' }}</span>
+                </div>
+                <div class="kd-rs-row">
+                  <span class="kd-rs-lbl">A</span
+                  ><span class="kd-rs-val">{{ ResumeRawatJalan.asesmen || '—' }}</span>
+                </div>
+                <div class="kd-rs-row">
+                  <span class="kd-rs-lbl">P</span
+                  ><span class="kd-rs-val">{{ ResumeRawatJalan.plan || '—' }}</span>
+                </div>
+              </div>
+
+              <!-- SITB -->
+              <!-- <div class="kd-rs-group" v-if="ResumeRawatJalan?.no_sitb"> -->
+              <div class="kd-rs-group kd-rs-group-lbl">SITB</div>
+              <pre class="kd-rs-pre">{{ ResumeRawatJalan?.no_sitb }}</pre>
+              <!-- </div> -->
+
+              <div class="kd-rs-group" v-if="ResumeRawatJalan?.diagnosa">
+                <div class="kd-rs-group-lbl">Diagnosa</div>
+                <pre class="kd-rs-pre">{{ ResumeRawatJalan.diagnosa }}</pre>
+              </div>
+
+              <!-- Prosedur -->
+              <div class="kd-rs-group" v-if="ResumeRawatJalan?.procedure">
+                <div class="kd-rs-group-lbl">Prosedur ICD</div>
+                <pre class="kd-rs-pre">{{ ResumeRawatJalan.procedure }}</pre>
+              </div>
+
+              <!-- Tindakan Non-ICD -->
+              <div class="kd-rs-group" v-if="ResumeRawatJalan?.tindakan_non_icd">
+                <div class="kd-rs-group-lbl">Tindakan</div>
+                <pre class="kd-rs-pre">{{ ResumeRawatJalan.tindakan_non_icd }}</pre>
+              </div>
+
+              <!-- Obat -->
+              <div class="kd-rs-group" v-if="ResumeRawatJalan?.obat">
+                <div class="kd-rs-group-lbl">Obat</div>
+                <pre class="kd-rs-pre">{{ ResumeRawatJalan.obat }}</pre>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- ══ KANAN: Form Triase IGD (JALAN + KODEPOLI IGD) ══ -->
+        <div v-else-if="isRajalIGD" class="kd-col-right">
+          <div class="kd-resume-panel">
+            <Tag class="kd-resume-panel-title" severity="danger" style="background: #b71c1c">
+              INSTALASI GAWAT DARURAT (IGD)
+            </Tag>
+
+            <!-- Skeleton Triase Loading -->
+            <div v-if="loadingTriase">
+              <!-- Skeleton: Skor Triase -->
+              <div class="kd-rs-group">
+                <Skeleton width="35%" height="0.65rem" class="mb-3"></Skeleton>
+                <div
+                  style="
+                    display: grid;
+                    grid-template-columns: repeat(4, 1fr);
+                    gap: 5px;
+                    margin-bottom: 6px;
+                  "
+                >
+                  <Skeleton v-for="i in 4" :key="i" height="52px" border-radius="6px"></Skeleton>
+                </div>
+                <Skeleton width="100%" height="30px" border-radius="5px"></Skeleton>
+              </div>
+
+              <!-- Skeleton: Cara Masuk -->
+              <div class="kd-rs-group">
+                <Skeleton width="40%" height="0.65rem" class="mb-3"></Skeleton>
+                <div v-for="i in 5" :key="i" class="kd-rs-row" style="margin-bottom: 6px">
+                  <Skeleton
+                    width="38%"
+                    height="0.6rem"
+                    style="flex-shrink: 0; margin-right: 8px"
+                  ></Skeleton>
+                  <Skeleton width="55%" height="0.6rem"></Skeleton>
+                </div>
+              </div>
+
+              <!-- Skeleton: TTV -->
+              <div class="kd-rs-group">
+                <Skeleton width="45%" height="0.65rem" class="mb-3"></Skeleton>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px">
+                  <div
+                    v-for="i in 8"
+                    :key="i"
+                    style="
+                      border: 1px solid #e9ecef;
+                      border-radius: 6px;
+                      padding: 6px 4px;
+                      text-align: center;
+                    "
+                  >
+                    <Skeleton width="60%" height="0.5rem" style="margin: 0 auto 4px"></Skeleton>
+                    <Skeleton width="80%" height="0.9rem" style="margin: 0 auto"></Skeleton>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Skeleton: Tabel Triase -->
+              <div class="kd-rs-group">
+                <Skeleton width="50%" height="0.65rem" class="mb-3"></Skeleton>
+                <div style="border: 1px solid #e9ecef; border-radius: 4px; overflow: hidden">
+                  <div
+                    style="
+                      display: grid;
+                      grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+                      gap: 0;
+                      background: #f0fdf4;
+                      padding: 5px 6px;
+                    "
+                  >
+                    <Skeleton v-for="i in 5" :key="i" height="0.6rem"></Skeleton>
+                  </div>
+                  <div
+                    v-for="row in 4"
+                    :key="row"
+                    style="
+                      display: grid;
+                      grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+                      gap: 4px;
+                      padding: 5px 6px;
+                      border-top: 1px solid #f0f0f0;
+                    "
+                  >
+                    <Skeleton
+                      v-for="col in 5"
+                      :key="col"
+                      :height="col === 1 ? '0.7rem' : '0.55rem'"
+                    ></Skeleton>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-else-if="!triaseHeader?.code || triaseHeader?.code !== 200" class="kd-rs-group">
+              <div class="kd-empty-dx">
+                <i class="pi pi-minus-circle"></i> Tidak ada data triase untuk kunjungan ini.
+              </div>
+            </div>
+
+            <template v-else>
+              <!-- Skor Triase -->
+              <div class="kd-rs-group" v-if="triaseNilai">
+                <div class="kd-rs-group-lbl">Kategori Triase</div>
+                <div class="tks-scores">
+                  <div class="tks-box tks-emergensi">
+                    <div class="tks-num">{{ triaseNilai.EMERGENSI || 0 }}</div>
+                    <div class="tks-lbl">EMERGENSI</div>
+                  </div>
+                  <div class="tks-box tks-urgent">
+                    <div class="tks-num">{{ triaseNilai.URGENT || 0 }}</div>
+                    <div class="tks-lbl">URGENT</div>
+                  </div>
+                  <div class="tks-box tks-nonurgent">
+                    <div class="tks-num">{{ triaseNilai.NON_URGENT || 0 }}</div>
+                    <div class="tks-lbl">NON URGENT</div>
+                  </div>
+                  <div class="tks-box tks-death">
+                    <div class="tks-num">{{ triaseNilai.DEATH_ON_ARRIVAL || 0 }}</div>
+                    <div class="tks-lbl">DOA</div>
+                  </div>
+                </div>
+                <div :class="['tks-kesimpulan', 'tks-kes-' + triaseKesimpulanKey]">
+                  Kategori: <strong>{{ triaseKesimpulan }}</strong>
+                </div>
+              </div>
+
+              <!-- Data Pasien -->
+              <div class="kd-rs-group">
+                <div class="kd-rs-group-lbl">Data Pasien</div>
+                <div class="kd-rs-row">
+                  <span class="kd-rs-lbl">Nama</span>
+                  <span class="kd-rs-val">
+                    {{ props.datapasien.NAMAPASIEN || '—' }}
+
+                    <span
+                      v-if="props.datapasien.JENISPASIEN"
+                      class="kd-jenis-badge"
+                      :class="
+                        props.datapasien.JENISPASIEN?.toLowerCase() === 'baru'
+                          ? 'kd-jenis-baru'
+                          : 'kd-jenis-lama'
+                      "
+                      >{{ props.datapasien.JENISPASIEN }}</span
+                    >
+                  </span>
+                </div>
+                <div class="kd-rs-row">
+                  <span class="kd-rs-lbl">Tgl. Lahir</span>
+                  <span class="kd-rs-val">{{ formatTglLahir(props.datapasien.TGLLAHIR) }}</span>
+                </div>
+              </div>
+
+              <!-- Cara Masuk Pasien -->
+              <div class="kd-rs-group">
+                <div class="kd-rs-group-lbl">Cara Masuk Pasien</div>
+
+                <div class="kd-rs-row">
+                  <span class="kd-rs-lbl">Waktu Masuk</span>
+                  <span class="kd-rs-val">{{ triaseHeader.waktu || '—' }}</span>
+                </div>
+                <div class="kd-rs-row">
+                  <span class="kd-rs-lbl">Diantar Oleh</span>
+                  <span class="kd-rs-val">{{ triaseHeader.diantar_oleh || '—' }}</span>
+                </div>
+                <div class="kd-rs-row">
+                  <span class="kd-rs-lbl">Transportasi</span>
+                  <span class="kd-rs-val">{{ triaseHeader.transportasi || '—' }}</span>
+                </div>
+                <div class="kd-rs-row">
+                  <span class="kd-rs-lbl">DPJP</span>
+                  <span class="kd-rs-val">{{
+                    triaseHeader.namadokter_sp || props.datapasien.NAMADOKTER || '—'
+                  }}</span>
+                </div>
+                <div class="kd-rs-row">
+                  <span class="kd-rs-lbl">Kesadaran</span>
+                  <span class="kd-rs-val">{{ triaseHeader.kesadaran || '—' }}</span>
+                </div>
+                <div class="kd-rs-row">
+                  <span class="kd-rs-lbl">Status Psikologi</span>
+                  <span class="kd-rs-val">{{ triaseHeader.status_psikologi || '—' }}</span>
+                </div>
+                <div class="kd-rs-row">
+                  <span class="kd-rs-lbl">Resiko Jatuh</span>
+                  <span class="kd-rs-val">
+                    <span
+                      :style="{
+                        color: triaseHeader.resiko_jatuh === 'YA' ? '#dc2626' : '#1a6b4a',
+                        fontWeight: 600,
+                      }"
+                      >{{ triaseHeader.resiko_jatuh || '—' }}</span
+                    >
+                  </span>
+                </div>
+              </div>
+
+              <!-- Anamnese Singkat -->
+              <div class="kd-rs-group" v-if="triaseHeader.keluhan_utama">
+                <div class="kd-rs-group-lbl">Anamnese Singkat</div>
+                <div class="kd-rs-row">
+                  <span class="kd-rs-lbl">Keluhan Utama</span>
+                  <span class="kd-rs-val">{{ triaseHeader.keluhan_utama }}</span>
+                </div>
+                <div class="kd-rs-row" v-if="triaseHeader.riwayat_penyakit_dahulu">
+                  <span class="kd-rs-lbl">Riwayat Penyakit</span>
+                  <span class="kd-rs-val">{{ triaseHeader.riwayat_penyakit_dahulu }}</span>
+                </div>
+              </div>
+
+              <!-- Tanda-Tanda Vital -->
+              <div class="kd-rs-group">
+                <div class="kd-rs-group-lbl">Tanda-Tanda Vital</div>
+                <div class="kd-ttv-mini" style="grid-template-columns: repeat(4, 1fr)">
+                  <div class="kd-ttv-item">
+                    <div class="kd-ttv-lbl">Suhu</div>
+                    <div class="kd-ttv-val">
+                      {{ triaseHeader.suhu ?? '—' }}<span style="font-size: 8px"> °C</span>
+                    </div>
+                  </div>
+                  <div class="kd-ttv-item">
+                    <div class="kd-ttv-lbl">TD</div>
+                    <div class="kd-ttv-val" style="font-size: 11px">
+                      {{ triaseHeader.tensi_sistol ?? '—' }}/{{ triaseHeader.tensi_distol ?? '—' }}
+                    </div>
+                  </div>
+                  <div class="kd-ttv-item">
+                    <div class="kd-ttv-lbl">Nadi</div>
+                    <div class="kd-ttv-val">{{ triaseHeader.nadipermenit ?? '—' }}</div>
+                  </div>
+                  <div class="kd-ttv-item">
+                    <div class="kd-ttv-lbl">SpO2</div>
+                    <div class="kd-ttv-val">
+                      {{ triaseHeader.saturasi ?? '—' }}<span style="font-size: 9px">%</span>
+                    </div>
+                  </div>
+                  <div class="kd-ttv-item">
+                    <div class="kd-ttv-lbl">RR</div>
+                    <div class="kd-ttv-val">{{ triaseHeader.respirasi ?? '—' }}</div>
+                  </div>
+                  <div class="kd-ttv-item">
+                    <div class="kd-ttv-lbl">BB</div>
+                    <div class="kd-ttv-val">
+                      {{ triaseHeader.bb ?? '—' }}<span style="font-size: 8px"> kg</span>
+                    </div>
+                  </div>
+                  <div class="kd-ttv-item">
+                    <div class="kd-ttv-lbl">TB</div>
+                    <div class="kd-ttv-val">
+                      {{ triaseHeader.tb ?? '—' }}<span style="font-size: 8px"> cm</span>
+                    </div>
+                  </div>
+                  <div class="kd-ttv-item">
+                    <div class="kd-ttv-lbl">Nyeri</div>
+                    <div class="kd-ttv-val">
+                      {{ triaseHeader.nyeri ?? '—' }}<span style="font-size: 8px">/10</span>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  v-if="triaseHeader.lokasinyeri"
+                  style="font-size: 11px; color: #555; padding: 4px 2px; margin-top: 4px"
+                >
+                  <strong>Lokasi Nyeri:</strong> {{ triaseHeader.lokasinyeri }}
+                </div>
+              </div>
+
+              <!-- Tabel Pemeriksaan Triase -->
+              <div class="kd-rs-group" v-if="triaseFacts && triaseFacts.length > 0">
+                <div class="kd-rs-group-lbl">Hasil Pemeriksaan Triase</div>
+                <table class="kd-triase-tbl">
+                  <thead>
+                    <tr>
+                      <th>Pemeriksaan</th>
+                      <th class="kdt-head kdt-head-emergensi">Emergensi</th>
+                      <th class="kdt-head kdt-head-urgent">Urgent</th>
+                      <th class="kdt-head kdt-head-nonurgent">Non Urgent</th>
+                      <th class="kdt-head kdt-head-death">DOA</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="group in triaseFacts" :key="group.grouping">
+                      <td>
+                        <strong>{{ group.grouping }}</strong>
+                      </td>
+                      <td>
+                        <template v-for="(det, idx) in group.details" :key="'e' + idx">
+                          <div
+                            v-if="det.sk_1"
+                            :class="[
+                              'kdt-item',
+                              det.checked_val_1 ? 'kdt-checked kdt-emergensi' : 'kdt-unchecked',
+                            ]"
+                          >
+                            <span v-if="det.checked_val_1" class="kdt-ck">✓</span>{{ det.sk_1 }}
+                          </div>
+                        </template>
+                      </td>
+                      <td>
+                        <template v-for="(det, idx) in group.details" :key="'u' + idx">
+                          <div
+                            v-if="det.sk_2"
+                            :class="[
+                              'kdt-item',
+                              det.checked_val_2 ? 'kdt-checked kdt-urgent' : 'kdt-unchecked',
+                            ]"
+                          >
+                            <span v-if="det.checked_val_2" class="kdt-ck">✓</span>{{ det.sk_2 }}
+                          </div>
+                        </template>
+                      </td>
+                      <td>
+                        <template v-for="(det, idx) in group.details" :key="'n' + idx">
+                          <div
+                            v-if="det.sk_4"
+                            :class="[
+                              'kdt-item',
+                              det.checked_val_4 ? 'kdt-checked kdt-nonurgent' : 'kdt-unchecked',
+                            ]"
+                          >
+                            <span v-if="det.checked_val_4" class="kdt-ck">✓</span>{{ det.sk_4 }}
+                          </div>
+                        </template>
+                      </td>
+                      <td>
+                        <template v-for="(det, idx) in group.details" :key="'d' + idx">
+                          <div
+                            v-if="det.sk_5"
+                            :class="[
+                              'kdt-item',
+                              det.checked_val_5 ? 'kdt-checked kdt-death' : 'kdt-unchecked',
+                            ]"
+                          >
+                            <span v-if="det.checked_val_5" class="kdt-ck">✓</span>{{ det.sk_5 }}
+                          </div>
+                        </template>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Secondary Survey -->
+              <div class="kd-rs-group" v-if="triaseSurvey && triaseSurvey.length > 0">
+                <div class="kd-rs-group-lbl">Secondary Survey</div>
+                <table class="kd-obat-table">
+                  <thead>
+                    <tr>
+                      <th>Objek</th>
+                      <th>Kondisi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="item in triaseSurvey" :key="item.id">
+                      <td>
+                        <strong>{{ item.organ }}</strong>
+                      </td>
+                      <td>
+                        <span
+                          v-if="item.kondisi === 'NORMAL'"
+                          style="color: #1a6b4a; font-weight: 600"
+                          >NORMAL</span
+                        >
+                        <span v-else>{{ item.kondisi || 'NORMAL' }}</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Diagnosa -->
+              <div class="kd-rs-group" v-if="triaseDiagnosa">
+                <div class="kd-rs-group-lbl">Diagnosa</div>
+                <div class="kd-rs-row">
+                  <span class="kd-rs-lbl">Diagnosa Utama</span>
+                  <span class="kd-rs-val">{{ triaseDiagnosa.dx_utama || '—' }}</span>
+                </div>
+                <div class="kd-rs-row" v-if="triaseDiagnosa.dx_sekunder">
+                  <span class="kd-rs-lbl">Diagnosa Sekunder</span>
+                  <span class="kd-rs-val">{{ triaseDiagnosa.dx_sekunder }}</span>
+                </div>
+                <div class="kd-rs-row">
+                  <span class="kd-rs-lbl">Jenis Kasus</span>
+                  <span class="kd-rs-val">{{ triaseDiagnosa.jenis_kasus || '—' }}</span>
+                </div>
+              </div>
+
+              <!-- Catatan Penting -->
+              <div
+                class="kd-rs-group"
+                v-if="triaseHeader.catatanpenting || triaseHeader.CATATANPENTING"
+              >
+                <div class="kd-rs-group-lbl">Catatan Penting</div>
+                <pre class="kd-rs-pre">{{
+                  triaseHeader.catatanpenting || triaseHeader.CATATANPENTING
+                }}</pre>
+              </div>
+
+              <!-- Rencana Tindak Lanjut -->
+              <div class="kd-rs-group" v-if="triaseRTL">
+                <div class="kd-rs-group-lbl">Rencana Tindak Lanjut</div>
+                <div class="kd-rs-row" style="align-items: center; gap: 8px">
+                  <span
+                    :style="{
+                      display: 'inline-block',
+                      padding: '2px 10px',
+                      borderRadius: '6px',
+                      fontWeight: 700,
+                      fontSize: '12px',
+                      background: triaseRTLBadgeBg,
+                      color: triaseRTLBadgeColor,
+                    }"
+                  >
+                  </span>
+
+                  <span v-if="props.datapasien.KETERANGAN" style="font-size: 11px; color: #6c757d">
+                    {{ props.datapasien.KETERANGAN }}
+                  </span>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- ══ KANAN: Resume Pulang (Rawat Inap) ══ -->
+        <div v-else class="kd-col-right">
           <div class="kd-resume-panel">
             <Tag class="kd-resume-panel-title" severity="success">
               <i class="pi pi-file-check"></i> Resume Pulang
@@ -546,6 +1205,7 @@
           severity="success"
           :loading="saving"
           @click="simpanKlaim"
+          :disabled="isReadOnly"
         />
       </div>
     </template>
@@ -563,7 +1223,8 @@ import { useToast } from 'primevue/usetoast'
 
 const configStore = useConfigStore()
 const authStore = useAuthStore()
-const { id_client, user_id } = storeToRefs(authStore)
+const { id_client, user_id, group_user } = storeToRefs(authStore)
+const isReadOnly = computed(() => group_user.value === 'ENTRI_KLAIM')
 const toast = useToast()
 import { useRouter } from 'vue-router'
 const router = useRouter()
@@ -571,7 +1232,7 @@ const router = useRouter()
 // ── Props & Emits ────────────────────────────────────────
 const props = defineProps({
   showKlaim: { type: Boolean, default: false },
-  noregister: { type: String, default: '' },
+  datapasien: { type: Object, default: () => ({ NOPENDAFTARAN: '' }) },
 })
 
 const emit = defineEmits(['update:showKlaim', 'saved'])
@@ -580,6 +1241,13 @@ const visible = computed({
   get: () => props.showKlaim,
   set: (v) => emit('update:showKlaim', v),
 })
+
+const formatTglLahir = (val) => {
+  if (!val) return '—'
+  const d = new Date(val)
+  if (isNaN(d)) return val
+  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+}
 
 // ── Lifecycle guard ──────────────────────────────────────
 const isMounted = ref(false)
@@ -634,11 +1302,21 @@ const statusOptions = [
 
 // ── Watch: load data saat dialog dibuka ──────────────────
 watch(
-  [() => props.noregister, () => props.showKlaim],
+  [() => props.datapasien?.NOPENDAFTARAN, () => props.showKlaim],
   async ([noreg, show]) => {
     if (show && noreg) {
-      loadResume(noreg)
-      fetchKlaimJson(noreg)
+      try {
+        const calls = [loadResume(noreg), fetchKlaimJson(noreg)]
+        if (props.datapasien?.JENISRAWAT === 'JALAN' && props.datapasien?.KODEPOLI !== 'IGD') {
+          calls.push(pasien_rajal_pol(noreg))
+        }
+        if (props.datapasien?.JENISRAWAT === 'JALAN' && props.datapasien?.KODEPOLI === 'IGD') {
+          calls.push(fetchTriaseDataIGD(noreg))
+        }
+        await Promise.all(calls)
+      } catch (err) {
+        console.error('KlaimResume watcher error:', err)
+      }
     }
   },
   { immediate: true },
@@ -647,7 +1325,7 @@ watch(
 const printResumePasien = () => {
   const routeData = router.resolve({
     name: 'ResumeRanapView',
-    query: { noreg: props.noregister },
+    query: { noreg: props.datapasien.NOPENDAFTARAN },
   })
   window.open(routeData.href, '_blank')
 }
@@ -656,7 +1334,7 @@ const PrintRekamMedisEl = () => {
   //onHide()
   const routeData = router.resolve({
     name: 'RMEViewer',
-    query: { noreg: props.noregister },
+    query: { noreg: props.datapasien.NOPENDAFTARAN },
   })
   window.open(routeData.href, '_blank')
 }
@@ -687,6 +1365,7 @@ async function loadResume(noreg) {
       `${configStore.apiBaseUrl}/index.php/api/Resumepulang/getdata_resume_v2`,
       { noregister: noreg, id_client: id_client.value },
     )
+
     if (!isMounted.value) return
     const d = res.data
     pasienInfo.value = d.data_ranap ?? {}
@@ -694,7 +1373,7 @@ async function loadResume(noreg) {
     ranapData.value = d.data_ranap ?? {}
     triaseData.value = d.triase_igd ?? {}
     obatPulang.value = Array.isArray(d.obat_pulang) ? d.obat_pulang : []
-    obatRawat.value = (d.obat_penunjang?.obatan || '')
+    obatRawat.value = String(d.obat_penunjang?.obatan ?? '')
       .split('|')
       .map((s) => s.trim())
       .filter((s) => s.length > 0)
@@ -704,6 +1383,7 @@ async function loadResume(noreg) {
       : []
 
     // Prefill dx utama dari resume jika ada
+
     if (d.resume?.dx_masuk && typeof d.resume.dx_masuk === 'object') {
       dxUtama.value = d.resume.dx_masuk
     }
@@ -760,8 +1440,13 @@ async function searchDiagnose(event) {
 }
 
 const get_procedure = async (event) => {
-  const query = event.value
+  let query = event.value
   if (!query || query.length < 2) return
+
+  // Format kode prosedur: tambah titik setelah 2 digit pertama jika belum ada
+  if (/^\d{2,}$/.test(query)) {
+    query = query.slice(0, 2) + '.' + query.slice(2)
+  }
 
   try {
     const res = await axios.post(
@@ -772,7 +1457,10 @@ const get_procedure = async (event) => {
     const results = res.data ?? []
     const uniqueMap = new Map()
     results.forEach((item) => {
-      if (item.kode) uniqueMap.set(item.kode, item)
+      if (item.kode) {
+        item.search_key = item.kode.replace('.', '')
+        uniqueMap.set(item.kode, item)
+      }
     })
     listProsedurOptions.value = Array.from(uniqueMap.values())
   } catch (err) {
@@ -875,7 +1563,7 @@ const applyKlaimJson = (data) => {
   catatanUmum.value = data.catatan_umum || ''
 }
 
-const fetchKlaimJson = async (noregister) => {
+async function fetchKlaimJson(noregister) {
   if (!noregister || !String(noregister).trim()) {
     showWarning('No registrasi tidak boleh kosong')
     return null
@@ -887,6 +1575,8 @@ const fetchKlaimJson = async (noregister) => {
     const response = await axios.post(
       `${url}/index.php/api/transaksi_pasien/get_claim_data/${noregister}/${id_client.value}`,
     )
+
+    console.log('Respons klaim JSON:', response.data)
 
     if (response?.data) {
       applyKlaimJson(response.data)
@@ -931,7 +1621,7 @@ async function simpanKlaim() {
   saving.value = true
   try {
     const payload = {
-      noregister: props.noregister,
+      noregister: props.datapasien.NOPENDAFTARAN,
       nosep: ranapData.value.NOSEP,
       id_client: id_client.value,
       user_id: user_id.value,
@@ -947,6 +1637,8 @@ async function simpanKlaim() {
         nama: d.NAMADOKTER,
       })),
     }
+
+    console.log('Payload klaim yang akan disimpan:', JSON.stringify(payload))
 
     await axios.post(
       `${configStore.apiBaseUrl}/index.php/api/transaksi_pasien/save_data_claim_v2`,
@@ -989,6 +1681,142 @@ function onHide() {
   catatanPerbaikan.value = ''
   catatanUmum.value = ''
   showValidasiCatatan.value = false
+  ResumeRawatJalan.value = null
+  rajalDataMasuk.value = null
+  loadingRajal.value = false
+  triaseHeader.value = {}
+  triaseFacts.value = []
+  triaseNilai.value = null
+  triaseSurvey.value = []
+  triaseRTL.value = null
+  triaseDiagnosa.value = null
+}
+
+const isRajalNonIGD = computed(
+  () => props.datapasien?.JENISRAWAT === 'JALAN' && props.datapasien?.KODEPOLI !== 'IGD',
+)
+
+const isRajalIGD = computed(
+  () => props.datapasien?.JENISRAWAT === 'JALAN' && props.datapasien?.KODEPOLI === 'IGD',
+)
+
+// ── State Triase IGD (untuk JALAN + KODEPOLI=IGD) ────────────────────────
+const loadingTriase = ref(false)
+const triaseHeader = ref({})
+const triaseFacts = ref([])
+const triaseNilai = ref(null)
+const triaseSurvey = ref([])
+const triaseRTL = ref(null)
+const triaseDiagnosa = ref(null)
+
+const triaseKesimpulanKey = computed(() => {
+  if (!triaseNilai.value) return ''
+  if ((triaseNilai.value.EMERGENSI || 0) > 0) return 'emergensi'
+  if ((triaseNilai.value.URGENT || 0) > 0) return 'urgent'
+  if ((triaseNilai.value.NON_URGENT || 0) > 0) return 'nonurgent'
+  if ((triaseNilai.value.DEATH_ON_ARRIVAL || 0) > 0) return 'death'
+  return ''
+})
+
+const triaseKesimpulan = computed(() => {
+  const k = triaseKesimpulanKey.value
+  if (k === 'emergensi') return 'EMERGENSI'
+  if (k === 'urgent') return 'URGENT'
+  if (k === 'nonurgent') return 'NON URGENT'
+  if (k === 'death') return 'DEATH ON ARRIVAL'
+  return 'BELUM DITENTUKAN'
+})
+
+const triaseRTLLabel = computed(() => {
+  if (!triaseRTL.value) return '-'
+  const map = {
+    1: 'Pulang',
+    2: 'Observasi',
+    3: 'Rawat Jalan',
+    4: 'Rujuk Keluar',
+    5: 'APS',
+    6: 'Meninggal',
+    7: 'Rawat Inap',
+  }
+  return map[triaseRTL.value.STATUS] || `Status ${triaseRTL.value.STATUS}`
+})
+
+const triaseRTLBadgeBg = computed(() => {
+  const map = {
+    1: '#e8f5e9',
+    2: '#e3f2fd',
+    3: '#e3f2fd',
+    4: '#fff8e1',
+    5: '#fff8e1',
+    6: '#ffebee',
+    7: '#e8eaf6',
+  }
+  return map[triaseRTL.value?.STATUS] || '#f5f5f5'
+})
+
+const triaseRTLBadgeColor = computed(() => {
+  const map = {
+    1: '#1b5e20',
+    2: '#0d47a1',
+    3: '#0d47a1',
+    4: '#e65100',
+    5: '#e65100',
+    6: '#b71c1c',
+    7: '#1a237e',
+  }
+  return map[triaseRTL.value?.STATUS] || '#444'
+})
+
+async function fetchTriaseDataIGD(noreg) {
+  if (!noreg) return
+  loadingTriase.value = true
+  try {
+    const url = configStore.apiBaseUrl
+    const response = await axios.post(`${url}/index.php/api/Triaseigd/getitem_triase`, {
+      noregister: noreg,
+      id_client: id_client.value,
+      norm: props.datapasien?.NOMR || '',
+    })
+    if (!isMounted.value) return
+    const data = response.data
+    triaseHeader.value = data.header || {}
+    triaseFacts.value = data.response || []
+    triaseNilai.value = data.nilatriase || null
+    triaseSurvey.value = Array.isArray(data.survey) ? data.survey : []
+    if (data.header?.STATUS !== undefined && data.header?.STATUS !== null) {
+      triaseRTL.value = { STATUS: data.header.STATUS, KETERANGAN: data.header.KETERANGAN || '' }
+    }
+    if (data.diagnosa?.metadata?.code === 200 && data.diagnosa?.response) {
+      triaseDiagnosa.value = data.diagnosa.response
+    }
+  } catch (e) {
+    console.error('Gagal memuat data triase IGD:', e)
+  } finally {
+    if (isMounted.value) loadingTriase.value = false
+  }
+}
+
+const ResumeRawatJalan = ref(null)
+const rajalDataMasuk = ref(null)
+const loadingRajal = ref(false)
+async function pasien_rajal_pol(noreg) {
+  if (!noreg) return
+  loadingRajal.value = true
+
+  try {
+    const url = configStore.apiBaseUrl
+    const res = await axios.get(
+      `${url}index.php/api/transaksi_pasien/getdata_asesmen/${noreg}/${id_client.value}`,
+    )
+
+    if (!isMounted.value) return
+    ResumeRawatJalan.value = res.data?.response ?? {}
+    rajalDataMasuk.value = res.data?.datamasuk ?? null
+  } catch (e) {
+    console.error(e)
+  } finally {
+    if (isMounted.value) loadingRajal.value = false
+  }
 }
 
 defineExpose({
@@ -1291,6 +2119,52 @@ defineExpose({
   font-weight: 700;
 }
 
+.kd-jenis-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  line-height: 1.6;
+}
+.kd-jenis-baru {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+.kd-jenis-lama {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #7dd3fc;
+}
+
+.kd-gender-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  line-height: 1.6;
+}
+.kd-gender-l {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border: 1px solid #93c5fd;
+}
+.kd-gender-p {
+  background: #fce7f3;
+  color: #be185d;
+  border: 1px solid #f9a8d4;
+}
+
 .kd-rs-row-highlight {
   background: #f0fdf4;
   border-left: 3px solid #1a6b4a;
@@ -1403,6 +2277,20 @@ defineExpose({
   white-space: nowrap;
 }
 
+.kd-rs-pre {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #212529;
+  background: #f0fdf4;
+  border-left: 3px solid #b2dfce;
+  border-radius: 0 4px 4px 0;
+  padding: 6px 10px;
+}
+
 /* ── Lab abnormal table ── */
 .kd-lab-table {
   width: 100%;
@@ -1504,6 +2392,226 @@ defineExpose({
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+/* ── Triase IGD: Skor ── */
+.tks-scores {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  margin-bottom: 6px;
+}
+.tks-box {
+  text-align: center;
+  border-radius: 6px;
+  padding: 6px 4px;
+  color: #fff;
+}
+.tks-num {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+}
+.tks-lbl {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+.tks-emergensi {
+  background: #c62828;
+}
+.tks-urgent {
+  background: #f9a825;
+  color: #333;
+}
+.tks-nonurgent {
+  background: #2e7d32;
+}
+.tks-death {
+  background: #212121;
+}
+
+.tks-kesimpulan {
+  text-align: center;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  background: #f5f5f5;
+  border: 1.5px solid #e0e0e0;
+  color: #444;
+  margin-top: 2px;
+}
+.tks-kes-emergensi {
+  background: #ffebee;
+  color: #c62828;
+  border-color: #ef9a9a;
+}
+.tks-kes-urgent {
+  background: #fffde7;
+  color: #e65100;
+  border-color: #ffe082;
+}
+.tks-kes-nonurgent {
+  background: #e8f5e9;
+  color: #1b5e20;
+  border-color: #a5d6a7;
+}
+.tks-kes-death {
+  background: #212121;
+  color: #fff;
+  border-color: #000;
+}
+
+/* ── Triase IGD: Tabel ── */
+.kd-triase-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+  margin-top: 4px;
+}
+.kd-triase-tbl th {
+  padding: 4px 5px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+.kd-triase-tbl td {
+  padding: 4px 5px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: top;
+}
+.kdt-head {
+  color: #fff;
+}
+.kdt-head-emergensi {
+  background: #c62828;
+}
+.kdt-head-urgent {
+  background: #f9a825;
+  color: #333;
+}
+.kdt-head-nonurgent {
+  background: #2e7d32;
+}
+.kdt-head-death {
+  background: #212121;
+}
+
+.kdt-item {
+  line-height: 1.4;
+  padding: 1px 0;
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+.kdt-ck {
+  flex-shrink: 0;
+}
+.kdt-checked {
+  font-weight: 700;
+}
+.kdt-unchecked {
+  color: #bbb;
+  font-size: 9px;
+}
+.kdt-emergensi {
+  color: #b71c1c;
+}
+.kdt-urgent {
+  color: #bf360c;
+}
+.kdt-nonurgent {
+  color: #1b5e20;
+}
+.kdt-death {
+  color: #212121;
+}
+
+/* ── Mobile Responsive ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Body: dari fixed-height jadi scrollable */
+  .kd-body {
+    height: auto;
+    overflow: visible;
+  }
+
+  /* Stack 2 kolom jadi 1 kolom */
+  .kd-columns {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  /* Kiri: hapus border kanan, beri padding lebih kecil */
+  .kd-col-left {
+    overflow-y: visible;
+    border-right: none;
+    border-bottom: 2px solid #e9ecef;
+    padding: 12px;
+  }
+
+  /* Kanan: hapus background min-height */
+  .kd-col-right {
+    overflow-y: visible;
+    height: auto;
+  }
+
+  /* Info strip: wrap ke 2x2 */
+  .kd-info-strip {
+    flex-wrap: wrap;
+  }
+  .kd-strip-item {
+    flex: 1 1 calc(50% - 1px);
+    min-width: 0;
+    border-right: 1px solid #b2dfce;
+    border-bottom: 1px solid #b2dfce;
+  }
+  .kd-strip-item:nth-child(2n) {
+    border-right: none;
+  }
+  .kd-strip-item:nth-last-child(-n + 2) {
+    border-bottom: none;
+  }
+
+  /* TTV: 3 kolom di mobile */
+  .kd-ttv-mini {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  /* Triase skor: 2 kolom */
+  .tks-scores {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Status kelengkapan: 1 kolom */
+  .kd-status-group {
+    grid-template-columns: 1fr;
+  }
+
+  /* Footer buttons: wrap dan full width */
+  .kd-footer {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .kd-footer :deep(.p-button) {
+    flex: 1 1 calc(50% - 6px);
+    justify-content: center;
+  }
+
+  /* Dx row: wrap agar tag tidak terpotong */
+  .kd-dx-row {
+    flex-wrap: wrap;
+  }
+
+  /* Triase table: horizontal scroll */
+  .kd-triase-tbl {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 </style>
 <style scoped>

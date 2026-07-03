@@ -57,11 +57,7 @@
 
         <div class="remember-row">
           <label class="remember-label">
-            <input
-              type="checkbox"
-              v-model="rememberMe"
-              class="remember-check"
-            />
+            <input type="checkbox" v-model="rememberMe" class="remember-check" />
             <span>Ingat saya</span>
           </label>
         </div>
@@ -185,6 +181,13 @@ const profile_rs = async (id_client) => {
     localStorage.setItem('satu_sehat_organization_id', response.data.satu_sehat_organization_id)
     localStorage.setItem('satu_sehat_struktur_org', response.data.satu_sehat_struktur_org)
 
+    localStorage.setItem(
+      'TAMPILKAN_NO_URUTAN_DISPLAY',
+      response.data.TAMPILKAN_NO_URUTAN_DISPLAY !== undefined
+        ? response.data.TAMPILKAN_NO_URUTAN_DISPLAY
+        : 0,
+    )
+
     localStorage.setItem('use_tte_bsre', response.data.use_tte_bsre)
     localStorage.setItem('disable_jika_sediaan_nol', response.data.disable_jika_sediaan_nol)
 
@@ -251,7 +254,6 @@ const profile_apol = async (id_client) => {
     localStorage.setItem('apol_consid', response.data.consid)
     localStorage.setItem('apol_scret_key', response.data.scret_key)
     localStorage.setItem('apol_user_key', response.data.user_key)
-
     return response.data
   } catch (error) {
     // console.error('Auth error:', error)
@@ -303,6 +305,12 @@ const handleSubmit = async () => {
       localStorage.setItem('id_lokasi', userData.ID_LOKASI)
       localStorage.setItem('group_user', userData.GROUP_USER)
       localStorage.setItem('kd_dokter', userData.KD_DOKTER || '')
+      if (userData.token) {
+        localStorage.setItem('token', userData.token)
+      }
+      if (userData.token_expires_at) {
+        localStorage.setItem('token_expires_at', userData.token_expires_at)
+      }
 
       // 2. Set minimal user data to authStore first (so id_client is available)
       authStore.setIdClient(
@@ -366,12 +374,17 @@ const handleSubmit = async () => {
         localStorage.setItem('NAMA_RS', rsProfile.NAMA_RS)
 
         authStore.LINK_LOGO = rsProfile.LINK_LOGO
+        authStore.tampilkan_no_urutan_display =
+          rsProfile.TAMPILKAN_NO_URUTAN_DISPLAY !== undefined
+            ? rsProfile.TAMPILKAN_NO_URUTAN_DISPLAY
+            : 0
       }
 
+      // Hapus idle timer lama agar checkOnMount di MainLayouts tidak menganggap sesi expired
+      localStorage.removeItem('idle_last_activity')
+
       // 8. Finally redirect after everything is ready
-      setTimeout(() => {
-        router.push('/dashboard/home')
-      }, 800)
+      await router.push('/dashboard/home')
     } else {
       throw new Error(response.data.metadata?.message || 'Authentication failed')
     }
@@ -401,9 +414,9 @@ const handleSubmit = async () => {
 
 onMounted(() => {
   if (localStorage.getItem('rm_flag') === '1') {
-    formData.name     = localStorage.getItem('rm_username') || ''
+    formData.name = localStorage.getItem('rm_username') || ''
     formData.password = localStorage.getItem('rm_password') || ''
-    rememberMe.value  = true
+    rememberMe.value = true
   }
 })
 </script>

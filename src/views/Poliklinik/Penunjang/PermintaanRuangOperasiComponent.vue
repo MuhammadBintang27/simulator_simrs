@@ -4,35 +4,6 @@
       <span class="form-header-title">PERMINTAAN RUANG OPERASI</span>
     </template>
     <div class="form-body">
-      <!-- Row 1: No. Rekam Medis & Nama Pasien -->
-      <div class="form-row">
-        <div class="form-field">
-          <label class="form-label required">No. Rekam Medis</label>
-          <InputText
-            v-model="form.no_rekam_medis"
-            placeholder="663254"
-            class="w-full"
-            :disabled="true"
-          />
-        </div>
-        <div class="form-field">
-          <label class="form-label required">Nama Pasien</label>
-          <InputText v-model="form.nama_pasien" class="w-50" :disabled="true" />
-        </div>
-      </div>
-
-      <!-- Row 2: Jenis Kelamin & Tanggal Lahir -->
-      <div class="form-row">
-        <div class="form-field">
-          <label class="form-label">Jenis Kelamin</label>
-          <InputText v-model="form.jenis_kelamin" placeholder="L" class="w-full" :disabled="true" />
-        </div>
-        <div class="form-field">
-          <label class="form-label">Tanggal Lahir :</label>
-          <label for="">{{ form.tanggal_lahir }} ({{ form.usia }})</label>
-        </div>
-      </div>
-      <Divider />
       <!-- Jenis Operasi / Tindakan -->
       <div class="form-field full-width">
         <label class="form-label required">Jenis Operasi / Tindakan</label>
@@ -98,20 +69,20 @@
         <Button
           label="Batal"
           severity="secondary"
-          outlined
           icon="pi pi-times"
           @click="handleBatal"
           :disabled="loading"
         />
         <Button
           label="Refresh"
+          severity="info"
           icon="pi pi-refresh"
           :loading="loading_jadwal"
-          class="p-button-sm p-button-outlined"
           @click="get_jadwal_operasi(2)"
         />
         <Button
           label="Simpan Permintaan"
+          severity="success"
           icon="pi pi-check"
           :loading="loading"
           @click="handleSubmit(1)"
@@ -202,12 +173,6 @@
 
           <Column header="Aksi" :style="{ width: '100px', textAlign: 'center' }">
             <template #body="slotProps">
-              <Button
-                icon="pi pi-eye"
-                class="p-button-sm p-button-rounded p-button-info p-button-text mr-1"
-                v-tooltip.top="'Detail'"
-                @click="lihatDetail(slotProps.data)"
-              />
               <Button
                 v-if="slotProps.data.terlaksana === '0'"
                 icon="pi pi-trash"
@@ -670,21 +635,6 @@ onMounted(() => {
 .form-label.required::after {
   content: ' *';
   color: #ef4444;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding-top: 8px;
-  border-top: 1px solid #e2e8f0;
-  margin-top: 4px;
-}
-
-:deep(.p-button) {
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
 }
 
 :deep(.p-divider) {

@@ -51,7 +51,7 @@ defineProps({
 .hero-section {
   background: linear-gradient(135deg, #4f8f7a 0%, #3f7663 100%);
   border-radius: 12px;
-  padding: 2rem;
+  padding: 1.5rem 2rem;
   margin-bottom: 1.5rem;
   color: white;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -59,15 +59,16 @@ defineProps({
 
 .hero-content {
   display: flex;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
 }
 
 .hero-icon {
-  width: 80px;
-  height: 80px;
+  width: 56px;
+  height: 56px;
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 16px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -75,7 +76,7 @@ defineProps({
 }
 
 .hero-icon i {
-  font-size: 2.5rem;
+  font-size: 1.75rem;
 }
 
 .hero-text {
@@ -83,84 +84,100 @@ defineProps({
 }
 
 .hero-title {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.25rem 0;
   color: white;
+  line-height: 1.3;
 }
 
 .hero-description {
-  font-size: 1rem;
-  opacity: 0.95;
+  font-size: 0.875rem;
+  opacity: 0.9;
   margin: 0;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .hero-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .stat-card {
+  flex: 1;
+  min-width: 100px;
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: 1.25rem;
-  text-align: center;
-  transition: all 0.3s ease;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  transition: all 0.25s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .stat-card:hover {
-  background: rgba(255, 255, 255, 0.25);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.22);
+  transform: translateY(-1px);
 }
 
 .stat-card.loading {
-  opacity: 0.7;
+  opacity: 0.6;
 }
 
 .stat-value {
-  font-size: 2.5rem;
+  font-size: 1.625rem;
   font-weight: 700;
   color: white;
-  margin-bottom: 0.5rem;
-  min-height: 3rem;
+  line-height: 1;
+  min-width: 2rem;
+  text-align: center;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .stat-value .pi-spinner {
-  font-size: 1.5rem;
+  font-size: 1rem;
 }
 
 .stat-label {
-  font-size: 0.875rem;
-  opacity: 0.9;
+  font-size: 0.8rem;
+  opacity: 0.88;
   font-weight: 500;
+  line-height: 1.3;
 }
 
 @media (max-width: 768px) {
   .hero-section {
-    padding: 1.5rem;
+    padding: 1.25rem;
   }
 
   .hero-content {
     flex-direction: column;
-    text-align: center;
+    align-items: flex-start;
+    gap: 1rem;
   }
 
   .hero-title {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
   }
 
   .hero-stats {
+    display: grid;
     grid-template-columns: repeat(2, 1fr);
+    gap: 0.625rem;
+  }
+
+  .stat-card {
+    min-width: unset;
   }
 
   .stat-value {
-    font-size: 1.75rem;
+    font-size: 1.375rem;
   }
 }
 </style>

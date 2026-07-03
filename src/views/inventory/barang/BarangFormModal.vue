@@ -14,7 +14,6 @@
     <div class="row g-3">
       <!-- ── MAIN FORM ──────────────────────────────────────────────── -->
       <div class="col-md-8">
-
         <!-- INFORMASI DASAR -->
         <div class="fm-section mb-3">
           <div class="fm-section-title"><i class="pi pi-info-circle me-1"></i>INFORMASI DASAR</div>
@@ -36,7 +35,7 @@
             <label class="fm-label">Kategori <span class="text-danger">*</span></label>
             <Select
               v-model="form.KATEGORI"
-              :options="kategoriList.filter(k => k.NAMA_KATEGORI?.trim())"
+              :options="kategoriList.filter((k) => k.NAMA_KATEGORI?.trim())"
               optionLabel="NAMA_KATEGORI"
               optionValue="NAMA_KATEGORI"
               placeholder="Pilih kategori..."
@@ -46,18 +45,30 @@
               @change="validateField('KATEGORI')"
               :disabled="loading"
             />
-            <small v-if="errors.KATEGORI" class="text-danger d-block mt-1">{{ errors.KATEGORI }}</small>
+            <small v-if="errors.KATEGORI" class="text-danger d-block mt-1">{{
+              errors.KATEGORI
+            }}</small>
           </div>
 
           <div v-if="bucket === 'OBAT_BMHP'" class="mb-1">
             <label class="fm-label">Klasifikasi</label>
             <div class="klasifikasi-row">
               <div class="klasifikasi-item">
-                <Checkbox v-model="form.iskronis" :binary="true" inputId="ck_kronis" :disabled="loading" />
+                <Checkbox
+                  v-model="form.iskronis"
+                  :binary="true"
+                  inputId="ck_kronis"
+                  :disabled="loading"
+                />
                 <label for="ck_kronis" class="klasifikasi-label">Kronis</label>
               </div>
               <div class="klasifikasi-item">
-                <Checkbox v-model="form.iskonsinyasi" :binary="true" inputId="ck_konsinyasi" :disabled="loading" />
+                <Checkbox
+                  v-model="form.iskonsinyasi"
+                  :binary="true"
+                  inputId="ck_konsinyasi"
+                  :disabled="loading"
+                />
                 <label for="ck_konsinyasi" class="klasifikasi-label">Konsinyasi</label>
               </div>
             </div>
@@ -90,10 +101,11 @@
                 @change="errors.GOLONGAN = ''"
                 :disabled="loading"
               />
-              <small v-if="errors.GOLONGAN" class="text-danger d-block mt-1">{{ errors.GOLONGAN }}</small>
+              <small v-if="errors.GOLONGAN" class="text-danger d-block mt-1">{{
+                errors.GOLONGAN
+              }}</small>
             </div>
           </div>
-
         </div>
 
         <!-- SATUAN BERTINGKAT (non-JASA) -->
@@ -111,7 +123,9 @@
                 @blur="validateSatuan"
                 :disabled="loading"
               />
-              <small v-if="errors.SATUAN_KECIL" class="text-danger d-block mt-1">{{ errors.SATUAN_KECIL }}</small>
+              <small v-if="errors.SATUAN_KECIL" class="text-danger d-block mt-1">{{
+                errors.SATUAN_KECIL
+              }}</small>
             </div>
             <div class="col-4">
               <label class="fm-label">Satuan Sedang <span class="fm-opt">(opsional)</span></label>
@@ -150,7 +164,9 @@
                 :class="{ 'p-invalid': errors.ISI_SEDANG_KE_KECIL }"
                 :disabled="loading || !form.SATUAN_SEDANG"
               />
-              <small v-if="errors.ISI_SEDANG_KE_KECIL" class="text-danger d-block mt-1">{{ errors.ISI_SEDANG_KE_KECIL }}</small>
+              <small v-if="errors.ISI_SEDANG_KE_KECIL" class="text-danger d-block mt-1">{{
+                errors.ISI_SEDANG_KE_KECIL
+              }}</small>
               <small v-else-if="form.SATUAN_SEDANG && form.SATUAN_KECIL" class="fm-hint">
                 1 {{ form.SATUAN_SEDANG }} = ? {{ form.SATUAN_KECIL }}
               </small>
@@ -169,7 +185,9 @@
                 :class="{ 'p-invalid': errors.ISI_BESAR_KE_SEDANG }"
                 :disabled="loading || !form.SATUAN_BESAR"
               />
-              <small v-if="errors.ISI_BESAR_KE_SEDANG" class="text-danger d-block mt-1">{{ errors.ISI_BESAR_KE_SEDANG }}</small>
+              <small v-if="errors.ISI_BESAR_KE_SEDANG" class="text-danger d-block mt-1">{{
+                errors.ISI_BESAR_KE_SEDANG
+              }}</small>
               <small
                 v-else-if="form.SATUAN_BESAR && (form.SATUAN_SEDANG || form.SATUAN_KECIL)"
                 class="fm-hint"
@@ -240,8 +258,13 @@
               class="w-100"
               :disabled="loading"
             />
-            <small v-if="form.GROUPING && !groupingList.some(g => g.NAMA_GROUP === form.GROUPING)" class="text-success" style="font-size:11px">
-              <i class="pi pi-plus-circle me-1" />Grouping baru — akan ditambahkan ke master saat disimpan
+            <small
+              v-if="form.GROUPING && !groupingList.some((g) => g.NAMA_GROUP === form.GROUPING)"
+              class="text-success"
+              style="font-size: 11px"
+            >
+              <i class="pi pi-plus-circle me-1" />Grouping baru — akan ditambahkan ke master saat
+              disimpan
             </small>
           </div>
 
@@ -288,15 +311,32 @@
           <div class="row g-2">
             <div class="col-4">
               <label class="fm-label">Kandungan</label>
-              <InputText v-model.number="form.KANDUNGAN" type="number" min="0" class="w-100" placeholder="500" :disabled="loading" />
+              <InputText
+                v-model.number="form.KANDUNGAN"
+                type="number"
+                min="0"
+                class="w-100"
+                placeholder="500"
+                :disabled="loading"
+              />
             </div>
             <div class="col-4">
               <label class="fm-label">Satuan Kandungan</label>
-              <InputText v-model="form.SATUAN_KANDUNGAN" class="w-100" placeholder="mg, ml..." :disabled="loading" />
+              <InputText
+                v-model="form.SATUAN_KANDUNGAN"
+                class="w-100"
+                placeholder="mg, ml..."
+                :disabled="loading"
+              />
             </div>
             <div class="col-4">
               <label class="fm-label">Volume UOM</label>
-              <InputText v-model="form.VOLUME_UOM_NAME" class="w-100" placeholder="mL, L..." :disabled="loading" />
+              <InputText
+                v-model="form.VOLUME_UOM_NAME"
+                class="w-100"
+                placeholder="mL, L..."
+                :disabled="loading"
+              />
             </div>
           </div>
         </div>
@@ -317,8 +357,13 @@
                 @input="onStokMinChange"
               />
               <div class="stok-min-hint" :class="form.GUNAKAN_STOCK_MIN ? 'hint-on' : 'hint-off'">
-                <i :class="form.GUNAKAN_STOCK_MIN ? 'pi pi-check-circle' : 'pi pi-minus-circle'" class="me-1"></i>
-                <span v-if="form.GUNAKAN_STOCK_MIN">Aktif — peringatan jika stok &lt; {{ form.STOCKMINIMUM }}</span>
+                <i
+                  :class="form.GUNAKAN_STOCK_MIN ? 'pi pi-check-circle' : 'pi pi-minus-circle'"
+                  class="me-1"
+                ></i>
+                <span v-if="form.GUNAKAN_STOCK_MIN"
+                  >Aktif — peringatan jika stok &lt; {{ form.STOCKMINIMUM }}</span
+                >
                 <span v-else>Isi angka &gt; 0 untuk mengaktifkan</span>
               </div>
             </div>
@@ -340,9 +385,7 @@
       <!-- ── SIDEBAR ────────────────────────────────────────────────── -->
       <div class="col-md-4">
         <div class="fm-info-card">
-          <div class="fm-info-header">
-            <i :class="bucketIcon + ' me-2'"></i>{{ bucketLabel }}
-          </div>
+          <div class="fm-info-header"><i :class="bucketIcon + ' me-2'"></i>{{ bucketLabel }}</div>
           <hr class="my-2" style="border-color: #e2e8f0" />
           <div class="fm-hint-list">
             <div class="fw-semibold mb-1" style="font-size: 11px; color: #475569">WAJIB DIISI:</div>
@@ -352,7 +395,9 @@
             <template v-if="bucket === 'OBAT_BMHP'">
               <hr class="my-2" style="border-color: #e2e8f0" />
               <div class="fw-semibold mb-1" style="font-size: 11px; color: #475569">FARMASI:</div>
-              <div class="fm-hint-item">• Pilih atau tambah zat aktif, sediaan, dan rute dari dropdown</div>
+              <div class="fm-hint-item">
+                • Pilih atau tambah zat aktif, sediaan, dan rute dari dropdown
+              </div>
             </template>
             <template v-if="bucket === 'JASA'">
               <hr class="my-2" style="border-color: #e2e8f0" />
@@ -399,8 +444,6 @@
       </div>
     </template>
   </Dialog>
-
-
 </template>
 
 <script setup>
@@ -485,7 +528,14 @@ const defaultForm = () => ({
 })
 
 const form = ref(defaultForm())
-const errors = ref({ NAMA: '', KATEGORI: '', SATUAN_KECIL: '', ISI_SEDANG_KE_KECIL: '', ISI_BESAR_KE_SEDANG: '', GOLONGAN: '' })
+const errors = ref({
+  NAMA: '',
+  KATEGORI: '',
+  SATUAN_KECIL: '',
+  ISI_SEDANG_KE_KECIL: '',
+  ISI_BESAR_KE_SEDANG: '',
+  GOLONGAN: '',
+})
 
 // Kategori & Farmasi
 const kategoriList = ref([])
@@ -502,7 +552,7 @@ const golonganOptions = [
 ]
 
 const showGolongan = computed(() => {
-  const selected = klasifikasiList.value.find(k => k.kode === form.value.KLASIFIKASI_OBAT)
+  const selected = klasifikasiList.value.find((k) => k.kode === form.value.KLASIFIKASI_OBAT)
   return selected?.ada_sub_golongan === '1' || selected?.ada_sub_golongan === 1
 })
 
@@ -514,17 +564,21 @@ function onKlasifikasiChange() {
 const sediaanInput = ref(null)
 const ruteInput = ref(null)
 
-
 // ── HELPERS ────────────────────────────────────────────────────────────────
-const showSuccess = (msg) => toast.add({ severity: 'success', summary: 'Berhasil', detail: msg, life: 3000 })
-const showError = (msg) => toast.add({ severity: 'error', summary: 'Gagal', detail: msg, life: 5000 })
+const showSuccess = (msg) =>
+  toast.add({ severity: 'success', summary: 'Berhasil', detail: msg, life: 3000 })
+const showError = (msg) =>
+  toast.add({ severity: 'error', summary: 'Gagal', detail: msg, life: 5000 })
 
 // ── AUTOSAVE / DRAFT ───────────────────────────────────────────────────────
 const draftKey = computed(() => `barang_form_draft_${props.bucket}`)
 
 function saveDraft() {
   if (!props.visible || isEditMode.value) return
-  localStorage.setItem(draftKey.value, JSON.stringify({ form: form.value, savedAt: new Date().toISOString() }))
+  localStorage.setItem(
+    draftKey.value,
+    JSON.stringify({ form: form.value, savedAt: new Date().toISOString() }),
+  )
   lastSavedAt.value = new Date()
 }
 
@@ -547,11 +601,15 @@ function formatDraftTime(date) {
   return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
-watch(form, () => {
-  if (!props.visible || isEditMode.value) return
-  clearTimeout(autosaveTimer)
-  autosaveTimer = setTimeout(saveDraft, 2000)
-}, { deep: true })
+watch(
+  form,
+  () => {
+    if (!props.visible || isEditMode.value) return
+    clearTimeout(autosaveTimer)
+    autosaveTimer = setTimeout(saveDraft, 2000)
+  },
+  { deep: true },
+)
 
 function onStokMinChange() {
   form.value.GUNAKAN_STOCK_MIN = Number(form.value.STOCKMINIMUM) > 0
@@ -600,9 +658,13 @@ function validateForm() {
 // ── GROUPING: auto-create saat submit jika belum ada di master ─────────────
 async function ensureGroupingExists(name) {
   if (!name) return
-  const exists = groupingList.value.some(g => g.NAMA_GROUP === name)
+  const exists = groupingList.value.some((g) => g.NAMA_GROUP === name)
   if (!exists) {
-    await axios.post(`${configStore.apiApotikUrl}/index.php/api/inventory/master_grouping_create`, { NAMA_GROUP: name }, { params: { clientId: authStore.id_client } })
+    await axios.post(
+      `${configStore.apiApotikUrl}/index.php/api/inventory/master_grouping_create`,
+      { NAMA_GROUP: name },
+      { params: { clientId: authStore.id_client } },
+    )
   }
 }
 
@@ -626,8 +688,16 @@ function close() {
 
 function onHide() {
   form.value = defaultForm()
-  errors.value = { NAMA: '', KATEGORI: '', SATUAN_KECIL: '', ISI_SEDANG_KE_KECIL: '', ISI_BESAR_KE_SEDANG: '', GOLONGAN: '' }
-  sediaanInput.value = null; ruteInput.value = null
+  errors.value = {
+    NAMA: '',
+    KATEGORI: '',
+    SATUAN_KECIL: '',
+    ISI_SEDANG_KE_KECIL: '',
+    ISI_BESAR_KE_SEDANG: '',
+    GOLONGAN: '',
+  }
+  sediaanInput.value = null
+  ruteInput.value = null
   lastSavedAt.value = null
   clearTimeout(autosaveTimer)
 }
@@ -637,17 +707,29 @@ async function fetchMasterDropdowns() {
   const clientId = authStore.id_client
   try {
     const requests = [
-      axios.get(`${configStore.apiApotikUrl}/index.php/api/inventory/kategori_list`, { params: { clientId, bucket: props.bucket } }),
+      axios.get(`${configStore.apiApotikUrl}/index.php/api/inventory/kategori_list`, {
+        params: { clientId, bucket: props.bucket },
+      }),
     ]
     if (props.bucket === 'OBAT_BMHP') {
       requests.push(
-        axios.get(`${configStore.apiApotikUrl}/index.php/api/inventory/master_sediaan_list`, { params: { clientId } }),
-        axios.get(`${configStore.apiApotikUrl}/index.php/api/inventory/master_rute_list`, { params: { clientId } }),
-        axios.get(`${configStore.apiApotikUrl}/index.php/api/inventory/master_grouping_list`, { params: { clientId } }),
-        axios.get(`${configStore.apiApotikUrl}/index.php/api/inventory/master_klasifikasi_list`, { params: { clientId } }),
+        axios.get(`${configStore.apiApotikUrl}/index.php/api/inventory/master_sediaan_list`, {
+          params: { clientId },
+        }),
+        axios.get(`${configStore.apiApotikUrl}/index.php/api/inventory/master_rute_list`, {
+          params: { clientId },
+        }),
+        axios.get(`${configStore.apiApotikUrl}/index.php/api/inventory/master_grouping_list`, {
+          params: { clientId },
+        }),
+        axios.get(`${configStore.apiApotikUrl}/index.php/api/inventory/master_klasifikasi_list`, {
+          params: { clientId },
+        }),
       )
     }
-    const [kategoriRes, sediaanRes, ruteRes, groupingRes, klasifikasiRes] = await Promise.all(requests)
+
+    const [kategoriRes, sediaanRes, ruteRes, groupingRes, klasifikasiRes] =
+      await Promise.all(requests)
     kategoriList.value = kategoriRes.data?.response || kategoriRes.data || []
     if (props.bucket === 'OBAT_BMHP') {
       sediaanList.value = sediaanRes.data?.response || sediaanRes.data || []
@@ -669,7 +751,11 @@ async function fetchBarangDetail(id) {
       { params: { clientId: authStore.id_client } },
     )
     const data = res.data?.response || res.data
-    if (!data) { showError('Data barang tidak ditemukan'); close(); return }
+    if (!data) {
+      showError('Data barang tidak ditemukan')
+      close()
+      return
+    }
 
     form.value = {
       NAMA: data.NAMA || '',
@@ -702,8 +788,15 @@ async function fetchBarangDetail(id) {
       GOLONGAN: data.GOLONGAN || null,
     }
 
-    if (data.BENTUK_SEDIAAN) sediaanInput.value = sediaanList.value.find(s => s.NAMA_SEDIAAN === data.BENTUK_SEDIAAN) || { NAMA_SEDIAAN: data.BENTUK_SEDIAAN, KODE_SEDIAAN: data.CODE_SEDIAAN || '' }
-    if (data.RUTE) ruteInput.value = ruteList.value.find(r => r.NAMA_RUTE === data.RUTE) || { NAMA_RUTE: data.RUTE, KODE_RUTE: data.KODE_RUTE || '' }
+    if (data.BENTUK_SEDIAAN)
+      sediaanInput.value = sediaanList.value.find(
+        (s) => s.NAMA_SEDIAAN === data.BENTUK_SEDIAAN,
+      ) || { NAMA_SEDIAAN: data.BENTUK_SEDIAAN, KODE_SEDIAAN: data.CODE_SEDIAAN || '' }
+    if (data.RUTE)
+      ruteInput.value = ruteList.value.find((r) => r.NAMA_RUTE === data.RUTE) || {
+        NAMA_RUTE: data.RUTE,
+        KODE_RUTE: data.KODE_RUTE || '',
+      }
   } catch (err) {
     console.error('Error fetching barang detail:', err)
     showError('Gagal mengambil data barang')
@@ -715,7 +808,10 @@ async function fetchBarangDetail(id) {
 
 // ── API: SAVE ──────────────────────────────────────────────────────────────
 async function submitForm() {
-  if (!validateForm()) { showError('Periksa kembali data yang diisi'); return }
+  if (!validateForm()) {
+    showError('Periksa kembali data yang diisi')
+    return
+  }
 
   loading.value = true
   try {
@@ -769,7 +865,10 @@ async function submitForm() {
     }
 
     const finalPayload = Object.fromEntries(
-      Object.entries(payload).map(([k, v]) => [k, typeof v === 'string' && v ? v.trim().toUpperCase() : v]),
+      Object.entries(payload).map(([k, v]) => [
+        k,
+        typeof v === 'string' && v ? v.trim().toUpperCase() : v,
+      ]),
     )
 
     let res
@@ -788,7 +887,10 @@ async function submitForm() {
     }
 
     const meta = res.data?.metadata
-    if (meta && meta.code !== 200) { showError(meta.message || 'Gagal menyimpan data'); return }
+    if (meta && meta.code !== 200) {
+      showError(meta.message || 'Gagal menyimpan data')
+      return
+    }
 
     showSuccess(isEditMode.value ? 'Barang berhasil diperbarui' : 'Barang berhasil ditambahkan')
     clearDraft()
@@ -830,14 +932,14 @@ function confirmDelete() {
   })
 }
 
-
 // ── LIFECYCLE ──────────────────────────────────────────────────────────────
 watch(
   () => props.visible,
   async (val) => {
     if (!val) return
     form.value = defaultForm()
-    sediaanInput.value = null; ruteInput.value = null
+    sediaanInput.value = null
+    ruteInput.value = null
     await fetchMasterDropdowns()
     if (props.itemId) {
       await fetchBarangDetail(props.itemId)
@@ -846,7 +948,12 @@ watch(
       if (draft?.form) {
         Object.assign(form.value, draft.form)
         lastSavedAt.value = draft.savedAt ? new Date(draft.savedAt) : null
-        toast.add({ severity: 'info', summary: 'Draft dipulihkan', detail: 'Data form sebelumnya dimuat otomatis', life: 3500 })
+        toast.add({
+          severity: 'info',
+          summary: 'Draft dipulihkan',
+          detail: 'Data form sebelumnya dimuat otomatis',
+          life: 3500,
+        })
       }
     }
   },
@@ -878,12 +985,28 @@ watch(
   display: block;
   margin-bottom: 4px;
 }
-.fm-opt { font-weight: 400; color: #9ca3af; font-size: 11px; }
-.fm-hint { font-size: 11px; color: #6b7280; display: block; margin-top: 3px; }
+.fm-opt {
+  font-weight: 400;
+  color: #9ca3af;
+  font-size: 11px;
+}
+.fm-hint {
+  font-size: 11px;
+  color: #6b7280;
+  display: block;
+  margin-top: 3px;
+}
 
 /* ── INPUT + ADD ──────────────────────────────────────────────────────────── */
-.input-with-add { display: flex; gap: 8px; align-items: center; }
-.input-with-add .flex-1 { flex: 1; min-width: 0; }
+.input-with-add {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.input-with-add .flex-1 {
+  flex: 1;
+  min-width: 0;
+}
 
 /* ── KONVERSI PREVIEW ─────────────────────────────────────────────────────── */
 .konversi-preview {
@@ -902,8 +1025,16 @@ watch(
   border-radius: 4px;
   font-weight: 500;
 }
-.hint-on { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-.hint-off { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+.hint-on {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+.hint-off {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
 
 /* ── INFO CARD ────────────────────────────────────────────────────────────── */
 .fm-info-card {
@@ -920,17 +1051,34 @@ watch(
   color: #006064;
   margin-bottom: 10px;
 }
-.fm-info-rules { display: flex; flex-direction: column; gap: 4px; }
+.fm-info-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 .fm-rule {
   font-size: 12px;
   padding: 4px 8px;
   border-radius: 4px;
   font-weight: 500;
 }
-.rule-yes { background: #f0fdf4; color: #166534; }
-.rule-no { background: #fef2f2; color: #991b1b; }
-.fm-hint-list { font-size: 11.5px; color: #475569; line-height: 1.8; }
-.fm-hint-item { color: #64748b; font-size: 11px; }
+.rule-yes {
+  background: #f0fdf4;
+  color: #166534;
+}
+.rule-no {
+  background: #fef2f2;
+  color: #991b1b;
+}
+.fm-hint-list {
+  font-size: 11.5px;
+  color: #475569;
+  line-height: 1.8;
+}
+.fm-hint-item {
+  color: #64748b;
+  font-size: 11px;
+}
 
 /* ── MODAL FOOTER ─────────────────────────────────────────────────────────── */
 .modal-footer-inner {
@@ -941,9 +1089,23 @@ watch(
 }
 
 /* ── KLASIFIKASI CHECKBOX ROW ─────────────────────────────────────────────── */
-.klasifikasi-row { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 6px; }
-.klasifikasi-item { display: flex; align-items: center; gap: 6px; }
-.klasifikasi-label { font-size: 12px; color: #374151; cursor: pointer; user-select: none; }
+.klasifikasi-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 6px;
+}
+.klasifikasi-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.klasifikasi-label {
+  font-size: 12px;
+  color: #374151;
+  cursor: pointer;
+  user-select: none;
+}
 
 /* ── DRAFT INDICATOR ──────────────────────────────────────────────────────── */
 .draft-indicator {
@@ -969,7 +1131,9 @@ watch(
   display: flex;
   align-items: center;
 }
-.draft-clear-btn:hover { color: #164e63; }
+.draft-clear-btn:hover {
+  color: #164e63;
+}
 
 /* ── BUTTONS ──────────────────────────────────────────────────────────────── */
 .btn-primary-barang {

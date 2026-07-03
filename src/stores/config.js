@@ -63,6 +63,7 @@ export const useAuthStore = defineStore('auth', {
     id_lokasi: localStorage.getItem('id_lokasi') || null,
     use_tte_bsre: localStorage.getItem('use_tte_bsre') || null,
     disable_jika_sediaan_nol: localStorage.getItem('disable_jika_sediaan_nol') || null,
+    tampilkan_no_urutan_display: localStorage.getItem('TAMPILKAN_NO_URUTAN_DISPLAY') ?? 0,
     group_user: localStorage.getItem('group_user') || null,
     kd_dokter: localStorage.getItem('kd_dokter') || null,
     // NEW: Add user object and job_code
@@ -114,12 +115,12 @@ export const useAuthStore = defineStore('auth', {
       this.job_code = userData?.job_code || userData?.kode_jabatan || null
       this.bidang_id = userData?.bidang_id || userData?.LOKASI || null
       this.group_user = userData?.group_user || null
-      this.kd_dokter  = userData?.kd_dokter  || null
+      this.kd_dokter = userData?.kd_dokter || null
 
-      if (this.job_code)   localStorage.setItem('job_code',   this.job_code)
-      if (this.bidang_id)  localStorage.setItem('bidang_id',  this.bidang_id)
+      if (this.job_code) localStorage.setItem('job_code', this.job_code)
+      if (this.bidang_id) localStorage.setItem('bidang_id', this.bidang_id)
       if (this.group_user) localStorage.setItem('group_user', this.group_user)
-      if (this.kd_dokter)  localStorage.setItem('kd_dokter',  this.kd_dokter)
+      if (this.kd_dokter) localStorage.setItem('kd_dokter', this.kd_dokter)
     },
 
     clearAuthData() {
@@ -131,11 +132,12 @@ export const useAuthStore = defineStore('auth', {
       this.LINK_LOGO = null
       this.id_lokasi = null
       this.use_tte_bsre = 0
+      this.tampilkan_no_urutan_display = 0
       this.user = null
       this.job_code = null
-      this.bidang_id  = null
+      this.bidang_id = null
       this.group_user = null
-      this.kd_dokter  = null
+      this.kd_dokter = null
 
       localStorage.removeItem('id_client')
       localStorage.removeItem('user_name')
@@ -146,6 +148,7 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('loggedIn')
       localStorage.removeItem('id_lokasi')
       localStorage.removeItem('use_tte_bsre')
+      localStorage.removeItem('TAMPILKAN_NO_URUTAN_DISPLAY')
       localStorage.removeItem('job_code')
       localStorage.removeItem('bidang_id')
       localStorage.removeItem('group_user')

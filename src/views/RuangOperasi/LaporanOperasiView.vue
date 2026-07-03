@@ -142,7 +142,7 @@
           <div class="field-group mb-0">
             <label class="field-label">Durasi Operasi</label>
             <div class="durasi-display" v-if="form.durasi">
-              <i class="pi pi-stopwatch me-2" style="color: #d97706"></i>
+              <i class="pi pi-stopwatch me-2" style="color: var(--p-yellow-600)"></i>
               <span class="durasi-value">{{ form.durasi }}</span>
               <span class="durasi-unit">menit</span>
             </div>
@@ -285,7 +285,7 @@
   <div class="laporan-action-bar mt-3">
     <div class="action-inner">
       <div class="action-info">
-        <i class="pi pi-info-circle me-2" style="color: #6c757d"></i>
+        <i class="pi pi-info-circle me-2" style="color: var(--p-text-muted-color)"></i>
         <span>Field bertanda <span class="required">*</span> wajib diisi sebelum menyimpan.</span>
       </div>
       <div class="action-buttons">
@@ -300,7 +300,7 @@
         <Button
           label="Simpan Laporan"
           icon="pi pi-save"
-          class="btn-simpan-laporan"
+          severity="success"
           :loading="loading"
           @click="saveForm"
         />
@@ -647,10 +647,10 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: linear-gradient(135deg, #1a3a5c 0%, #2563a8 100%);
-  border-radius: 4px;
+  background: var(--p-primary-color);
+  border-radius: var(--p-border-radius);
   padding: 1rem 1.5rem;
-  color: #fff;
+  color: var(--p-primary-contrast-color);
 }
 .banner-icon {
   flex-shrink: 0;
@@ -672,7 +672,7 @@ onMounted(() => {
   flex-shrink: 0;
   background: rgba(255, 255, 255, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 4px;
+  border-radius: var(--p-border-radius);
   padding: 0.25rem 0.75rem;
   font-size: 0.75rem;
   white-space: nowrap;
@@ -680,11 +680,11 @@ onMounted(() => {
 
 /* ====== Cards ====== */
 .laporan-card {
-  border-radius: 4px;
+  border-radius: var(--p-border-radius);
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  background: #fff;
-  border: 1px solid #e9ecef;
+  box-shadow: var(--p-card-shadow);
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
 }
 .laporan-card-header {
   display: flex;
@@ -692,7 +692,7 @@ onMounted(() => {
   padding: 0.75rem 1.1rem;
   font-weight: 700;
   font-size: 0.92rem;
-  color: #fff;
+  color: var(--p-primary-contrast-color);
   letter-spacing: 0.04em;
 }
 .laporan-card-header small {
@@ -702,7 +702,7 @@ onMounted(() => {
 }
 .laporan-card-header .badge-count {
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+  border-radius: var(--p-border-radius);
   padding: 0.15rem 0.6rem;
   font-size: 0.72rem;
   font-weight: 600;
@@ -712,7 +712,7 @@ onMounted(() => {
 .uraian-header,
 .instruksi-header,
 .gambar-header {
-  background: linear-gradient(135deg, #1a3a5c, #2563a8);
+  background: var(--p-primary-color);
 }
 .laporan-card-body {
   padding: 1rem 1.1rem;
@@ -726,11 +726,11 @@ onMounted(() => {
   display: block;
   font-size: 0.8rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--p-text-color);
   margin-bottom: 0.3rem;
 }
 .required {
-  color: #dc2626;
+  color: var(--p-red-600);
 }
 .radio-group {
   display: flex;
@@ -740,7 +740,7 @@ onMounted(() => {
 }
 .radio-label {
   font-size: 0.82rem;
-  color: #374151;
+  color: var(--p-text-color);
   cursor: pointer;
 }
 
@@ -752,7 +752,7 @@ onMounted(() => {
   gap: 0.5rem;
   font-size: 0.7rem;
   font-weight: 700;
-  color: #6b7280;
+  color: var(--p-text-muted-color);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -761,7 +761,7 @@ onMounted(() => {
   content: '';
   flex: 1;
   height: 1px;
-  background: #e5e7eb;
+  background: var(--p-content-border-color);
 }
 
 /* ====== Durasi Display ====== */
@@ -769,32 +769,32 @@ onMounted(() => {
   display: flex;
   align-items: center;
   padding: 0.5rem 0.85rem;
-  background: #fffbeb;
-  border: 1px solid #fde68a;
+  background: var(--p-yellow-50);
+  border: 1px solid var(--p-yellow-200);
   border-radius: 8px;
   gap: 0.4rem;
 }
 .durasi-value {
   font-size: 1.3rem;
   font-weight: 700;
-  color: #92400e;
+  color: var(--p-yellow-800);
 }
 .durasi-unit {
   font-size: 0.78rem;
-  color: #92400e;
+  color: var(--p-yellow-800);
   opacity: 0.75;
 }
 
 /* ====== Upload Zone ====== */
 .upload-zone {
-  border: 2px dashed #d1d5db;
+  border: 2px dashed var(--p-content-border-color);
   border-radius: 10px;
   overflow: hidden;
   transition: border-color 0.15s;
   margin-bottom: 0.5rem;
 }
 .upload-zone:hover {
-  border-color: #2563a8;
+  border-color: var(--p-primary-color);
 }
 .file-input {
   display: none;
@@ -810,29 +810,29 @@ onMounted(() => {
   transition: background 0.15s;
 }
 .upload-zone-label:hover {
-  background: #eff6ff;
+  background: var(--p-primary-50);
 }
 .upload-zone-label .pi {
   font-size: 1.8rem;
-  color: #2563a8;
+  color: var(--p-primary-color);
   opacity: 0.7;
 }
 .upload-text {
   font-size: 0.82rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--p-text-color);
 }
 .upload-hint {
   font-size: 0.72rem;
-  color: #9ca3af;
+  color: var(--p-text-muted-color);
 }
 .upload-count-badge {
   padding: 0.3rem 0.75rem;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
+  background: var(--p-primary-50);
+  border: 1px solid var(--p-primary-200);
   border-radius: 6px;
   font-size: 0.78rem;
-  color: #1a3a5c;
+  color: var(--p-primary-color);
   font-weight: 600;
 }
 
@@ -844,10 +844,10 @@ onMounted(() => {
   justify-content: center;
   gap: 0.5rem;
   padding: 2rem;
-  background: #f9fafb;
-  border: 2px dashed #e5e7eb;
+  background: var(--p-surface-50);
+  border: 2px dashed var(--p-content-border-color);
   border-radius: 10px;
-  color: #9ca3af;
+  color: var(--p-text-muted-color);
   font-size: 0.82rem;
 }
 .gallery-empty .pi {
@@ -862,8 +862,8 @@ onMounted(() => {
   position: relative;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
+  border: 1px solid var(--p-content-border-color);
+  background: var(--p-surface-50);
 }
 .gallery-img {
   width: 100%;
@@ -877,7 +877,7 @@ onMounted(() => {
   right: 4px;
   width: 22px;
   height: 22px;
-  background: rgba(220, 38, 38, 0.9);
+  background: color-mix(in srgb, var(--p-red-600) 90%, transparent);
   color: #fff;
   border: none;
   border-radius: 50%;
@@ -889,11 +889,11 @@ onMounted(() => {
   transition: background 0.15s;
 }
 .gallery-remove:hover {
-  background: #dc2626;
+  background: var(--p-red-600);
 }
 .gallery-info {
   padding: 0.3rem 0.4rem;
-  background: #fff;
+  background: var(--p-content-background);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -901,14 +901,14 @@ onMounted(() => {
 }
 .gallery-name {
   font-size: 0.65rem;
-  color: #6b7280;
+  color: var(--p-text-muted-color);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
 }
 .badge-existing {
-  background: #16a34a;
+  background: var(--p-green-600);
   color: #fff;
   padding: 1px 5px;
   border-radius: 10px;
@@ -917,8 +917,8 @@ onMounted(() => {
   flex-shrink: 0;
 }
 .badge-new {
-  background: #2563a8;
-  color: #fff;
+  background: var(--p-primary-color);
+  color: var(--p-primary-contrast-color);
   padding: 1px 5px;
   border-radius: 10px;
   font-size: 0.62rem;
@@ -928,8 +928,8 @@ onMounted(() => {
 
 /* ====== Action Bar ====== */
 .laporan-action-bar {
-  background: #fff;
-  border: 1px solid #e9ecef;
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
   border-radius: 10px;
   padding: 0.8rem 1.2rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -945,16 +945,11 @@ onMounted(() => {
   display: flex;
   align-items: center;
   font-size: 0.8rem;
-  color: #6c757d;
+  color: var(--p-text-muted-color);
 }
 .action-buttons {
   display: flex;
   align-items: center;
-}
-.btn-simpan-laporan {
-  background: linear-gradient(135deg, #1a3a5c, #2563a8) !important;
-  border: none !important;
-  font-weight: 600;
 }
 
 /* ====== PrimeVue overrides ====== */

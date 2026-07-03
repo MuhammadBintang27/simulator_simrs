@@ -147,6 +147,47 @@
       </div>
     </div>
 
+    <!-- KONSULTASI NOTIFICATION BANNER -->
+
+    <div v-if="konsulNotifStore.total > 0" class="konsul-banner">
+      <div
+        v-if="konsulNotifStore.unreadMasuk > 0"
+        class="konsul-banner-item konsul-banner-masuk"
+        @click="openJawabKonsul"
+      >
+        <div class="konsul-banner-icon">
+          <i class="pi pi-bell" />
+          <span class="konsul-banner-count">{{ konsulNotifStore.unreadMasuk }}</span>
+        </div>
+        <div class="konsul-banner-text">
+          <span class="konsul-banner-title">Permintaan Konsultasi Masuk</span>
+          <span class="konsul-banner-sub">
+            {{ konsulNotifStore.unreadMasuk }} konsultasi belum dijawab — klik untuk membuka
+          </span>
+        </div>
+        <i class="pi pi-arrow-right konsul-banner-arrow" />
+      </div>
+
+      <div
+        v-if="konsulNotifStore.unreadTerkirim > 0"
+        class="konsul-banner-item konsul-banner-terkirim"
+        @click="openJawabKonsul"
+      >
+        <div class="konsul-banner-icon">
+          <i class="pi pi-reply" />
+          <span class="konsul-banner-count">{{ konsulNotifStore.unreadTerkirim }}</span>
+        </div>
+        <div class="konsul-banner-text">
+          <span class="konsul-banner-title">Balasan Konsultasi Baru</span>
+          <span class="konsul-banner-sub">
+            {{ konsulNotifStore.unreadTerkirim }} konsultasi yang Anda kirim sudah dibalas — klik
+            untuk melihat
+          </span>
+        </div>
+        <i class="pi pi-arrow-right konsul-banner-arrow" />
+      </div>
+    </div>
+
     <!-- DATA TABLE -->
     <div class="card">
       <div class="card-body">
@@ -169,6 +210,23 @@
             </div>
           </div>
           <div class="tbl-actions">
+            <div class="konsul-notif-wrap">
+              <Button
+                icon="pi pi-comments"
+                label="Jawab Konsultasi"
+                size="small"
+                severity="warn"
+                v-tooltip.top="konsulTooltip"
+                @click="openJawabKonsul"
+              />
+              <span
+                v-if="konsulNotifStore.total > 0"
+                class="konsul-notif-badge"
+                :class="konsulBadgeClass"
+              >
+                {{ konsulNotifStore.total > 99 ? '99+' : konsulNotifStore.total }}
+              </span>
+            </div>
             <Button
               icon="pi pi-filter-slash"
               label="Reset"
@@ -287,6 +345,22 @@
                   @click="openCPPT(data.NOPENDAFTARAN)"
                 />
                 <Button
+                  label="Diagnosa Akhir"
+                  icon="fas fa-file-medical-alt"
+                  size="small"
+                  severity="warn"
+                  class="exp-btn"
+                  @click="openDiagnosaAkhir(data.NOPENDAFTARAN)"
+                />
+                <Button
+                  label="Siriraj Score"
+                  icon="fas fa-brain"
+                  size="small"
+                  severity="secondary"
+                  class="exp-btn"
+                  @click="openSiriraj(data.NOPENDAFTARAN)"
+                />
+                <Button
                   label="Rekam Medis EL"
                   icon="pi pi-file-pdf"
                   size="small"
@@ -294,6 +368,14 @@
                   class="exp-btn"
                   outlined
                   @click="PrintRekamMedisEl(data.NOPENDAFTARAN)"
+                />
+                <Button
+                  label="Konsultasi"
+                  icon="pi pi-comments"
+                  size="small"
+                  severity="warn"
+                  class="exp-btn"
+                  @click="openKonsultasi(data)"
                 />
               </div>
 
@@ -331,22 +413,12 @@
           <!-- Expander column -->
           <Column expander style="width: 3rem" frozen />
 
-          <Column
-            v-if="isColumnVisible('NOPENDAFTARAN')"
-            field="NOPENDAFTARAN"
-            header="NOREG"
-            sortable
-          >
-            <template #body="{ data }">
-              <Button
-                icon="pi pi-file-pdf"
-                label="ResumeMedis"
-                size="small"
-                severity="info"
-                outlined
-                class="round-button2"
-                @click="ShowDetailsdata(data)"
-              />
+          <!-- No. Baris -->
+          <Column header="No" style="width: 2.5rem; text-align: center" frozen>
+            <template #body="{ index }">
+              <span style="font-size: 0.68rem; color: #64748b; font-weight: 600">{{
+                index + 1
+              }}</span>
             </template>
           </Column>
 
@@ -396,15 +468,11 @@
             sortable
           >
             <template #filter="{ filterModel, filterCallback }">
-              <MultiSelect
-                :maxSelectedLabels="3"
+              <InputText
                 v-model="filterModel.value"
-                @change="filterCallback()"
-                :options="noSEP"
-                filter
-                placeholder="Pilih No SEP"
+                @input="filterCallback()"
+                placeholder="Cari No SEP..."
                 class="p-column-filter"
-                showClear
               />
             </template>
           </Column>
@@ -475,26 +543,7 @@
             </template>
           </Column>
 
-          <Column
-            v-if="isColumnVisible('NAMADOKTER')"
-            field="NAMADOKTER"
-            header="Dokter"
-            style="min-width: 15rem"
-            sortable
-          >
-            <template #filter="{ filterModel, filterCallback }">
-              <MultiSelect
-                :maxSelectedLabels="2"
-                v-model="filterModel.value"
-                @change="filterCallback()"
-                :options="dokterOptions"
-                placeholder="Pilih Dokter"
-                filter
-                class="p-column-filter"
-                showClear
-              />
-            </template>
-          </Column>
+          <Column field="NAMADOKTER" header="Dokter" style="min-width: 15rem" sortable> </Column>
 
           <Column
             v-if="isColumnVisible('DIAGNOSA_AWAL')"
@@ -734,7 +783,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, nextTick, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useConfigStore } from '@/stores/config'
 import axios from 'axios'
@@ -745,12 +794,29 @@ import { storeToRefs } from 'pinia'
 import { FilterMatchMode } from '@primevue/core/api'
 import { useToast } from 'primevue/usetoast'
 import KlaimResumeComponent from '@/components/Keuangan/KlaimResumeComponent.vue'
+import { useKonsulNotifStore } from '@/stores/konsulNotif'
 
 const router = useRouter()
 const configStore = useConfigStore()
 const authStore = useAuthStore()
 const { id_client, user_id, user_name, group_user, kd_dokter } = storeToRefs(authStore)
 const toast = useToast()
+const konsulNotifStore = useKonsulNotifStore()
+
+const konsulBadgeClass = computed(() => {
+  if (konsulNotifStore.unreadMasuk > 0 && konsulNotifStore.unreadTerkirim > 0) return 'badge-both'
+  if (konsulNotifStore.unreadMasuk > 0) return 'badge-masuk'
+  return 'badge-terkirim'
+})
+
+const konsulTooltip = computed(() => {
+  const parts = []
+  if (konsulNotifStore.unreadMasuk > 0)
+    parts.push(`${konsulNotifStore.unreadMasuk} permintaan masuk`)
+  if (konsulNotifStore.unreadTerkirim > 0)
+    parts.push(`${konsulNotifStore.unreadTerkirim} balasan baru`)
+  return parts.join(' · ') || null
+})
 
 const ShowProgressCheckSEP = ref(false)
 const loading = ref(false)
@@ -774,18 +840,28 @@ const openCPPT = (noregister) => {
   const url = router.resolve({ name: 'CPPTView', params: { noregister } }).href
   window.open(url, '_blank')
 }
+
+const openDiagnosaAkhir = (noregister) => {
+  const url = router.resolve({ name: 'DiagnosaAkhirDPJP', params: { noregister } }).href
+  window.open(url, '_blank')
+}
+
+const openSiriraj = (noreg) => {
+  const url = router.resolve({ name: 'SirirajView', params: { noreg } }).href
+  window.open(url, '_blank')
+}
 const startDate = ref(new Date())
 const endDate = ref(new Date())
 
 const medicalData = ref([])
 const selectedNoreg = ref('')
 const showKlaim = ref(false)
+
 const sttsCoderFilter = ref(null)
 
 const showColumnMenu = ref(false)
 const visibleColumns = ref([
   'STTS_RM_DPJP',
-  'NOPENDAFTARAN',
   'NOMR',
   'NAMAPASIEN',
   'USIA',
@@ -814,7 +890,6 @@ const PrintRekamMedisEl = (noregister) => {
 
 const allColumns = ref([
   { field: 'STTS_RM_DPJP', header: 'Status' },
-  { field: 'NOPENDAFTARAN', header: 'No Registrasi' },
   { field: 'NOMR', header: 'No MR' },
   { field: 'NAMAPASIEN', header: 'Nama Pasien' },
   { field: 'USIA', header: 'Usia' },
@@ -842,11 +917,10 @@ const filters = ref({
   NAMADOKTER: { value: null, matchMode: FilterMatchMode.IN },
   KETERANGAN: { value: null, matchMode: FilterMatchMode.IN },
   SUDAHFINALCLAIM: { value: null, matchMode: FilterMatchMode.IN },
-  NOSEP: { value: null, matchMode: FilterMatchMode.IN },
+  NOSEP: { value: null, matchMode: FilterMatchMode.CONTAINS },
   IS_AKTIF_SEP: { value: null, matchMode: FilterMatchMode.IN },
 })
 
-const filteredCount = ref(0)
 const TempfilteredData = ref([])
 const DataSelected = ref(null)
 
@@ -946,12 +1020,21 @@ const filteredByStts = computed(() => {
   return data
 })
 
-const sttsCoderCount = computed(() => ({
-  null: medicalData.value.length,
-  0: medicalData.value.filter((r) => r.STTS_RM_DPJP == 0 || r.STTS_RM_DPJP == null).length,
-  1: medicalData.value.filter((r) => r.STTS_RM_DPJP == 1).length,
-  2: medicalData.value.filter((r) => r.STTS_RM_DPJP == 2).length,
-}))
+// filteredCount live dari array — update otomatis saat filter berubah
+const filteredCount = computed(() => filteredByStts.value.length)
+
+// sttsCoderCount live dari array, mempertimbangkan filter DPJP aktif
+const sttsCoderCount = computed(() => {
+  const base = dpjpSelected.value
+    ? medicalData.value.filter((r) => r.NAMADOKTER === dpjpSelected.value)
+    : medicalData.value
+  return {
+    null: base.length,
+    0: base.filter((r) => r.STTS_RM_DPJP == 0 || r.STTS_RM_DPJP == null).length,
+    1: base.filter((r) => r.STTS_RM_DPJP == 1).length,
+    2: base.filter((r) => r.STTS_RM_DPJP == 2).length,
+  }
+})
 
 const jumlahTidakDiajukan = computed(() => {
   const data =
@@ -1061,19 +1144,16 @@ const updateFilterOptions = () => {
   caraBayarFilterOptions.value = getUniqueValues('CARABAYAR')
   poliOptions.value = getUniqueValues('POLI')
   dokterOptions.value = getUniqueValues('NAMADOKTER')
-  dpjpOptions.value = getUniqueValues('NAMADOKTER').filter(Boolean)
+  // Jika login sebagai DOKTER, dropdown hanya tampilkan dokter yang login
+  if (group_user.value === 'DOKTER' && dpjpSelected.value) {
+    dpjpOptions.value = [dpjpSelected.value]
+  } else {
+    dpjpOptions.value = getUniqueValues('NAMADOKTER').filter(Boolean)
+  }
   sudahFilanClaim.value = getUniqueValues('SUDAHFINALCLAIM')
   KetaranganOpt.value = getUniqueValues('KETERANGAN')
   noSEP.value = getUniqueValues('NOSEP')
   isAktifSEP.value = getUniqueValues('IS_AKTIF_SEP')
-}
-
-const updateSummary = () => {
-  const data =
-    TempfilteredData.value && TempfilteredData.value.length
-      ? TempfilteredData.value
-      : medicalData.value
-  filteredCount.value = data.length
 }
 
 const loadingDokter = ref(false)
@@ -1091,13 +1171,12 @@ const fetchDokterLogin = async () => {
     if (response.data?.response) {
       listDokter.value = response.data.response
 
-      // Isi dpjpOptions dari list dokter agar Select punya pilihan
-      dpjpOptions.value = listDokter.value.map((d) => d.NAMADOKTER).filter(Boolean)
-
       // Cari dokter yang login berdasarkan KDDOKTER
       const matched = listDokter.value.find((d) => String(d.KDDOKTER) === String(kd_dokter.value))
       if (matched) {
         dpjpSelected.value = matched.NAMADOKTER
+        // Untuk user DOKTER, dropdown hanya tampilkan dokter yang login
+        dpjpOptions.value = [matched.NAMADOKTER]
       }
     }
   } catch (error) {
@@ -1110,7 +1189,6 @@ const fetchDokterLogin = async () => {
 
 const onFilter = (event) => {
   TempfilteredData.value = event.filteredValue || []
-  updateSummary()
 }
 
 const clearFilters = () => {
@@ -1123,7 +1201,7 @@ const clearFilters = () => {
     NAMADOKTER: { value: null, matchMode: FilterMatchMode.IN },
     KETERANGAN: { value: null, matchMode: FilterMatchMode.IN },
     SUDAHFINALCLAIM: { value: null, matchMode: FilterMatchMode.IN },
-    NOSEP: { value: null, matchMode: FilterMatchMode.IN },
+    NOSEP: { value: null, matchMode: FilterMatchMode.CONTAINS },
     IS_AKTIF_SEP: { value: null, matchMode: FilterMatchMode.IN },
   }
 }
@@ -1153,6 +1231,23 @@ const onKlaimSaved = (data) => {
 const ShowDetailsdata = (row) => {
   selectedNoreg.value = row.NOPENDAFTARAN
   showKlaim.value = true
+}
+
+const openJawabKonsul = () => {
+  const url = router.resolve({ name: 'JawabKonsulView' }).href
+  window.open(url, '_blank')
+}
+
+const openKonsultasi = (data) => {
+  const url = router.resolve({
+    name: 'KonsultasiFormView',
+    query: {
+      noregister: data.NOPENDAFTARAN,
+      no_rm: data.NOMR,
+      nama_pasien: data.NAMAPASIEN,
+    },
+  }).href
+  window.open(url, '_blank')
 }
 
 const showSuccess = (message = 'Operation successful') => {
@@ -1233,7 +1328,6 @@ const fetchData = async () => {
             : Number(item.STTS_RM_DPJP),
       }))
       updateFilterOptions()
-      updateSummary()
       showSuccess(`Data berhasil dimuat: ${medicalData.value.length} records`)
     } else {
       medicalData.value = []
@@ -1268,6 +1362,11 @@ onMounted(() => {
   if (group_user.value === 'DOKTER') {
     fetchDokterLogin()
   }
+  konsulNotifStore.startPolling(configStore.apiBaseUrl, id_client.value, kd_dokter.value)
+})
+
+onUnmounted(() => {
+  konsulNotifStore.stopPolling()
 })
 </script>
 
@@ -1466,10 +1565,16 @@ onMounted(() => {
 }
 
 :deep(.p-datatable .p-datatable-tbody > tr > td) {
-  padding: 0.1rem 0.5rem;
+  padding: 0.02rem 0.35rem;
+  font-size: 0.7rem;
+  line-height: 1;
+}
+:deep(.p-datatable .p-datatable-tbody > tr) {
+  height: 22px;
 }
 :deep(.p-datatable .p-datatable-thead > tr > th) {
-  padding: 0.5rem 1rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.7rem;
   background: #e6edf7;
   color: #162d4e;
 }
@@ -1770,5 +1875,170 @@ onMounted(() => {
   border: 1px solid #dde5ee;
   padding: 5px 10px;
   font-size: 12px;
+}
+
+/* ── Konsultasi Notification Banner ── */
+.konsul-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.konsul-banner-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition:
+    filter 0.15s,
+    transform 0.12s;
+  animation: bannerSlideIn 0.3s ease;
+}
+.konsul-banner-item:hover {
+  filter: brightness(0.95);
+  transform: translateX(2px);
+}
+.konsul-banner-masuk {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 1px solid #fca5a5;
+  border-left: 5px solid #ef4444;
+}
+.konsul-banner-terkirim {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #86efac;
+  border-left: 5px solid #10b981;
+}
+.konsul-banner-icon {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.konsul-banner-masuk .konsul-banner-icon {
+  background: #fee2e2;
+  color: #ef4444;
+}
+.konsul-banner-terkirim .konsul-banner-icon {
+  background: #dcfce7;
+  color: #10b981;
+}
+.konsul-banner-count {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid #fff;
+}
+.konsul-banner-masuk .konsul-banner-count {
+  background: #ef4444;
+}
+.konsul-banner-terkirim .konsul-banner-count {
+  background: #10b981;
+}
+.konsul-banner-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.konsul-banner-title {
+  font-size: 13px;
+  font-weight: 700;
+}
+.konsul-banner-masuk .konsul-banner-title {
+  color: #b91c1c;
+}
+.konsul-banner-terkirim .konsul-banner-title {
+  color: #065f46;
+}
+.konsul-banner-sub {
+  font-size: 11.5px;
+}
+.konsul-banner-masuk .konsul-banner-sub {
+  color: #dc2626;
+}
+.konsul-banner-terkirim .konsul-banner-sub {
+  color: #059669;
+}
+.konsul-banner-arrow {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.konsul-banner-masuk .konsul-banner-arrow {
+  color: #ef4444;
+}
+.konsul-banner-terkirim .konsul-banner-arrow {
+  color: #10b981;
+}
+
+@keyframes bannerSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Konsultasi Notif Badge ── */
+.konsul-notif-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.konsul-notif-badge {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  min-width: 19px;
+  height: 19px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid #fff;
+  pointer-events: none;
+  z-index: 2;
+  animation: badgePulse 2s ease-in-out infinite;
+}
+.konsul-notif-badge.badge-masuk {
+  background: #ef4444;
+}
+.konsul-notif-badge.badge-terkirim {
+  background: #10b981;
+}
+.konsul-notif-badge.badge-both {
+  background: #f97316;
+}
+
+@keyframes badgePulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.18);
+  }
 }
 </style>

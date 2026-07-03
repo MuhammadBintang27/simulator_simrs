@@ -36,8 +36,13 @@
               >
               </i>
             </h4>
+
             <div class="patient-details">
-              <dt>RM</dt>
+              <dt><i class="pi pi-id-card"></i> NIK</dt>
+              <dd>{{ fact?.NOKTP }}</dd>
+              <dt><i class="fas fa-shield-alt"></i> NOBPJS</dt>
+              <dd>{{ fact?.NOJAMINAN }}</dd>
+              <dt><i class="fas fa-folder-open"></i> RM</dt>
               <dd>{{ fact?.NOMR }}</dd>
               <dt><i class="pi pi-map-marker"></i> Alamat</dt>
               <dd>{{ fact?.ALAMAT }}</dd>
@@ -149,6 +154,9 @@
                 >
                 <Tab v-if="fact?.KODEPOLI == 'MAT'" value="7">VISUS MATA</Tab>
                 <Tab v-if="fact?.KODEPOLI == 'OBG'" value="9">OBGYN</Tab>
+                <Tab v-if="fact?.KODEPOLI == 'PAR' || fact?.KODEPOLI == '097'" value="10"
+                  >ASMA PPOK</Tab
+                >
                 <Tab value="1">TINDAKAN</Tab>
                 <Tab value="2">TERAPHY</Tab>
                 <Tab value="3">LAMPIRAN FILE</Tab>
@@ -190,7 +198,10 @@
 
                           <div class="row">
                             <div class="col-md-3">
-                              <label>Suhu (C)</label>
+                              <label
+                                ><i class="fas fa-thermometer-half" style="color: #e74c3c"></i> Suhu
+                                (C)</label
+                              >
                               <InputGroup>
                                 <InputNumber
                                   v-model="soap.suhu"
@@ -201,7 +212,10 @@
                               </InputGroup>
                             </div>
                             <div class="col-md-3">
-                              <label>Tensi</label>
+                              <label
+                                ><i class="fas fa-tachometer-alt" style="color: #c0392b"></i>
+                                Tensi</label
+                              >
                               <InputGroup>
                                 <InputText
                                   v-model="soap.tensi"
@@ -213,7 +227,9 @@
                               </InputGroup>
                             </div>
                             <div class="col-md-3">
-                              <label>SPO2</label>
+                              <label
+                                ><i class="fas fa-lungs" style="color: #2980b9"></i> SPO2</label
+                              >
                               <InputGroup>
                                 <InputNumber
                                   v-model="soap.sp2o"
@@ -224,7 +240,10 @@
                               </InputGroup>
                             </div>
                             <div class="col-md-3">
-                              <label>Tinggi Badan</label>
+                              <label
+                                ><i class="fas fa-ruler-vertical" style="color: #8e44ad"></i> Tinggi
+                                Badan</label
+                              >
                               <InputGroup>
                                 <InputNumber
                                   v-model="soap.tinggi_badan"
@@ -237,7 +256,9 @@
                           </div>
                           <div class="row mt-4">
                             <div class="col-md-3">
-                              <label style="color: darkblue">Respirasi</label>
+                              <label style="color: darkblue"
+                                ><i class="fas fa-wind" style="color: #27ae60"></i> Respirasi</label
+                              >
                               <InputGroup>
                                 <InputNumber
                                   v-model="soap.respirasi_perm"
@@ -248,7 +269,10 @@
                               </InputGroup>
                             </div>
                             <div class="col-md-3">
-                              <label style="color: darkblue">GCS (E,V,M)</label>
+                              <label style="color: darkblue"
+                                ><i class="fas fa-brain" style="color: #f39c12"></i> GCS
+                                (E,V,M)</label
+                              >
                               <InputGroup>
                                 <InputText
                                   v-model="soap.cgs"
@@ -260,7 +284,10 @@
                               </InputGroup>
                             </div>
                             <div class="col-md-3">
-                              <label style="color: darkblue">Berat Badan</label>
+                              <label style="color: darkblue"
+                                ><i class="fas fa-weight" style="color: #7f8c8d"></i> Berat
+                                Badan</label
+                              >
                               <InputGroup>
                                 <InputNumber
                                   v-model="soap.berat_badan"
@@ -271,7 +298,9 @@
                               </InputGroup>
                             </div>
                             <div class="col-md-3">
-                              <label style="color: darkblue">Nadi</label>
+                              <label style="color: darkblue"
+                                ><i class="fas fa-heartbeat" style="color: #e91e63"></i> Nadi</label
+                              >
                               <InputGroup>
                                 <InputNumber
                                   v-model="soap.nadi_permenit"
@@ -330,6 +359,21 @@
                               </div>
                             </div>
                           </Transition>
+
+                          <!-- No SITB: hanya Poli Paru -->
+                          <div
+                            v-if="fact?.KODEPOLI === 'PAR' || fact?.KODEPOLI === '097'"
+                            class="row mt-5"
+                          >
+                            <div class="col-md-6">
+                              <label style="color: darkblue" class="mr-2">No. SITB</label>
+                              <InputText
+                                v-model="soap.no_sitb"
+                                placeholder="Masukkan No. SITB..."
+                                class="w-full"
+                              />
+                            </div>
+                          </div>
 
                           <div class="row mt-5">
                             <div class="col-md-12">
@@ -510,6 +554,24 @@
                           </div>
                           <div class="detail-item">
                             <label>Plan</label>
+                            <div class="plan-badges mb-2">
+                              <span
+                                v-for="option in planOptions"
+                                :key="option"
+                                :class="[
+                                  'plan-badge',
+                                  { 'plan-badge--active': isPlanSelected(option) },
+                                ]"
+                                @click="togglePlan(option)"
+                                >{{ option }}</span
+                              >
+                              <span
+                                v-if="soap.plan"
+                                class="plan-badge plan-badge--clear"
+                                @click="soap.plan = ''"
+                                ><i class="pi pi-times"></i> Clear</span
+                              >
+                            </div>
                             <Textarea
                               v-model="soap.plan"
                               class="custom-textarea"
@@ -608,8 +670,12 @@
                     :dataset="fact"
                   />
                 </TabPanel>
+
                 <TabPanel value="9">
                   <ObgynComponent v-if="fact" :datapasien="fact" />
+                </TabPanel>
+                <TabPanel value="10">
+                  <PoliParuView v-if="fact" :datapasien="fact" />
                 </TabPanel>
               </TabPanels>
             </Tabs>
@@ -837,6 +903,7 @@ import HemodiComponent from '@/components/PoliklinikComponent/HemodiComponent.vu
 import PemeriksaanVisusPoliMata from '@/components/PoliklinikComponent/PemeriksaanVisusPoliMata.vue'
 import OdontogramComponent from '@/views/Poliklinik/Gigi/OdontogramComponent.vue'
 import ObgynComponent from '@/views/Poliklinik/Obgyn/ObgynComponent.vue'
+import PoliParuView from '@/views/Poliklinik/Paru/PoliParuView.vue'
 
 import ResikoJatuhComponent from '@/components/KajianAwal/ResikoJatuhComponent.vue'
 
@@ -1164,6 +1231,7 @@ const soap = reactive({
   plan: '',
   kesadaran: '',
   kesadaran_code: '',
+  no_sitb: '',
   catatan_dokter: '',
   jenis_dok: 1,
   id_client: id_client.value,
@@ -1537,8 +1605,10 @@ const GetSoap = async () => {
       soap.berat_badan = parseInt(temp_data.value?.berat_badan) || 0
       soap.nadi_permenit = parseInt(temp_data.value?.nadi_permenit) || 0
       soap.catatan_dokter = temp_data.value?.catatan_dokter || ''
+
       // Set consciousness level
       selectedLevel.value = temp_data.value?.kesadaran_code || ''
+      soap.no_sitb = temp_data.value?.no_sitb || ''
     }
 
     soap_loading.value = false
@@ -1562,6 +1632,41 @@ const onTemplateSelected = (data) => {
   soap.subjek = data.subject
   soap.asesmen = data.assesment
   soap.plan = data.plan
+}
+
+const planOptions = [
+  'Terapi lanjut',
+  'Rujuk Ke rawat inap',
+  'Rujuk internal',
+  'Konsul Ke Poli lain',
+  'Rujuk ke rs lain',
+  'Kontrol Ulang',
+  'Operasi',
+]
+
+const isPlanSelected = (option) => {
+  return soap.plan
+    ? soap.plan
+        .split(',')
+        .map((s) => s.trim())
+        .includes(option)
+    : false
+}
+
+const togglePlan = (option) => {
+  const current = soap.plan
+    ? soap.plan
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : []
+  const idx = current.indexOf(option)
+  if (idx === -1) {
+    current.push(option)
+  } else {
+    current.splice(idx, 1)
+  }
+  soap.plan = current.join(', ')
 }
 
 const getriwayatJKN = async () => {
@@ -1713,6 +1818,46 @@ onMounted(async () => {
   width: 100%;
   padding: 12px !important;
   margin-bottom: 1em;
+}
+
+.plan-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.plan-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1.5px solid #0891b2;
+  color: #0891b2;
+  background: #fff;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.plan-badge:hover {
+  background: #e0f2f7;
+}
+
+.plan-badge--active {
+  background: #0891b2;
+  color: #fff;
+  border-color: #0891b2;
+}
+
+.plan-badge--clear {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.plan-badge--clear:hover {
+  background: #fee2e2;
 }
 
 .radio-group {

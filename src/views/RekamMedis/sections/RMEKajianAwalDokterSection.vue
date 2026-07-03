@@ -44,7 +44,7 @@
         </span>
         <span v-else class="rme-badge rme-badge-warning">⏳ Belum Diotorisasi</span>
         <span v-if="data.last_update" class="kad-last-update">
-          <i class="pi pi-clock"></i> Diperbarui: {{ data.last_update }}
+          <!-- <i class="pi pi-clock"></i> Diperbarui: {{ data.last_update }} -->
         </span>
       </div>
 
@@ -359,7 +359,11 @@ const fetchKajianAwal = async () => {
     console.error('[KajianAwalSection]', e)
   } finally {
     loading.value = false
-    const hasKajian = !!(data.value?.keluhan_utama || data.value?.dx_awal || data.value?.riwayat_peny_skrg)
+    const hasKajian = !!(
+      data.value?.keluhan_utama ||
+      data.value?.dx_awal ||
+      data.value?.riwayat_peny_skrg
+    )
     reportSectionData('kajian-awal', hasKajian)
     if (hasKajian) {
       addTimelineEvent('kajian-awal', {

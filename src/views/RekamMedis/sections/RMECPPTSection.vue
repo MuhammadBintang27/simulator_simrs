@@ -1,157 +1,186 @@
 ﻿<template>
-  <div class="rme-section">
+  <!-- ── Loading / Error / Kosong: satu halaman A4 ── -->
+  <div v-if="loading || error || !fact.length" class="rme-a4-page" data-section="cppt">
+    <div class="rme-page-header-repeat">
+      <span class="rme-phr-rm">RM: {{ dataPasien?.NOMR }}</span>
+      <span class="rme-phr-name">{{ dataPasien?.NAMAPASIEN }}</span>
+      <span class="rme-phr-reg">Reg: {{ dataPasien?.NOPENDAFTARAN }}</span>
+    </div>
     <div class="rme-section-title">
       <i class="pi pi-file-edit no-print" style="color: #1a3a5f"></i>
       CATATAN PERKEMBANGAN PASIEN TERINTEGRASI (CPPT / SOAP)
     </div>
-
     <div v-if="loading" class="rme-loading-row">
       <span class="rme-loading-dot"></span> Memuat catatan CPPT...
     </div>
-
     <div v-else-if="error" class="rme-empty-note">
       <i class="pi pi-info-circle"></i> {{ error }}
     </div>
-
-    <div v-else-if="!fact || fact.length === 0" class="rme-empty-note">
+    <div v-else class="rme-empty-note">
       <i class="pi pi-minus-circle"></i> Belum ada catatan CPPT/SOAP untuk kunjungan ini.
     </div>
+  </div>
 
-    <div v-else>
-      <!-- ── Tabel CPPT ── -->
-      <div class="rme-cppt-table-wrap">
-        <table class="rme-cppt-table">
-          <thead>
-            <tr>
-              <th class="col-auth">AUTH</th>
-              <th class="col-no">No.</th>
-              <th class="col-waktu">WAKTU</th>
-              <th class="col-soap">SOAP / SBAR</th>
-              <th class="col-instruksi">INSTRUKSI / VERIF</th>
-              <th class="col-ppa">PPA</th>
-              <th class="col-qr">AUTH</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="(item, k) in fact"
-              :key="item.id"
-              :class="{ 'row-auth': item.hasbeen_auth == 1 }"
-            >
-              <td class="col-auth td-center">
-                <span v-if="item.hasbeen_auth == 1" class="rme-badge rme-badge-success auth-icon"
-                  >&#10003;</span
+  <!-- ── Satu halaman A4 per chunk data ── -->
+  <template v-else>
+    <div
+      v-for="(chunk, pageIdx) in chunks"
+      :key="pageIdx"
+      class="rme-a4-page cppt-a4-page"
+      data-section="cppt"
+    >
+      <!-- Header repeat setiap halaman -->
+      <div class="rme-page-header-repeat">
+        <span class="rme-phr-rm">RM: {{ dataPasien?.NOMR }}</span>
+        <span class="rme-phr-name">{{ dataPasien?.NAMAPASIEN }}</span>
+        <span class="rme-phr-reg"> CPPT Hal. {{ pageIdx + 1 }}/{{ chunks.length }} </span>
+      </div>
+
+      <!-- Judul section hanya di halaman pertama -->
+      <div v-if="pageIdx === 0" class="rme-section-title">
+        <i class="pi pi-file-edit no-print" style="color: #1a3a5f"></i>
+        CATATAN PERKEMBANGAN PASIEN TERINTEGRASI (CPPT / SOAP)
+      </div>
+
+      <!-- Tabel CPPT untuk chunk ini -->
+      <table class="rme-cppt-table">
+        <thead>
+          <tr>
+            <th class="col-auth">AUTH</th>
+            <th class="col-no">No.</th>
+            <th class="col-waktu">WAKTU</th>
+            <th class="col-soap">SOAP / SBAR</th>
+            <th class="col-instruksi">INSTRUKSI / VERIF</th>
+            <th class="col-ppa">PPA</th>
+            <th class="col-qr">AUTH</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in chunk" :key="item.id" :class="{ 'row-auth': item.hasbeen_auth == 1 }">
+            <td class="col-auth td-center">
+              <span v-if="item.hasbeen_auth == 1" class="rme-badge rme-badge-success auth-icon"
+                >&#10003;</span
+              >
+              <span v-else class="rme-badge rme-badge-warning auth-icon">&#9203;</span>
+              <div v-if="item.jenis_dok === 'SBAR'" class="mt-1">
+                <span class="rme-badge rme-badge-warning">SBAR</span>
+              </div>
+            </td>
+
+            <td class="col-no td-center">
+              <strong>{{ globalIndex(pageIdx, item) }}</strong>
+            </td>
+
+            <td class="col-waktu">
+              <div class="cppt-waktu">{{ item.waktu_display || '-' }}</div>
+            </td>
+
+            <td class="col-soap">
+              <div v-if="hasTTV(item)" class="rme-cppt-ttv">
+                <span v-if="Number(item.suhu) > 0"
+                  ><i class="fas fa-thermometer-half"></i> {{ item.suhu }}°C</span
                 >
-                <span v-else class="rme-badge rme-badge-warning auth-icon">&#9203;</span>
-                <div v-if="item.jenis_dok === 'SBAR'" class="mt-1">
-                  <span class="rme-badge rme-badge-warning">SBAR</span>
-                </div>
-              </td>
-
-              <td class="col-no td-center">
-                <strong>{{ k + 1 }}</strong>
-              </td>
-
-              <td class="col-waktu">
-                <div class="cppt-waktu">{{ item.waktu_display || '-' }}</div>
-              </td>
-
-              <td class="col-soap">
-                <div v-if="hasTTV(item)" class="rme-cppt-ttv">
-                  <span v-if="Number(item.suhu) > 0"
-                    ><i class="pi pi-sun"></i> {{ item.suhu }}°C</span
-                  >
-                  <span v-if="Number(item.sistole) > 0"
-                    ><i class="pi pi-heart"></i> {{ item.sistole }}/{{ item.diastole }} mmHg</span
-                  >
-                  <span v-if="Number(item.nadi) > 0"
-                    ><i class="pi pi-wave-pulse"></i> {{ item.nadi }}x/mnt</span
-                  >
-                  <span v-if="Number(item.spo2) > 0"
-                    ><i class="pi pi-cloud"></i> SpO&#8322; {{ item.spo2 }}%</span
-                  >
-                  <span v-if="Number(item.pernafasan) > 0 || Number(item.respirasi) > 0">
-                    <i class="pi pi-replay"></i> {{ item.pernafasan || item.respirasi }}x/mnt
-                  </span>
-                  <span v-if="Number(item.gcs) > 0"
-                    ><i class="pi pi-eye"></i> GCS {{ item.gcs }}</span
-                  >
-                </div>
-
-                <div v-if="item.subject" class="cppt-soap-row">
-                  <span class="cppt-soap-lbl">{{ item.caption1 || 'S' }}:</span>
-                  <span class="cppt-soap-val" v-html="formatText(item.subject)"></span>
-                </div>
-                <div v-if="item.object_display || item.object" class="cppt-soap-row">
-                  <span class="cppt-soap-lbl">{{ item.caption2 || 'O' }}:</span>
+                <span v-if="Number(item.sistole) > 0"
+                  ><i class="pi pi-heart"></i> {{ item.sistole }}/{{ item.diastole }} mmHg</span
+                >
+                <span v-if="Number(item.nadi) > 0"
+                  ><i class="pi pi-wave-pulse"></i> {{ item.nadi }}x/mnt</span
+                >
+                <span v-if="Number(item.spo2) > 0"
+                  ><i class="pi pi-cloud"></i> SpO&#8322; {{ item.spo2 }}%</span
+                >
+                <span v-if="Number(item.pernafasan) > 0 || Number(item.respirasi) > 0">
+                  <i class="pi pi-replay"></i> {{ item.pernafasan || item.respirasi }}x/mnt
+                </span>
+                <span v-if="Number(item.gcs) > 0"
+                  ><i class="pi pi-eye"></i> GCS {{ item.gcs }}</span
+                >
+              </div>
+              <div v-if="item.subject" class="cppt-soap-row">
+                <span class="cppt-soap-lbl">{{ item.caption1 || 'S' }}:</span>
+                <span class="cppt-soap-val" v-html="formatText(item.subject)"></span>
+              </div>
+              <div v-if="item.object_display" class="cppt-soap-row">
+                <span class="cppt-soap-lbl">{{ item.caption2 || 'O' }}:</span>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 2px">
                   <span
                     class="cppt-soap-val rme-cppt-obj-html"
                     v-html="item.object_display || formatText(item.object)"
                   ></span>
+                  <span class="cppt-soap-val">{{ item.object }}</span>
                 </div>
-                <div v-if="item.asessment" class="cppt-soap-row">
-                  <span class="cppt-soap-lbl">{{ item.caption3 || 'A' }}:</span>
-                  <span class="cppt-soap-val" v-html="formatText(item.asessment)"></span>
-                </div>
-                <div v-if="item.jenis_dok !== 'SBAR' && item.plan" class="cppt-soap-row">
-                  <span class="cppt-soap-lbl">{{ item.caption4 || 'P' }}:</span>
+              </div>
+              <div v-if="item.asessment" class="cppt-soap-row">
+                <span class="cppt-soap-lbl">{{ item.caption3 || 'A' }}:</span>
+                <span class="cppt-soap-val" v-html="formatText(item.asessment)"></span>
+              </div>
+              <div v-if="item.jenis_dok !== 'SBAR' && item.plan" class="cppt-soap-row">
+                <span class="cppt-soap-lbl">{{ item.caption4 || 'P' }}:</span>
+                <span class="cppt-soap-val" v-html="formatText(item.plan)"></span>
+              </div>
+              <div v-if="item.catatan_penting" class="rme-cppt-catatan">
+                <span class="rme-cppt-catatan-lbl">Catatan Penting:</span>
+                {{ item.catatan_penting }}
+              </div>
+            </td>
+
+            <td class="col-instruksi">
+              <template v-if="item.jenis_dok === 'SBAR'">
+                <div v-if="item.plan" class="cppt-soap-row">
+                  <span class="cppt-soap-lbl">{{ item.caption4 || 'R' }}:</span>
                   <span class="cppt-soap-val" v-html="formatText(item.plan)"></span>
                 </div>
-                <div v-if="item.catatan_penting" class="rme-cppt-catatan">
-                  <span class="rme-cppt-catatan-lbl">Catatan Penting:</span>
-                  {{ item.catatan_penting }}
+                <div class="rme-cppt-verif mt-1">
+                  <template v-if="item.verif == 1">
+                    <div class="rme-badge rme-badge-success">Terverifikasi DPJP</div>
+                    <div v-if="item.profesi_verif" class="cppt-verif-name mt-1">
+                      {{ item.profesi_verif }} - {{ item.verif_by_name }}
+                    </div>
+                  </template>
+                  <span v-else class="rme-badge rme-badge-warning">Menunggu Verif DPJP</span>
                 </div>
-              </td>
+              </template>
+              <span v-else class="text-muted-sm">-</span>
+            </td>
 
-              <td class="col-instruksi">
-                <template v-if="item.jenis_dok === 'SBAR'">
-                  <div v-if="item.plan" class="cppt-soap-row">
-                    <span class="cppt-soap-lbl">{{ item.caption4 || 'R' }}:</span>
-                    <span class="cppt-soap-val" v-html="formatText(item.plan)"></span>
-                  </div>
-                  <div class="rme-cppt-verif mt-1">
-                    <template v-if="item.verif == 1">
-                      <div class="rme-badge rme-badge-success">Terverifikasi DPJP</div>
-                      <div v-if="item.profesi_verif" class="cppt-verif-name mt-1">
-                        {{ item.profesi_verif }} - {{ item.verif_by_name }}
-                      </div>
-                    </template>
-                    <span v-else class="rme-badge rme-badge-warning">Menunggu Verif DPJP</span>
-                  </div>
-                </template>
-                <span v-else class="text-muted-sm">-</span>
-              </td>
+            <td class="col-ppa">
+              <div class="cppt-ppa-profesi" :style="profesiStyle(item.profesi)">
+                {{ item.profesi || '-' }}
+              </div>
+              <div class="cppt-ppa-name">{{ item.verif_user_display || '' }}</div>
+            </td>
 
-              <td class="col-ppa">
-                <div class="cppt-ppa-profesi">{{ item.profesi || '-' }}</div>
-                <div class="cppt-ppa-name">{{ item.verif_user_display || '' }}</div>
-              </td>
+            <td class="col-qr td-center">
+              <template v-if="item.hasbeen_auth == 1">
+                <QrcodeVue
+                  :value="qrValue(item)"
+                  :size="50"
+                  level="H"
+                  render-as="svg"
+                  class="cppt-qr-img"
+                />
+                <div v-if="item.time_auth" class="cppt-qr-time">
+                  <!-- {{ item.time_auth }} -->
+                </div>
+              </template>
+              <span v-else class="text-muted-sm">-</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-              <td class="col-qr td-center">
-                <template v-if="item.hasbeen_auth == 1">
-                  <QrcodeVue
-                    :value="qrValue(item)"
-                    :size="50"
-                    level="H"
-                    render-as="svg"
-                    class="cppt-qr-img"
-                  />
-                  <div v-if="item.time_auth" class="cppt-qr-time">{{ item.time_auth }}</div>
-                </template>
-                <span v-else class="text-muted-sm">-</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+    <!-- ── Analisis Tren TTV ── -->
+    <div v-if="ttvItems.length >= 2" class="rme-a4-page" data-section="cppt-ttv">
+      <div class="rme-page-header-repeat">
+        <span class="rme-phr-rm">RM: {{ dataPasien?.NOMR }}</span>
+        <span class="rme-phr-name">{{ dataPasien?.NAMAPASIEN }}</span>
+        <span class="rme-phr-reg">Reg: {{ dataPasien?.NOPENDAFTARAN }}</span>
       </div>
-
-      <!-- ── Analisis Tren TTV ── -->
-      <div v-if="ttvItems.length >= 2" class="ttv-trend-section no-print">
+      <div class="ttv-trend-section">
         <div class="ttv-trend-header">
           <i class="pi pi-chart-line"></i> ANALISIS TREN TANDA-TANDA VITAL
         </div>
-
-        <!-- Flag abnormal -->
         <div v-if="ttvFlags.length > 0" class="ttv-flag-wrap">
           <div class="ttv-flag-title">
             <i class="pi pi-exclamation-triangle"></i> Peringatan Nilai Abnormal
@@ -162,20 +191,17 @@
               :key="flag.id + flag.param"
               class="ttv-flag-badge"
               :class="flag.level"
-              >{{ flag.msg }} <span class="ttv-flag-time">({{ flag.waktu }})</span></span
             >
+              {{ flag.msg }} <span class="ttv-flag-time">({{ flag.waktu }})</span>
+            </span>
           </div>
         </div>
         <div v-else class="ttv-flag-ok">
           <i class="pi pi-check-circle"></i> Semua nilai TTV dalam rentang normal
         </div>
-
-        <!-- Grafik -->
         <div class="ttv-chart-wrap">
           <canvas ref="trendCanvas" style="height: 180px; width: 100%"></canvas>
         </div>
-
-        <!-- Perbandingan Shift -->
         <div v-if="shiftData.length > 0" class="ttv-shift-wrap">
           <div class="ttv-shift-title"><i class="pi pi-clock"></i> Rata-rata TTV per Shift</div>
           <table class="ttv-shift-table">
@@ -183,7 +209,7 @@
               <tr>
                 <th>Shift</th>
                 <th>Entri</th>
-                <th><i class="pi pi-sun"></i> Suhu</th>
+                <th><i class="fas fa-thermometer-half"></i> Suhu</th>
                 <th><i class="pi pi-heart"></i> TD (mmHg)</th>
                 <th><i class="pi pi-wave-pulse"></i> Nadi</th>
                 <th><i class="pi pi-cloud"></i> SpO&#8322;</th>
@@ -209,7 +235,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </template>
 </template>
 
 <script setup>
@@ -234,11 +260,27 @@ const { id_client } = storeToRefs(authStore)
 const reportSectionData = inject('reportSectionData', () => {})
 const addTimelineEvent = inject('addTimelineEvent', () => {})
 
+const ROWS_PER_PAGE = 5
+
 const loading = ref(true)
 const error = ref(null)
 const fact = ref([])
 const trendCanvas = ref(null)
 let chartInstance = null
+
+// ── Chunking: pecah data menjadi kelompok per halaman A4 ──────────────────
+const chunks = computed(() => {
+  const result = []
+  for (let i = 0; i < fact.value.length; i += ROWS_PER_PAGE) {
+    result.push(fact.value.slice(i, i + ROWS_PER_PAGE))
+  }
+  return result
+})
+
+const globalIndex = (pageIdx, item) => {
+  const flatIdx = fact.value.findIndex((f) => f.id === item.id)
+  return flatIdx >= 0 ? flatIdx + 1 : pageIdx * ROWS_PER_PAGE + 1
+}
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -252,9 +294,25 @@ const hasTTV = (item) =>
   Number(item.gcs) > 0
 
 const qrValue = (item) =>
-  ['CPPT', item.id, props.noreg, item.time_auth, item.profesi, item.verif_user_display]
+  ['CPPT', item.id, props.noreg, item.profesi, item.verif_user_display]
     .map((v) => v ?? '')
     .join('|')
+
+const PROFESI_STYLE = {
+  DPJP: { color: '#7b1fa2', background: '#f3e5f5', borderColor: '#ce93d8' },
+  'DOKTER SPESIALIS': { color: '#1565c0', background: '#e3f2fd', borderColor: '#90caf9' },
+  'DOKTER UMUM': { color: '#0277bd', background: '#e1f5fe', borderColor: '#81d4fa' },
+  'DOKTER GIGI': { color: '#00695c', background: '#e0f2f1', borderColor: '#80cbc4' },
+  PERAWAT: { color: '#2e7d32', background: '#e8f5e9', borderColor: '#a5d6a7' },
+  APOTEKER: { color: '#e65100', background: '#fff3e0', borderColor: '#ffcc80' },
+  'TENAGA KEFARMASIAN': { color: '#bf360c', background: '#fbe9e7', borderColor: '#ffab91' },
+  'AHLI GIZI': { color: '#f57f17', background: '#fffde7', borderColor: '#ffe082' },
+}
+
+const profesiStyle = (profesi) => {
+  const key = (profesi || '').trim().toUpperCase()
+  return PROFESI_STYLE[key] ?? { color: '#37474f', background: '#eceff1', borderColor: '#b0bec5' }
+}
 
 const formatText = (text) => {
   if (!text) return '-'
@@ -267,7 +325,7 @@ const formatText = (text) => {
 
 // ── TTV items (hanya entri yang punya TTV, urut kronologis) ────────────────
 
-const ttvItems = computed(() => [...(fact.value || []).filter(hasTTV)].reverse())
+const ttvItems = computed(() => [...(fact.value || []).filter(hasTTV)])
 
 // ── Flag nilai abnormal ────────────────────────────────────────────────────
 
@@ -493,6 +551,12 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+/* ── Halaman CPPT berukuran A4 ── */
+.cppt-a4-page {
+  min-height: 267mm !important;
+  box-sizing: border-box;
+}
+
 /* ── Tabel CPPT ── */
 .rme-cppt-table-wrap {
   overflow-x: hidden;
@@ -501,7 +565,7 @@ onBeforeUnmount(() => {
 .rme-cppt-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 11px;
+  font-size: 12px;
 }
 .rme-cppt-table thead tr {
   background: linear-gradient(90deg, #1a3a5f 0%, #2c5282 100%);
@@ -509,7 +573,7 @@ onBeforeUnmount(() => {
 }
 .rme-cppt-table thead th {
   padding: 7px 9px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-align: center;
   border: 1px solid #1a3a5f;
@@ -554,7 +618,7 @@ onBeforeUnmount(() => {
   text-align: center;
 }
 .cppt-waktu {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: #1a3a5f;
   white-space: pre-line;
@@ -564,7 +628,7 @@ onBeforeUnmount(() => {
   gap: 4px;
   margin-bottom: 3px;
   align-items: flex-start;
-  font-size: 11px;
+  font-size: 12px;
 }
 .cppt-soap-lbl {
   font-weight: 800;
@@ -580,21 +644,25 @@ onBeforeUnmount(() => {
   word-break: break-word;
 }
 .auth-icon {
-  font-size: 13px;
+  font-size: 14px;
   padding: 3px 6px;
 }
 .cppt-ppa-profesi {
+  display: inline-block;
   font-size: 11px;
   font-weight: 700;
-  color: #1a3a5f;
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  white-space: nowrap;
 }
 .cppt-ppa-name {
-  font-size: 10px;
+  font-size: 11px;
   color: #555;
   margin-top: 2px;
 }
 .cppt-verif-name {
-  font-size: 10px;
+  font-size: 11px;
   color: #444;
   font-style: italic;
 }
@@ -606,7 +674,7 @@ onBeforeUnmount(() => {
   margin: 0 auto;
 }
 .cppt-qr-time {
-  font-size: 9px;
+  font-size: 10px;
   color: #4a6e4c;
   margin-top: 2px;
   text-align: center;
@@ -616,13 +684,14 @@ onBeforeUnmount(() => {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  font-size: 10px;
+  font-size: 11px;
   color: #455a64;
   margin-bottom: 5px;
   padding: 2px 0;
 }
-.rme-cppt-ttv .pi {
-  font-size: 10px;
+.rme-cppt-ttv .pi,
+.rme-cppt-ttv .fas {
+  font-size: 11px;
 }
 .rme-cppt-catatan {
   margin-top: 5px;
@@ -630,7 +699,7 @@ onBeforeUnmount(() => {
   background: #fff8e1;
   border-left: 3px solid #f9a825;
   border-radius: 2px;
-  font-size: 10px;
+  font-size: 11px;
   color: #5d4037;
 }
 .rme-cppt-catatan-lbl {
@@ -641,16 +710,16 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .rme-cppt-obj-html :deep(*) {
-  font-size: 11px !important;
+  font-size: 12px !important;
   font-family: 'Segoe UI', Arial, sans-serif !important;
   line-height: 1.55 !important;
   color: #333 !important;
 }
 .text-muted-sm {
-  font-size: 10px;
+  font-size: 11px;
   color: #aaa;
 }
 .mt-1 {
@@ -665,9 +734,10 @@ onBeforeUnmount(() => {
   border-radius: 4px;
   background: #fff;
   padding: 10px 12px 14px;
+  box-sizing: border-box;
 }
 .ttv-trend-header {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   color: #1a3a5f;
   letter-spacing: 0.5px;
@@ -683,7 +753,7 @@ onBeforeUnmount(() => {
   margin-bottom: 8px;
 }
 .ttv-flag-title {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   color: #b71c1c;
   margin-bottom: 5px;
@@ -700,7 +770,7 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 10px;
@@ -717,11 +787,11 @@ onBeforeUnmount(() => {
 }
 .ttv-flag-time {
   font-weight: 400;
-  font-size: 9px;
+  font-size: 10px;
   color: #888;
 }
 .ttv-flag-ok {
-  font-size: 10px;
+  font-size: 11px;
   color: #2e7d32;
   display: flex;
   align-items: center;
@@ -741,7 +811,7 @@ onBeforeUnmount(() => {
   margin-top: 10px;
 }
 .ttv-shift-title {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: #1a3a5f;
   margin-bottom: 6px;
@@ -752,7 +822,7 @@ onBeforeUnmount(() => {
 .ttv-shift-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 11px;
+  font-size: 12px;
 }
 .ttv-shift-table thead tr {
   background: #eef3fa;
@@ -763,13 +833,13 @@ onBeforeUnmount(() => {
   color: #1a3a5f;
   border: 1px solid #d5e3f0;
   text-align: center;
-  font-size: 10px;
+  font-size: 11px;
 }
 .ttv-shift-table tbody td {
   padding: 5px 9px;
   border: 1px solid #e8eef6;
   text-align: center;
-  font-size: 11px;
+  font-size: 12px;
 }
 .shift-name {
   font-weight: 700;

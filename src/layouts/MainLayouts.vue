@@ -20,7 +20,10 @@
 
     <footer class="main-footer" style="font-size: 11px">
       <div class="float-right">
-        <strong style="color: red">{{ config.getMode }}</strong>
+        <span v-if="config.getMode == 'development'"
+          >{{ config.apiBaseUrl }} || {{ config.apiApotikUrl }}</span
+        >
+        <strong style="color: red" class="mr-1">{{ config.getMode }} </strong>
         <b>Version</b> 3.2.0
       </div>
 
@@ -35,7 +38,6 @@
     <!-- /.control-sidebar -->
   </div>
   <!-- ./wrapper -->
-
 </template>
 
 <script setup>

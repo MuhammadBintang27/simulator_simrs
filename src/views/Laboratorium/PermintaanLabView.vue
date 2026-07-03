@@ -1,5 +1,5 @@
 <template>
-  <div class="content">
+  <div class="content" @click.once="initAudioCtx">
     <loading_overlay :is-loading="loading" message="Silahkan menunggu...." />
 
     <!-- Hero Section -->
@@ -83,10 +83,81 @@
           />
         </div>
         <div class="filter-group">
-          <Button label="Cari" icon="pi pi-search" @click="fetchData(1)" />
+          <label class="filter-label">
+            <i class="pi pi-flag"></i>
+            Status
+          </label>
+          <Select
+            v-model="activeFilter"
+            :options="filterOptions"
+            optionLabel="label"
+            optionValue="value"
+            class="w-full"
+          >
+            <template #value="{ value }">
+              <div v-if="value" style="display: flex; align-items: center; gap: 7px">
+                <span class="status-select-dot" :class="statusSelectDotClass(value)"></span>
+                <span>{{ filterOptions.find((o) => o.value === value)?.label }}</span>
+              </div>
+            </template>
+            <template #option="{ option }">
+              <div style="display: flex; align-items: center; gap: 8px">
+                <span class="status-select-dot" :class="statusSelectDotClass(option.value)"></span>
+                <span>{{ option.label }}</span>
+              </div>
+            </template>
+          </Select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">
+            <i class="pi pi-hospital"></i>
+            Jenis Rawat
+          </label>
+          <SelectButton
+            v-model="jenisRawatFilter"
+            :options="jenisRawatOptions"
+            optionLabel="label"
+            optionValue="value"
+            class="jenis-rawat-btn"
+          />
+        </div>
+        <div class="filter-group">
+          <div style="display: flex; gap: 6px; align-items: center">
+            <Button label="Cari" icon="pi pi-search" @click="fetchData(1)" />
+            <Button
+              icon="pi pi-refresh"
+              severity="secondary"
+              outlined
+              v-tooltip.top="'Reset filter'"
+              @click="resetFilter"
+            />
+            <span
+              class="countdown-badge"
+              :class="countdown <= 10 ? 'cd-danger' : countdown <= 30 ? 'cd-warn' : 'cd-ok'"
+              v-tooltip.top="'Auto-refresh berikutnya'"
+            >
+              <i class="pi pi-clock" style="font-size: 9px" />{{ countdown }}d
+            </span>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- ══ BANNER NOTIFIKASI BARU ══ -->
+    <Transition name="banner-slide">
+      <div v-if="showNewBanner && newLabCount > 0" class="new-lab-banner">
+        <i class="pi pi-bell" style="font-size: 1.1rem; flex-shrink: 0" />
+        <span style="flex: 1; min-width: 0">
+          <b>{{ newLabCount }} permintaan lab baru</b> masuk sejak terakhir cek
+        </span>
+        <button class="banner-dismiss-btn" @click="showNewBanner = false">
+          <i class="pi pi-eye" style="font-size: 11px" /> Tampilkan
+        </button>
+        <button class="banner-close-btn" @click="dismissBanner" title="Tutup &amp; hapus highlight">
+          <i class="pi pi-times" />
+        </button>
+      </div>
+    </Transition>
 
     <!-- Table Section -->
     <div class="tabs-section">
@@ -129,31 +200,35 @@
         striped-rows
         paginator
         rowHover
-        responsiveLayout="scroll"
         scrollable
-        scrollHeight="65vh"
-        :rows="25"
+        :rows="10"
         :rowsPerPageOptions="[10, 25, 50, 100]"
         size="small"
         class="elegant-datatable"
         tableStyle="min-width: 60rem"
         currentPageReportTemplate="{first}-{last} dari {totalRecords}"
         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport"
+        :rowClass="(row) => (newLabIds.has(labKey(row)) ? 'row-lab-baru' : null)"
       >
         <!-- Status -->
         <Column field="STATUS_PROGRESS" header="Status" style="width: 80px" frozen>
           <template #body="{ data }">
-            <Tag
-              :severity="getStatusColorClass(data.STATUS_PROGRESS)"
-              :value="
-                data.STATUS_PROGRESS === 'C'
-                  ? 'Selesai'
-                  : data.STATUS_PROGRESS === 'P'
-                    ? 'Proses'
-                    : 'Baru'
-              "
-              style="font-size: 0.68rem; padding: 2px 7px"
-            />
+            <div style="display: flex; flex-direction: column; gap: 3px; align-items: flex-start">
+              <Tag
+                :severity="getStatusColorClass(data.STATUS_PROGRESS)"
+                :value="
+                  data.STATUS_PROGRESS === 'C'
+                    ? 'Selesai'
+                    : data.STATUS_PROGRESS === 'P'
+                      ? 'Proses'
+                      : 'Baru'
+                "
+                style="font-size: 0.68rem; padding: 2px 7px"
+              />
+              <span v-if="newLabIds.has(labKey(data))" class="badge-baru-masuk">
+                <i class="pi pi-bell" style="font-size: 8px" /> baru masuk
+              </span>
+            </div>
           </template>
         </Column>
 
@@ -427,10 +502,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, reactive } from 'vue'
+import { ref, onMounted, onUnmounted, computed, reactive } from 'vue'
 import { useConfigStore } from '@/stores/config'
 import axios from 'axios'
 import DatePicker from 'primevue/datepicker'
+import Select from 'primevue/select'
 import { useAuthStore } from '@/stores/config'
 import { storeToRefs } from 'pinia'
 import { useToast } from 'primevue/usetoast'
@@ -443,6 +519,137 @@ const toast = useToast()
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+
+// ── Status filter & notifikasi ──
+const activeFilter = ref('ALL')
+const jenisRawatFilter = ref('SEMUA')
+const newLabIds = ref(new Set())
+const newLabCount = ref(0)
+const showNewBanner = ref(false)
+const countdown = ref(60)
+
+const jenisRawatOptions = [
+  { label: 'Semua', value: 'SEMUA' },
+  { label: 'Jalan', value: 'JALAN' },
+  { label: 'Inap', value: 'INAP' },
+]
+
+let autoRefreshTimer = null
+let countdownTimer = null
+
+const filterOptions = [
+  { label: 'Semua', value: 'ALL' },
+  { label: 'Baru', value: 'M' },
+  { label: 'Proses', value: 'P' },
+]
+
+const statusSelectDotClass = (val) => {
+  if (val === 'C') return 'ssd-success'
+  if (val === 'P') return 'ssd-success'
+  if (val === 'M') return 'ssd-warn'
+  return 'ssd-all'
+}
+
+const startAutoRefresh = () => {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer)
+  if (countdownTimer) clearInterval(countdownTimer)
+  countdown.value = 30
+  autoRefreshTimer = setInterval(fetchData.bind(null, 1), 30000)
+  countdownTimer = setInterval(() => {
+    countdown.value = Math.max(0, countdown.value - 1)
+  }, 1000)
+}
+
+const dismissBanner = () => {
+  showNewBanner.value = false
+  newLabIds.value = new Set()
+}
+
+const resetFilter = () => {
+  activeFilter.value = 'ALL'
+  jenisRawatFilter.value = 'SEMUA'
+  startDate.value = new Date()
+  endDate.value = new Date()
+  globalFilter.value = ''
+  fetchData(1)
+}
+
+let _audioCtx = null
+
+const initAudioCtx = () => {
+  try {
+    if (!_audioCtx) {
+      _audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+    }
+    if (_audioCtx.state === 'suspended') _audioCtx.resume()
+  } catch {
+    /* ignore */
+  }
+}
+
+const playNotifSound = () => {
+  try {
+    if (!_audioCtx) return
+    if (_audioCtx.state === 'suspended') _audioCtx.resume()
+    if (_audioCtx.state !== 'running') return
+    const ctx = _audioCtx
+    const master = ctx.createGain()
+    master.gain.value = 0.5
+    master.connect(ctx.destination)
+    const ding = (freq, start) => {
+      const osc = ctx.createOscillator()
+      const env = ctx.createGain()
+      osc.connect(env)
+      env.connect(master)
+      osc.type = 'sine'
+      osc.frequency.value = freq
+      env.gain.setValueAtTime(0, start)
+      env.gain.linearRampToValueAtTime(1, start + 0.008)
+      env.gain.exponentialRampToValueAtTime(0.001, start + 0.6)
+      osc.start(start)
+      osc.stop(start + 0.65)
+    }
+    // 3 nada ascending — do mi sol
+    ding(523, ctx.currentTime)
+    ding(659, ctx.currentTime + 0.18)
+    ding(784, ctx.currentTime + 0.36)
+  } catch {
+    /* ignore */
+  }
+}
+
+// ── Browser Notification ──
+const browserNotifGranted = ref(false)
+
+const requestBrowserNotifPermission = async () => {
+  if (!('Notification' in window)) return
+  if (Notification.permission === 'granted') {
+    browserNotifGranted.value = true
+    return
+  }
+  if (Notification.permission !== 'denied') {
+    const result = await Notification.requestPermission()
+    browserNotifGranted.value = result === 'granted'
+  }
+}
+
+const showBrowserNotif = (count, names = []) => {
+  if (!browserNotifGranted.value) return
+  const body =
+    names.length > 0
+      ? names.slice(0, 3).join(', ') + (names.length > 3 ? ` +${names.length - 3} lainnya` : '')
+      : `${count} permintaan pemeriksaan lab baru masuk`
+  const notif = new Notification('🔔 Permintaan Lab Baru', {
+    body,
+    icon: '/favicon.ico',
+    tag: 'lab-notif',
+    renotify: true,
+  })
+  notif.onclick = () => {
+    window.focus()
+    notif.close()
+  }
+}
 
 const showSpesimen = ref(false)
 
@@ -471,9 +678,21 @@ const globalFilter = ref('')
 const startDate = ref(new Date())
 const endDate = ref(new Date())
 
-// ✅ FIX 1: Computed property for filtered data
 const filteredData = computed(() => {
   return fact.value.filter((item) => {
+    // Filter by status
+    if (activeFilter.value === 'M') {
+      if (item.STATUS_PROGRESS === 'C' || item.STATUS_PROGRESS === 'P') return false
+    } else if (activeFilter.value !== 'ALL') {
+      if (item.STATUS_PROGRESS !== activeFilter.value) return false
+    }
+
+    // Filter by jenis rawat
+    if (jenisRawatFilter.value !== 'SEMUA') {
+      const jr = (item.JENISRAWAT || '').toUpperCase()
+      if (!jr.includes(jenisRawatFilter.value)) return false
+    }
+
     // Filter by global search
     if (globalFilter.value) {
       const searchTerm = globalFilter.value.toLowerCase()
@@ -629,10 +848,14 @@ const formatDateTimeForAPI_V2 = (date) => {
 }
 
 const listReceipts = ref([])
-// ✅ FIX 4: Fetch data functions
+const labKey = (r) => `${r.TRANS}|${r.TANGGAL}`
+
 const fetchData = async (mode, stts = null, nomr = null) => {
   try {
     loading.value = true
+
+    const isRefresh = fact.value.length > 0
+    const prevIds = isRefresh ? new Set(fact.value.map(labKey).filter(Boolean)) : null
 
     const payload = {
       id_client: id_client.value,
@@ -649,12 +872,33 @@ const fetchData = async (mode, stts = null, nomr = null) => {
       payload,
     )
 
-    // Set data + tambah field STTS_SPESIMEN = 'N'
-    fact.value = (response.data.response || []).map((item) => ({
+    const freshData = (response.data.response || []).map((item) => ({
       ...item,
-      STTS_SPESIMEN: 'N', // field baru
+      STTS_SPESIMEN: 'N',
     }))
 
+    if (isRefresh && prevIds) {
+      const newItems = freshData.filter((r) => !prevIds.has(labKey(r)))
+      if (newItems.length > 0) {
+        newLabCount.value = newItems.length
+        newLabIds.value = new Set(newItems.map(labKey))
+        showNewBanner.value = true
+        playNotifSound()
+        showBrowserNotif(newItems.length, newItems.map((r) => r.NAMA).filter(Boolean))
+        toast.add({
+          severity: 'info',
+          summary: `🔔 ${newItems.length} Permintaan Lab Baru`,
+          detail:
+            newItems
+              .slice(0, 3)
+              .map((r) => `• ${r.NAMA || r.TRANS}`)
+              .join('\n') + (newItems.length > 3 ? `\n• +${newItems.length - 3} lainnya` : ''),
+          life: 8000,
+        })
+      }
+    }
+
+    fact.value = freshData
     listReceipts.value = fact.value.map((item) => item.TRANS)
     await get_list_spesimen()
 
@@ -663,6 +907,8 @@ const fetchData = async (mode, stts = null, nomr = null) => {
     console.error('Error fetching data:', error)
     loading.value = false
     showError(error.message)
+  } finally {
+    startAutoRefresh()
   }
 }
 
@@ -877,7 +1123,8 @@ const get_by_kategori = async (selected) => {
 
 const fetchDataWithStatus = (status) => {
   globalFilter.value = ''
-  fetchData(1, status)
+  activeFilter.value = status === null ? 'ALL' : status
+  fetchData(1)
 }
 
 // ✅ FIX 5: Apply filters trigger
@@ -888,6 +1135,12 @@ const applyFilters = () => {
 onMounted(() => {
   fetchData(1)
   spesimenType()
+  requestBrowserNotifPermission()
+})
+
+onUnmounted(() => {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer)
+  if (countdownTimer) clearInterval(countdownTimer)
 })
 </script>
 
@@ -1439,5 +1692,170 @@ onMounted(() => {
 
 .card-body {
   overflow: auto;
+}
+
+/* ── Highlight baris baru ── */
+:deep(.elegant-datatable .row-lab-baru > td) {
+  background: #fffbeb !important;
+  border-left: 3px solid #f59e0b !important;
+  animation: row-flash 1.2s ease-in-out 3;
+}
+
+@keyframes row-flash {
+  0%,
+  100% {
+    background: #fffbeb !important;
+  }
+  50% {
+    background: #fef3c7 !important;
+  }
+}
+
+.badge-baru-masuk {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #d97706;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 10px;
+  padding: 1px 6px;
+  white-space: nowrap;
+  animation: pulse-badge 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* ── Jenis Rawat SelectButton ── */
+:deep(.jenis-rawat-btn .p-selectbutton-option) {
+  font-size: 0.78rem;
+  padding: 0.4rem 0.9rem;
+}
+
+/* ── Status select dot ── */
+.status-select-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.ssd-success {
+  background: var(--p-green-500);
+}
+.ssd-warn {
+  background: var(--p-orange-400);
+}
+.ssd-danger {
+  background: var(--p-red-500);
+}
+.ssd-all {
+  background: var(--p-surface-400);
+}
+
+/* ── Countdown badge ── */
+.countdown-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: 3px 9px;
+  border-radius: 12px;
+  white-space: nowrap;
+  transition:
+    background 0.3s,
+    color 0.3s;
+}
+.cd-ok {
+  background: var(--p-green-50);
+  color: var(--p-green-700);
+}
+.cd-warn {
+  background: var(--p-orange-50);
+  color: var(--p-orange-700);
+}
+.cd-danger {
+  background: var(--p-red-50);
+  color: var(--p-red-700);
+  animation: cd-pulse 1s ease-in-out infinite;
+}
+@keyframes cd-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* ── New Lab Banner ── */
+.new-lab-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  color: #fff;
+  border-radius: 8px;
+  font-size: 13px;
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.35);
+}
+.banner-dismiss-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.banner-dismiss-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+.banner-close-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  padding: 4px 6px;
+  font-size: 13px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+.banner-close-btn:hover {
+  color: #fff;
+}
+.banner-slide-enter-active,
+.banner-slide-leave-active {
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+.banner-slide-enter-from,
+.banner-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 </style>

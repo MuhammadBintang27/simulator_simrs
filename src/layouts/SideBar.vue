@@ -968,8 +968,8 @@ body.sb-collapsed .main-header.navbar {
   margin-left: 64px;
 }
 
-/* ── Mobile: sidebar sebagai drawer dari kiri ── */
-@media (max-width: 768px) {
+/* ── Mobile/Tablet (≤991px): sidebar sebagai drawer dari kiri ── */
+@media (max-width: 991px) {
   .sb {
     transform: translateX(-100%);
     width: 250px !important;

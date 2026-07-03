@@ -251,7 +251,7 @@
   <!-- Action Bar -->
   <div class="ic-action-bar mt-3">
     <div class="ic-action-info">
-      <i class="pi pi-info-circle me-2" style="color: #6c757d"></i>
+      <i class="pi pi-info-circle me-2" style="color: var(--p-text-muted-color)"></i>
       <span
         >Pastikan semua konfirmasi dicentang dan tanda tangan sudah dibubuhkan sebelum
         menyimpan.</span
@@ -269,7 +269,7 @@
       <Button
         label="Simpan Consent"
         icon="pi pi-save"
-        class="btn-save-ic"
+        severity="success"
         :loading="loading"
         @click="simpanData"
       />
@@ -733,10 +733,10 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: linear-gradient(135deg, #1a3a5c 0%, #2563a8 100%);
-  border-radius: 34px;
+  background: var(--p-primary-color);
+  border-radius: var(--p-border-radius);
   padding: 1rem 1.5rem;
-  color: #fff;
+  color: var(--p-primary-contrast-color);
 }
 .ic-banner-icon {
   flex-shrink: 0;
@@ -757,11 +757,11 @@ onUnmounted(() => {
 
 /* ====== Cards ====== */
 .ic-card {
-  border-radius: 10px;
+  border-radius: 4px;
   overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  background: #fff;
-  border: 1px solid #e9ecef;
+  box-shadow: var(--p-card-shadow);
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
 }
 .ic-card-header {
   display: flex;
@@ -769,9 +769,9 @@ onUnmounted(() => {
   padding: 0.7rem 1.1rem;
   font-weight: 700;
   font-size: 0.88rem;
-  color: #fff;
+  color: var(--p-primary-contrast-color);
   letter-spacing: 0.04em;
-  background: linear-gradient(135deg, #1a3a5c, #2563a8);
+  background: var(--p-primary-color);
 }
 .ic-card-header small {
   font-size: 0.7rem;
@@ -779,10 +779,10 @@ onUnmounted(() => {
   opacity: 0.88;
 }
 .consent-header {
-  background: linear-gradient(135deg, #14532d, #16a34a);
+  background: var(--p-green-600);
 }
 .ttd-header {
-  background: linear-gradient(135deg, #4a1259, #7c3aed);
+  background: var(--p-violet-600);
 }
 .ic-card-body {
   padding: 1rem 1.1rem;
@@ -796,32 +796,32 @@ onUnmounted(() => {
   display: block;
   font-size: 0.8rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--p-text-color);
   margin-bottom: 0.3rem;
 }
 .field-label-sm {
   display: block;
   font-size: 0.73rem;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--p-text-muted-color);
   margin-bottom: 0.2rem;
 }
 
 /* ====== Consent ====== */
 .consent-intro {
   font-size: 0.88rem;
-  color: #374151;
+  color: var(--p-text-color);
   margin-bottom: 0.75rem;
 }
 .signer-box {
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
+  background: var(--p-primary-50);
+  border: 1px solid var(--p-primary-200);
   border-radius: 8px;
   padding: 0.85rem 1rem;
 }
 .consent-text-block {
   font-size: 0.84rem;
-  color: #374151;
+  color: var(--p-text-color);
   line-height: 1.7;
 }
 .consent-list {
@@ -837,7 +837,7 @@ onUnmounted(() => {
 }
 .risk-list li {
   font-size: 0.79rem;
-  color: #dc2626;
+  color: var(--p-red-600);
   margin-bottom: 0.15rem;
 }
 .consent-checks {
@@ -851,11 +851,11 @@ onUnmounted(() => {
   align-items: flex-start;
   gap: 0.6rem;
   padding: 0.5rem 0.75rem;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: var(--p-surface-50);
+  border: 1px solid var(--p-content-border-color);
   border-radius: 7px;
   font-size: 0.82rem;
-  color: #374151;
+  color: var(--p-text-color);
   cursor: pointer;
 }
 .consent-check-item label {
@@ -867,7 +867,7 @@ onUnmounted(() => {
   margin: 1rem 0 0.4rem;
   font-size: 0.82rem;
   font-style: italic;
-  color: #6b7280;
+  color: var(--p-text-muted-color);
 }
 .consent-date-row {
   display: flex;
@@ -883,17 +883,17 @@ onUnmounted(() => {
 }
 
 .signer-card {
-  border: 1px solid #e9ecef;
-  border-radius: 4px;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--p-border-radius);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--p-content-background);
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
   transition: box-shadow 0.15s;
 }
 .signer-card:hover {
-  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.12);
+  box-shadow: var(--p-card-shadow);
 }
 
 .signer-card-top {
@@ -901,8 +901,8 @@ onUnmounted(() => {
   align-items: flex-start;
   gap: 0.3rem;
   padding: 0.65rem 0.75rem 0.5rem;
-  background: #faf5ff;
-  border-bottom: 1px solid #f3e8ff;
+  background: var(--p-surface-50);
+  border-bottom: 1px solid var(--p-content-border-color);
 }
 .signer-fields {
   flex: 1;
@@ -920,17 +920,17 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
+  background: var(--p-surface-50);
+  border-bottom: 1px solid var(--p-content-border-color);
   position: relative;
   transition: background 0.15s;
   overflow: hidden;
 }
 .canvas-preview-area:hover {
-  background: #eff6ff;
+  background: var(--p-primary-50);
 }
 .canvas-preview-area.has-signature {
-  background: #fff;
+  background: var(--p-content-background);
 }
 
 .signature-preview-img {
@@ -945,7 +945,7 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   gap: 0.4rem;
-  color: #cbd5e1;
+  color: var(--p-surface-400);
   font-size: 0.78rem;
   text-align: center;
   padding: 1rem;
@@ -960,8 +960,8 @@ onUnmounted(() => {
   position: absolute;
   bottom: 6px;
   right: 6px;
-  background: #dcfce7;
-  color: #15803d;
+  background: var(--p-green-100);
+  color: var(--p-green-700);
   border-radius: 20px;
   padding: 2px 8px;
   font-size: 0.65rem;
@@ -970,38 +970,38 @@ onUnmounted(() => {
 
 .signer-card-foot {
   padding: 0.35rem 0.75rem;
-  border-bottom: 1px solid #f3e8ff;
-  background: #faf5ff;
+  border-bottom: 1px solid var(--p-content-border-color);
+  background: var(--p-surface-50);
 }
 .signer-name-line {
   text-align: center;
   font-size: 0.72rem;
-  color: #6b7280;
+  color: var(--p-text-muted-color);
   padding: 0.4rem 0.75rem;
-  border-top: 1px solid #f3e8ff;
+  border-top: 1px solid var(--p-content-border-color);
   font-style: italic;
 }
 
 /* Add Signer Card */
 .add-signer-card {
   min-height: 130px;
-  border: 2px dashed #ddd6fe;
+  border: 2px dashed var(--p-primary-200);
   border-radius: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  color: #7c3aed;
+  color: var(--p-violet-600);
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
-  background: #faf5ff;
+  background: var(--p-surface-50);
 }
 .add-signer-card:hover {
-  background: #f5f3ff;
-  border-color: #7c3aed;
+  background: var(--p-primary-50);
+  border-color: var(--p-primary-color);
 }
 .add-signer-card .pi {
   font-size: 1.5rem;
@@ -1009,8 +1009,8 @@ onUnmounted(() => {
 
 /* ====== Action Bar ====== */
 .ic-action-bar {
-  background: #fff;
-  border: 1px solid #e9ecef;
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
   border-radius: 10px;
   padding: 0.8rem 1.2rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -1024,16 +1024,11 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   font-size: 0.8rem;
-  color: #6c757d;
+  color: var(--p-text-muted-color);
 }
 .ic-action-buttons {
   display: flex;
   align-items: center;
-}
-.btn-save-ic {
-  background: linear-gradient(135deg, #1a3a5c, #2563a8) !important;
-  border: none !important;
-  font-weight: 600;
 }
 
 /* ====== Fullscreen Overlay ====== */
@@ -1041,7 +1036,7 @@ onUnmounted(() => {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: #fff;
+  background: var(--p-content-background);
   display: flex;
   flex-direction: column;
 }
@@ -1051,7 +1046,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1.25rem;
-  background: linear-gradient(135deg, #4a1259, #7c3aed);
+  background: var(--p-violet-600);
   color: #fff;
   flex-shrink: 0;
   gap: 1rem;
@@ -1079,7 +1074,7 @@ onUnmounted(() => {
   position: relative;
   overflow: hidden;
   cursor: crosshair;
-  border-bottom: 2px dashed #ddd6fe;
+  border-bottom: 2px dashed var(--p-primary-200);
 }
 
 .fs-canvas {
@@ -1097,7 +1092,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
-  color: #e2d9f3;
+  color: var(--p-surface-300);
   font-size: 1.1rem;
   pointer-events: none;
   user-select: none;
@@ -1110,9 +1105,9 @@ onUnmounted(() => {
   flex-shrink: 0;
   text-align: center;
   padding: 0.6rem;
-  background: #f9fafb;
+  background: var(--p-surface-50);
   font-size: 0.75rem;
-  color: #9ca3af;
+  color: var(--p-text-muted-color);
 }
 
 /* Transition */
@@ -1171,7 +1166,7 @@ onUnmounted(() => {
   transition: background 0.15s;
 }
 .photo-retake-btn:hover {
-  background: rgba(124, 58, 237, 0.85);
+  background: color-mix(in srgb, var(--p-violet-600) 85%, transparent);
 }
 
 .photo-empty {
@@ -1182,18 +1177,18 @@ onUnmounted(() => {
   gap: 0.3rem;
   height: 80px;
   cursor: pointer;
-  color: #94a3b8;
+  color: var(--p-text-muted-color);
   font-size: 0.75rem;
   font-weight: 600;
-  background: #f8fafc;
-  border-bottom: 1px dashed #e2e8f0;
+  background: var(--p-surface-50);
+  border-bottom: 1px dashed var(--p-content-border-color);
   transition:
     background 0.15s,
     color 0.15s;
 }
 .photo-empty:hover {
-  background: #eff6ff;
-  color: #3b82f6;
+  background: var(--p-primary-50);
+  color: var(--p-primary-color);
 }
 .photo-empty .pi {
   font-size: 1.4rem;
@@ -1253,7 +1248,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   background: rgba(15, 23, 42, 0.9);
-  color: #f87171;
+  color: var(--p-red-400);
   font-size: 0.9rem;
   text-align: center;
   padding: 2rem;
@@ -1277,7 +1272,7 @@ onUnmounted(() => {
 }
 .camera-hint {
   font-size: 0.72rem;
-  color: #64748b;
+  color: var(--p-text-muted-color);
   text-align: center;
 }
 

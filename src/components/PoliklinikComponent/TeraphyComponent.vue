@@ -307,6 +307,7 @@
         :rowHover="true"
         :showGridlines="false"
         stripedRows
+        :rowClass="getRowClass"
       >
         <template #empty>
           <div class="tbl-empty">
@@ -331,7 +332,7 @@
         <Column style="width: 56px; text-align: center" header="Rutin">
           <template #body="slotProps">
             <Checkbox
-              v-if="slotProps.data.JENIS_R == 'R/'"
+              v-if="slotProps.data.JENIS_R === 'R/' && !_isRacikanParent(slotProps.data)"
               v-model="slotProps.data.obat_rutin"
               :value="slotProps.data.obat_rutin"
               @change="onCheckObat(slotProps.data)"
@@ -342,8 +343,21 @@
 
         <Column field="NAMA" header="Nama Obat" style="min-width: 180px">
           <template #body="slotProps">
-            <div class="obat-cell-name">{{ slotProps.data.NAMA }}</div>
-            <span class="obat-cell-barcode">{{ slotProps.data.BARCODE }}</span>
+            <div
+              class="obat-cell-name"
+              :class="{ 'racikan-child-name': _isRacikanChild(slotProps.data) }"
+            >
+              <i v-if="_isRacikanParent(slotProps.data)" class="pi pi-list racikan-parent-icon" />
+              <i
+                v-else-if="_isRacikanChild(slotProps.data)"
+                class="pi pi-arrow-right racikan-child-icon"
+              />
+              {{ slotProps.data.NAMA }}
+            </div>
+            <span v-if="!_isRacikan(slotProps.data)" class="obat-cell-barcode">{{
+              slotProps.data.BARCODE
+            }}</span>
+            <span v-else-if="_isRacikanParent(slotProps.data)" class="racikan-label">Racikan</span>
           </template>
         </Column>
 
@@ -907,16 +921,27 @@ const showSuccess = (message = 'Operation successful') => {
 const confirmRemoveItemObat = (index) => {
   const obat = selectedObatObatan.value[index]
   const namaObat = obat?.NAMA
+  const isParent = _isRacikanParent(obat)
+
+  const childCount = isParent
+    ? selectedObatObatan.value.filter(
+        (item) => item.RACIKAN_GROUP_ID === obat.RACIKAN_GROUP_ID && !_isRacikanParent(item),
+      ).length
+    : 0
+
+  const message = isParent
+    ? `Hapus racikan "${namaObat}" beserta ${childCount} item komposisinya?`
+    : `Anda ingin menghapus item "${namaObat}"?`
 
   confirm.require({
-    message: `Anda ingin menghapus item "${namaObat}"?`,
+    message,
     header: 'Konfirmasi Hapus',
     icon: 'pi pi-exclamation-triangle',
     rejectLabel: 'Batal',
     acceptLabel: 'Hapus',
     rejectClass: 'p-button-secondary p-button-outlined',
     acceptClass: 'p-button-danger',
-    accept: () => removeItem(index),
+    accept: () => removeItem(index, obat),
   })
 }
 
@@ -992,8 +1017,32 @@ const clearAllItems = () => {
   selectedObatObatan.value = []
 }
 
-const removeItem = (index) => {
-  selectedObatObatan.value.splice(index, 1)
+const _isRacikanParent = (item) =>
+  item.JENIS_R === 'R/' &&
+  String(item.BARCODE ?? '').trim() === '00000' &&
+  String(item.AS_PARENT ?? '') === '1'
+
+const _isRacikanChild = (item) =>
+  item.JENIS_R === '' &&
+  String(item.BARCODE ?? '').trim() === '00000' &&
+  String(item.AS_PARENT ?? '') === '0'
+
+const _isRacikan = (item) => _isRacikanParent(item) || _isRacikanChild(item)
+
+const removeItem = (index, item) => {
+  if (_isRacikanParent(item) && item?.RACIKAN_GROUP_ID) {
+    selectedObatObatan.value = selectedObatObatan.value.filter(
+      (o) => o.RACIKAN_GROUP_ID !== item.RACIKAN_GROUP_ID,
+    )
+  } else {
+    selectedObatObatan.value.splice(index, 1)
+  }
+}
+
+const getRowClass = (data) => {
+  if (_isRacikanParent(data)) return 'row-racikan-parent'
+  if (_isRacikanChild(data)) return 'row-racikan-child'
+  return ''
 }
 
 const riwayat_obat = ref([])
@@ -1101,7 +1150,7 @@ const saveItems = async () => {
   loading.value = true
   try {
     const url = configStore.apiApotikUrl
-    const response = await axios.post(`${url}/index.php/api/sales/insert_sales_v2`, headerObat)
+    const response = await axios.post(`${url}/index.php/api/sales/insert_sales_v3`, headerObat)
 
     console.log(response.data)
     if (response.data?.metadata?.code == 200) {
@@ -1133,6 +1182,8 @@ const ResepRacikan = async () => {
       return
     }
 
+    const groupId = `RR_${Date.now()}`
+
     const mainRacikanItem = {
       BARCODE: '00000',
       ID_BARANG: '00000',
@@ -1145,10 +1196,11 @@ const ResepRacikan = async () => {
       QTY_RACIK: 0,
       PERSEDIAAN: 0,
       MEREK: '',
-      QTY: 0,
+      QTY: jumlQtyResepRacikan.value,
       QTY_REQ: jumlQtyResepRacikan.value,
       JENIS: '',
       SATUAN_RACIK: SatuanRacikan.value,
+      RACIKAN_GROUP_ID: groupId,
     }
 
     addItem(mainRacikanItem)
@@ -1171,6 +1223,7 @@ const ResepRacikan = async () => {
           QTY: 0,
           JENIS: '',
           SATUAN_RACIK: '',
+          RACIKAN_GROUP_ID: groupId,
         }
         addItem(setItem, 2)
       }
@@ -1263,7 +1316,7 @@ const addItem = (item, mode) => {
       STATUS_PROGRESS: 'M',
       SUB_BARCODE: item.SUB_BARCODE || '',
       OBAT_OBATAN: 1,
-      AS_PARENT: mode == 1 ? 0 : 1,
+      AS_PARENT: item.AS_PARENT ?? 0,
       SAT_RACIK: '',
       FLAG: 'NEW LINE',
       JENIS: item.JENIS || '',
@@ -1273,6 +1326,7 @@ const addItem = (item, mode) => {
       REMARK_ITEM: item.REMARK_ITEM || '',
       TANGGAL_TRANS: currentDateTime.value,
       JML_RACIK: 0,
+      RACIKAN_GROUP_ID: item.RACIKAN_GROUP_ID || '',
     })
   } catch (error) {
     console.error(error)
@@ -2052,6 +2106,49 @@ onMounted(() => {
 .racikan-item-input {
   flex: 1;
   font-size: 12px !important;
+}
+
+/* ── Racikan row styles ──────────────────────── */
+:deep(.row-racikan-parent > td) {
+  background: #fdf2f8 !important;
+  border-left: 3px solid #db2777;
+}
+:deep(.row-racikan-parent:hover > td) {
+  background: #fce7f3 !important;
+}
+:deep(.row-racikan-child > td) {
+  background: #fdf4ff !important;
+  border-left: 3px solid #e9d5ff;
+  padding-left: 1.4rem !important;
+  color: #6b21a8;
+}
+:deep(.row-racikan-child:hover > td) {
+  background: #f3e8ff !important;
+}
+
+.racikan-parent-icon {
+  color: #db2777;
+  font-size: 11px;
+  margin-right: 5px;
+}
+.racikan-child-icon {
+  color: #a855f7;
+  font-size: 10px;
+  margin-right: 5px;
+}
+.racikan-child-name {
+  color: #7e22ce;
+}
+.racikan-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: #db2777;
+  background: #fce7f3;
+  border: 1px solid #fbcfe8;
+  padding: 1px 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
 /* ── DataTable global tweaks ─────────────────── */

@@ -180,7 +180,7 @@
         <div class="rj-footer-inner">
           <div class="rj-footer-ttl">Dokter Penanggung Jawab Pasien</div>
           <div class="rj-qr-wrap">
-            <QrcodeVue :value="noreg" :size="90" level="M" render-as="svg" />
+            <QrcodeVue :value="noreg" :size="40" level="M" render-as="svg" />
           </div>
           <div class="rj-footer-line"></div>
           <div class="rj-footer-dokter">{{ dataPasien?.NAMADOKTER || '—' }}</div>
@@ -220,10 +220,10 @@ const anamnesis = computed(() => {
 })
 
 const bmiScale = [
-  { range: '< 18.5',    label: 'Kurus',    color: '#64b5f6' },
-  { range: '18.5–24.9', label: 'Normal',   color: '#66bb6a' },
-  { range: '25.0–29.9', label: 'Gemuk',    color: '#ffa726' },
-  { range: '≥ 30',      label: 'Obesitas', color: '#ef5350' },
+  { range: '< 18.5', label: 'Kurus', color: '#64b5f6' },
+  { range: '18.5–24.9', label: 'Normal', color: '#66bb6a' },
+  { range: '25.0–29.9', label: 'Gemuk', color: '#ffa726' },
+  { range: '≥ 30', label: 'Obesitas', color: '#ef5350' },
 ]
 
 const bmi = computed(() => {
@@ -237,8 +237,8 @@ const bmiInfo = computed(() => {
   const v = parseFloat(bmi.value)
   if (isNaN(v)) return bmiScale[1]
   if (v < 18.5) return bmiScale[0]
-  if (v < 25)   return bmiScale[1]
-  if (v < 30)   return bmiScale[2]
+  if (v < 25) return bmiScale[1]
+  if (v < 30) return bmiScale[2]
   return bmiScale[3]
 })
 
@@ -283,7 +283,6 @@ const listTindakan = computed(() => {
     .map((s) => s.trim())
     .filter((s) => s.length > 0)
 })
-
 
 const fetchData = async () => {
   if (!props.noreg) return

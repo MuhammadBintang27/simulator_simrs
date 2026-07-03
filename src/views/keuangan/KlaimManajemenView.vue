@@ -233,6 +233,15 @@
               @click="loopPengecheckanSEP"
             />
             <Button
+              icon="pi pi-file-pdf"
+              label="Export PDF Batch"
+              size="small"
+              severity="danger"
+              outlined
+              :loading="isBatchExporting"
+              @click="showBatchDialog = true"
+            />
+            <Button
               icon="pi pi-cog"
               label="Atur Kolom"
               size="small"
@@ -279,6 +288,7 @@
           </div>
         </div>
         <DataTable
+          ref="dtRef"
           v-model:filters="filters"
           :value="filteredByStts"
           striped-rows
@@ -295,6 +305,9 @@
           class="p-datatable-sm"
           scrollable
           scrollHeight="700px"
+          resizableColumns
+          columnResizeMode="expand"
+          @columnResizeEnd="saveColumnWidths"
           :globalFilterFields="[
             'NAMAPASIEN',
             'POLI',
@@ -305,26 +318,23 @@
             'STTS_PULANG',
           ]"
         >
-          <!-- Kolom Data Dasar -->
-          <Column
-            v-if="isColumnVisible('NOPENDAFTARAN')"
-            field="NOPENDAFTARAN"
-            header="NOREG"
-            sortable
-          >
-            <template #body="{ data }">
-              <Button
-                icon="pi pi-file-pdf"
-                label="ResumeMedis"
-                size="small"
-                severity="info"
-                outlined
-                class="round-button2"
-                @click="ShowDetailsdata(data)"
-              /> </template
-          ></Column>
           <!-- "printResumePasien(data)" -->
-          <Column v-if="isColumnVisible('NOMR')" field="NOMR" header="NOMR" sortable />
+          <Column
+            v-if="isColumnVisible('NOMR')"
+            field="NOMR"
+            header="NOMR"
+            sortable
+            :showFilterMenu="false"
+          >
+            <template #filter="{ filterModel, filterCallback }">
+              <InputText
+                v-model="filterModel.value"
+                @input="filterCallback()"
+                placeholder="Cari NOMR..."
+                class="p-column-filter"
+              />
+            </template>
+          </Column>
           <Column
             v-if="isColumnVisible('NAMAPASIEN')"
             field="NAMAPASIEN"
@@ -350,7 +360,19 @@
             style="min-width: 4rem"
             sortable
           />
-
+          <!-- Kolom Data Dasar -->
+          <Column v-if="isColumnVisible('NOPENDAFTARAN')" field="NOPENDAFTARAN" header="NOREG">
+            <template #body="{ data }">
+              <Button
+                icon="pi pi-file-pdf"
+                label="..."
+                size="small"
+                severity="info"
+                outlined
+                class="round-button2"
+                @click="ShowDetailsdata(data)"
+              /> </template
+          ></Column>
           <Column
             v-if="isColumnVisible('NOTELP')"
             field="NOTELP"
@@ -364,17 +386,14 @@
             header="NOSEP"
             style="min-width: 4rem"
             sortable
+            :filterMatchModeOptions="[{ label: 'Contains', value: 'contains' }]"
           >
             <template #filter="{ filterModel, filterCallback }">
-              <MultiSelect
-                :maxSelectedLabels="3"
+              <InputText
                 v-model="filterModel.value"
-                @change="filterCallback()"
-                :options="noSEP"
-                filter
-                placeholder="Pilih Cara Bayar"
+                @input="filterCallback()"
+                placeholder="Cari No. SEP..."
                 class="p-column-filter"
-                showClear
               />
             </template>
           </Column>
@@ -387,11 +406,13 @@
                   'status-cell-success': data.STTS_CODER == 1,
                   'status-cell-warning': data.STTS_CODER == 2,
                   'status-cell-danger': data.STTS_CODER == 0,
+                  'status-cell-info': data.STTS_CODER == 3,
                 }"
               >
                 <small v-if="data.STTS_CODER == 1" class="badge badge-success">C</small>
                 <small v-if="data.STTS_CODER == 2" class="badge badge-warning">P</small>
                 <small v-if="data.STTS_CODER == 0" class="badge badge-danger">M</small>
+                <small v-if="data.STTS_CODER == 3" class="badge badge-info">S</small>
               </span>
             </template>
             <template #filter="{ filterModel, filterCallback }">
@@ -717,16 +738,229 @@
       />
     </template>
   </Dialog>
+  <!-- ── Dialog: Export PDF Batch ────────────────────────────────────── -->
+  <Dialog
+    v-model:visible="showBatchDialog"
+    :style="{ width: '600px' }"
+    modal
+    :closable="!isBatchExporting"
+    header="Export PDF Batch — Rekam Medis"
+  >
+    <div v-if="!isBatchExporting && batchLog.length === 0">
+      <!-- Folder Picker -->
+      <div class="batch-folder-row" v-if="supportsFilePicker">
+        <template v-if="!dirHandleName">
+          <i class="pi pi-folder" style="color: #888; font-size: 18px; flex-shrink: 0"></i>
+          <div style="flex: 1">
+            <div style="font-size: 13px; font-weight: 600; color: #333">Pilih folder tujuan</div>
+            <div style="font-size: 11px; color: #888">
+              Semua PDF akan disimpan langsung ke folder pilihan Anda
+            </div>
+          </div>
+          <Button
+            label="Pilih Folder"
+            icon="pi pi-folder-open"
+            size="small"
+            severity="secondary"
+            outlined
+            @click="selectDownloadFolder"
+          />
+        </template>
+        <template v-else>
+          <i class="pi pi-folder-open" style="color: #16a34a; font-size: 18px; flex-shrink: 0"></i>
+          <div style="flex: 1">
+            <div style="font-size: 13px; font-weight: 700; color: #111">{{ dirHandleName }}</div>
+            <div style="font-size: 11px; margin-top: 2px">
+              <span v-if="isScanning" style="color: #888">
+                <i class="pi pi-spin pi-spinner"></i> Membaca isi folder...
+              </span>
+              <template v-else>
+                <span style="color: #16a34a">{{ existingFilesCount }} file PDF ditemukan</span>
+                <span v-if="batchSkipCount > 0" style="color: #d97706; margin-left: 8px">
+                  <i class="pi pi-forward"></i> {{ batchSkipCount }} akan di-skip
+                </span>
+                <span v-else-if="existingFilesCount > 0" style="color: #6b7280; margin-left: 8px">
+                  Tidak ada yang cocok
+                </span>
+              </template>
+            </div>
+          </div>
+          <Button
+            label="Scan Ulang"
+            icon="pi pi-refresh"
+            size="small"
+            severity="secondary"
+            outlined
+            :loading="isScanning"
+            @click="scanFolderForExisting"
+          />
+          <Button
+            label="Ganti"
+            icon="pi pi-pencil"
+            size="small"
+            severity="secondary"
+            text
+            @click="selectDownloadFolder"
+          />
+        </template>
+      </div>
+      <div class="batch-folder-row batch-folder-info" v-else>
+        <i class="pi pi-download" style="color: #888; font-size: 15px; flex-shrink: 0"></i>
+        <div style="font-size: 11px; color: #666">
+          Browser tidak mendukung pemilihan folder — file akan diunduh satu per satu ke folder
+          unduhan default.
+        </div>
+      </div>
+
+      <!-- Kualitas PDF -->
+      <div class="batch-quality-row">
+        <span class="batch-quality-label"><i class="pi pi-sliders-h"></i> Kualitas PDF</span>
+        <div class="batch-quality-seg">
+          <button
+            v-for="p in BATCH_PDF_PRESETS"
+            :key="p.key"
+            class="batch-qbtn"
+            :class="{ active: batchPdfQuality === p.key }"
+            @click="setBatchPdfQuality(p.key)"
+            :title="p.desc"
+          >
+            <span class="bqbtn-label">{{ p.label }}</span>
+            <span class="bqbtn-size">{{ p.size }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Info jumlah data -->
+      <div class="batch-info">
+        <i class="pi pi-info-circle" style="color: #4a7ab5; font-size: 20px; flex-shrink: 0"></i>
+        <div style="flex: 1">
+          <div style="font-weight: 600; margin-bottom: 4px">
+            Total <strong>{{ batchDataToExport.length }}</strong> berkas RME
+            <template v-if="batchSkipCount > 0">
+              —
+              <span style="color: #16a34a"
+                >{{ batchDataToExport.length - batchSkipCount }} akan diproses</span
+              >,
+              <span style="color: #d97706">{{ batchSkipCount }} di-skip</span>
+            </template>
+          </div>
+          <div style="font-size: 12px; color: #666">
+            File yang sudah ada di folder akan dilewati secara otomatis.
+          </div>
+          <div
+            v-if="batchDataToExport.length - batchSkipCount > 30"
+            style="margin-top: 8px; color: #c0392b; font-size: 12px"
+          >
+            <i class="pi pi-exclamation-triangle"></i>
+            Lebih dari 30 berkas akan diproses — membutuhkan waktu cukup lama.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="isBatchExporting || batchLog.length > 0">
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 6px;
+        "
+      >
+        <span style="font-size: 13px; color: #555">
+          <span v-if="isBatchExporting">
+            Memproses
+            <strong>{{ batchCurrentIdx + 1 }}</strong> /
+            <strong>{{ batchLog.length }}</strong>
+          </span>
+          <span v-else style="color: #16a34a; font-weight: 600">
+            <i class="pi pi-check-circle"></i>
+            Selesai —
+            {{ batchLog.filter((x) => x.status === 'done').length }} berhasil,
+            {{ batchLog.filter((x) => x.status === 'skipped').length }} di-skip,
+            {{ batchLog.filter((x) => x.status === 'error').length }} gagal
+          </span>
+        </span>
+        <span style="font-size: 12px; font-weight: 700; color: #162d4e">{{ batchProgress }}%</span>
+      </div>
+      <ProgressBar :value="batchProgress" style="margin-bottom: 10px; height: 8px" />
+
+      <div class="batch-log-scroll">
+        <div
+          v-for="(item, idx) in batchLog"
+          :key="item.noreg"
+          class="batch-log-item"
+          :class="`batch-log-${item.status}`"
+        >
+          <span class="batch-log-idx">{{ idx + 1 }}</span>
+          <span class="batch-log-icon">
+            <i v-if="item.status === 'waiting'" class="pi pi-clock"></i>
+            <i v-else-if="item.status === 'processing'" class="pi pi-spin pi-spinner"></i>
+            <i v-else-if="item.status === 'done'" class="pi pi-check-circle"></i>
+            <i v-else-if="item.status === 'skipped'" class="pi pi-forward"></i>
+            <i v-else class="pi pi-times-circle"></i>
+          </span>
+          <span class="batch-log-name">{{ item.nama }}</span>
+          <span class="batch-log-noreg">{{ item.nosep }}</span>
+          <span v-if="item.status === 'error'" class="batch-log-err">{{ item.error }}</span>
+          <button
+            v-if="item.status === 'error' && !isBatchExporting"
+            class="batch-resume-btn"
+            @click="resumeItem(item)"
+            title="Ulangi item ini"
+          >
+            <i class="pi pi-refresh"></i> Ulangi
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <template #footer>
+      <Button
+        v-if="!isBatchExporting && batchLog.length === 0"
+        label="Mulai Export"
+        icon="pi pi-file-pdf"
+        severity="danger"
+        @click="startBatchExport"
+        :disabled="batchDataToExport.length === 0"
+      />
+      <Button
+        v-if="isBatchExporting"
+        label="Batalkan"
+        icon="pi pi-times"
+        severity="secondary"
+        outlined
+        @click="cancelBatchExport = true"
+      />
+      <Button
+        v-if="!isBatchExporting && errorCount > 0"
+        :label="`Resume Gagal (${errorCount})`"
+        icon="pi pi-refresh"
+        severity="warning"
+        @click="resumeAllFailed"
+      />
+      <Button
+        v-if="!isBatchExporting && batchLog.length > 0"
+        label="Tutup"
+        icon="pi pi-times"
+        severity="secondary"
+        outlined
+        @click="closeBatchDialog"
+      />
+    </template>
+  </Dialog>
+
   <Toast />
   <KlaimResumeComponent
     v-model:showKlaim="showKlaim"
-    :noregister="selectedNoreg"
+    :datapasien="selectedNoreg"
     @saved="onKlaimSaved"
   />
+  <KlaimEntriVue v-model:showDialog="showKlaimEntri" :datapasien="selectedNoreg" />
 </template>
 
 <script setup>
-import { ref, onMounted, computed, TransitionGroup, nextTick, watch } from 'vue'
+import { ref, onMounted, computed, nextTick, watch } from 'vue'
 import { useConfigStore } from '@/stores/config'
 import axios from 'axios'
 import DatePicker from 'primevue/datepicker'
@@ -739,7 +973,7 @@ import Badge from 'primevue/badge'
 
 const configStore = useConfigStore()
 const authStore = useAuthStore()
-const { id_client, user_id } = storeToRefs(authStore)
+const { id_client, user_id, group_user } = storeToRefs(authStore)
 const toast = useToast()
 import { useRouter } from 'vue-router'
 const router = useRouter()
@@ -747,14 +981,246 @@ const router = useRouter()
 const ShowProgressCheckSEP = ref(false)
 
 import KlaimResumeComponent from '@/components/Keuangan/KlaimResumeComponent.vue'
+import KlaimEntriVue from '@/views/keuangan/JKN/KlaimEntriVue.vue'
 
 const loading = ref(false)
 const startDate = ref(new Date())
 const endDate = ref(new Date())
 
+// ── Batch Export PDF ────────────────────────────────────────────────────────
+const showBatchDialog = ref(false)
+const isBatchExporting = ref(false)
+const batchProgress = ref(0)
+const batchCurrentIdx = ref(0)
+const batchLog = ref([])
+const cancelBatchExport = ref(false)
+
+// ── Kualitas PDF batch (disinkron dengan localStorage yg dibaca RMEViewer) ──
+const BATCH_PDF_PRESETS = [
+  { key: 'tinggi', label: 'Tinggi', size: '~3–8 MB', desc: 'Kualitas terbaik, file besar' },
+  { key: 'sedang', label: 'Sedang', size: '~1–3 MB', desc: 'Seimbang antara kualitas & ukuran' },
+  { key: 'rendah', label: 'Rendah', size: '< 1 MB', desc: 'File kecil, kualitas lebih rendah' },
+]
+const batchPdfQuality = ref(localStorage.getItem('rme_pdf_quality') || 'sedang')
+const setBatchPdfQuality = (key) => {
+  batchPdfQuality.value = key
+  localStorage.setItem('rme_pdf_quality', key)
+}
+
+// ── Folder tujuan (File System Access API) ──────────────────────────────────
+const dirHandle = ref(null)
+const dirHandleName = ref('')
+const supportsFilePicker = typeof window !== 'undefined' && 'showDirectoryPicker' in window
+const existingFiles = ref(new Set()) // Set<string> lowercase filename
+const existingFilesCount = ref(0)
+const isScanning = ref(false)
+
+const scanFolderForExisting = async () => {
+  if (!dirHandle.value) return
+  isScanning.value = true
+  try {
+    const names = new Set()
+    for await (const [name, handle] of dirHandle.value.entries()) {
+      if (handle.kind === 'file') names.add(name.toLowerCase())
+    }
+    existingFiles.value = names
+    existingFilesCount.value = names.size
+  } catch (e) {
+    showError('Gagal membaca isi folder: ' + e.message)
+  } finally {
+    isScanning.value = false
+  }
+}
+
+const fileExistsForPatient = (nosep) => {
+  // Filename format: {nosep}.pdf (sesuai RMEVIewer)
+  const fname = String(nosep).toLowerCase() + '.pdf'
+  return existingFiles.value.has(fname)
+}
+
+const selectDownloadFolder = async () => {
+  try {
+    const handle = await window.showDirectoryPicker({ mode: 'readwrite' })
+    dirHandle.value = handle
+    dirHandleName.value = handle.name
+    existingFiles.value = new Set()
+    existingFilesCount.value = 0
+    await scanFolderForExisting()
+  } catch (e) {
+    if (e.name !== 'AbortError') showError('Gagal memilih folder: ' + e.message)
+  }
+}
+
+const batchDataToExport = computed(() =>
+  TempfilteredData.value.length > 0 ? TempfilteredData.value : filteredByStts.value,
+)
+
+const batchSkipCount = computed(
+  () =>
+    batchDataToExport.value.filter((row) => fileExistsForPatient(row.NOSEP || row.NOPENDAFTARAN))
+      .length,
+)
+
+const closeBatchDialog = () => {
+  showBatchDialog.value = false
+  batchLog.value = []
+  batchProgress.value = 0
+  batchCurrentIdx.value = 0
+  cancelBatchExport.value = false
+}
+
+const exportPatientViaIframe = (noreg) =>
+  new Promise((resolve, reject) => {
+    // Create iframe programmatically so jQuery IFrame.js plugin never hooks into it
+    const iframe = document.createElement('iframe')
+    iframe.style.cssText =
+      'position:fixed;left:-9999px;top:-9999px;width:1300px;height:900px;opacity:0;border:none;pointer-events:none'
+
+    const cleanup = () => {
+      iframe.src = 'about:blank'
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe)
+    }
+
+    const url = router.resolve({ name: 'RMEViewer', query: { noreg, autoexport: '1' } }).href
+
+    const onMsg = async (e) => {
+      if (e.data?.noreg !== String(noreg)) return
+      window.removeEventListener('message', onMsg)
+      clearTimeout(timeoutId)
+      cleanup()
+
+      if (e.data?.type === 'rme_export_done') {
+        const buf = e.data.pdfBuffer
+        const fname = e.data.filename || `RME_${noreg}.pdf`
+        if (buf) {
+          if (dirHandle.value) {
+            // Tulis langsung ke folder yang dipilih user
+            try {
+              const fh = await dirHandle.value.getFileHandle(fname, { create: true })
+              const writable = await fh.createWritable()
+              await writable.write(buf)
+              await writable.close()
+            } catch (writeErr) {
+              reject(new Error('Gagal menyimpan ke folder: ' + writeErr.message))
+              return
+            }
+          } else {
+            // Fallback: trigger download biasa
+            const blob = new Blob([buf], { type: 'application/pdf' })
+            const objectUrl = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = objectUrl
+            a.download = fname
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            URL.revokeObjectURL(objectUrl)
+          }
+        }
+        resolve()
+      } else {
+        reject(new Error(e.data?.message || 'Export gagal'))
+      }
+    }
+    window.addEventListener('message', onMsg)
+
+    const timeoutId = setTimeout(() => {
+      window.removeEventListener('message', onMsg)
+      cleanup()
+      reject(new Error('Timeout (90s)'))
+    }, 90000)
+
+    document.body.appendChild(iframe)
+    iframe.src = url
+  })
+
+const errorCount = computed(() => batchLog.value.filter((x) => x.status === 'error').length)
+
+const runBatchLoop = async () => {
+  isBatchExporting.value = true
+  cancelBatchExport.value = false
+
+  const items = batchLog.value
+  for (let i = 0; i < items.length; i++) {
+    if (cancelBatchExport.value) break
+    batchCurrentIdx.value = i
+    const item = items[i]
+
+    if (item.status !== 'waiting') continue
+
+    item.status = 'processing'
+    try {
+      await exportPatientViaIframe(item.noreg)
+      item.status = 'done'
+    } catch (e) {
+      item.status = 'error'
+      item.error = e.message
+    }
+
+    const settled = items.filter((x) => x.status !== 'waiting' && x.status !== 'processing').length
+    batchProgress.value = Math.round((settled / items.length) * 100)
+
+    if (i < items.length - 1 && !cancelBatchExport.value) {
+      await new Promise((r) => setTimeout(r, 800))
+    }
+  }
+
+  isBatchExporting.value = false
+}
+
+const startBatchExport = async () => {
+  const data = batchDataToExport.value
+  if (!data.length) return
+
+  batchProgress.value = 0
+  batchCurrentIdx.value = 0
+
+  batchLog.value = data.map((row) => ({
+    noreg: row.NOPENDAFTARAN,
+    nosep: row.NOSEP || row.NOPENDAFTARAN,
+    nama: row.NAMAPASIEN,
+    nomr: row.NOMR,
+    status: fileExistsForPatient(row.NOSEP || row.NOPENDAFTARAN) ? 'skipped' : 'waiting',
+    error: '',
+  }))
+
+  await runBatchLoop()
+}
+
+const resumeAllFailed = async () => {
+  const errItems = batchLog.value.filter((x) => x.status === 'error')
+  if (!errItems.length) return
+  errItems.forEach((item) => {
+    item.status = 'waiting'
+    item.error = ''
+  })
+  await runBatchLoop()
+}
+
+const resumeItem = async (item) => {
+  item.status = 'waiting'
+  item.error = ''
+  isBatchExporting.value = true
+  cancelBatchExport.value = false
+  item.status = 'processing'
+  try {
+    await exportPatientViaIframe(item.noreg)
+    item.status = 'done'
+  } catch (e) {
+    item.status = 'error'
+    item.error = e.message
+  } finally {
+    const settled = batchLog.value.filter(
+      (x) => x.status !== 'waiting' && x.status !== 'processing',
+    ).length
+    batchProgress.value = Math.round((settled / batchLog.value.length) * 100)
+    isBatchExporting.value = false
+  }
+}
+
 // --- Data ---
 const medicalData = ref([])
-const selectedNoreg = ref('')
+const selectedNoreg = ref(null)
 // --- Column Visibility ---
 const showColumnMenu = ref(false)
 const visibleColumns = ref([
@@ -811,6 +1277,7 @@ const allColumns = ref([
 // --- Filters ---
 const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  NOMR: { value: null, matchMode: FilterMatchMode.CONTAINS },
   STTS_CODER: { value: null, matchMode: FilterMatchMode.IN },
   NAMAPASIEN: { value: null, matchMode: FilterMatchMode.CONTAINS },
   CARABAYAR: { value: null, matchMode: FilterMatchMode.IN },
@@ -818,7 +1285,7 @@ const filters = ref({
   NAMADOKTER: { value: null, matchMode: FilterMatchMode.IN },
   KETERANGAN: { value: null, matchMode: FilterMatchMode.IN },
   SUDAHFINALCLAIM: { value: null, matchMode: FilterMatchMode.IN },
-  NOSEP: { value: null, matchMode: FilterMatchMode.IN },
+  NOSEP: { value: null, matchMode: FilterMatchMode.CONTAINS },
   TARIFCBG: { value: null, matchMode: FilterMatchMode.IN },
   IS_AKTIF_SEP: { value: null, matchMode: FilterMatchMode.IN },
 })
@@ -830,6 +1297,7 @@ const disetujuiBPJS = ref(0)
 const TempfilteredData = ref([])
 
 const showKlaim = ref(false)
+const showKlaimEntri = ref(false)
 const DataSelected = ref(null)
 const sttsCoderFilter = ref(null) // null=Semua, 0=M, 1=C, 2=P
 
@@ -838,6 +1306,7 @@ const sttsCoderOpts = [
   { label: 'M', value: 0, icon: 'pi pi-times-circle', cls: 'danger' },
   { label: 'C', value: 1, icon: 'pi pi-check-circle', cls: 'success' },
   { label: 'P', value: 2, icon: 'pi pi-exclamation-circle', cls: 'warning' },
+  { label: 'S', value: 3, icon: 'pi pi-comment', cls: 'info' },
 ]
 
 // --- Helper Functions ---
@@ -862,10 +1331,12 @@ const onKlaimSaved = (data) => {
   })
 }
 const ShowDetailsdata = (row) => {
-  // console.log(row)
-  // DataSelected.value = row
-  selectedNoreg.value = row.NOPENDAFTARAN
-  showKlaim.value = true
+  selectedNoreg.value = row
+  if (group_user.value === 'ENTRI_KLAIM') {
+    showKlaimEntri.value = true
+  } else {
+    showKlaim.value = true
+  }
 }
 
 // --- Computed Properties untuk Analisis ---
@@ -879,6 +1350,7 @@ const sttsCoderCount = computed(() => ({
   0: medicalData.value.filter((r) => r.STTS_CODER == 0).length,
   1: medicalData.value.filter((r) => r.STTS_CODER == 1).length,
   2: medicalData.value.filter((r) => r.STTS_CODER == 2).length,
+  3: medicalData.value.filter((r) => r.STTS_CODER == 3).length,
 }))
 
 const selisihKlaim = computed(() => {
@@ -1034,6 +1506,72 @@ const loadColumnPreference = () => {
 }
 
 const FILTER_STORAGE_KEY = 'klaimManajemen_filterParams'
+const COLUMN_FILTER_STORAGE_KEY = 'klaimManajemen_columnFilters'
+const COLUMN_WIDTH_KEY = 'klaimManajemen_colWidths'
+const dtRef = ref(null)
+
+const saveColumnWidths = (event) => {
+  try {
+    const thead = event.element.closest('thead')
+    if (!thead) return
+    const widths = Array.from(thead.querySelectorAll('th')).map((th) => th.style.width || '')
+    localStorage.setItem(COLUMN_WIDTH_KEY, JSON.stringify(widths))
+  } catch (e) {
+    console.error('Error saving column widths:', e)
+  }
+}
+
+const restoreColumnWidths = async () => {
+  try {
+    const saved = localStorage.getItem(COLUMN_WIDTH_KEY)
+    if (!saved) return
+    const widths = JSON.parse(saved)
+    if (!Array.isArray(widths) || widths.length === 0) return
+    await nextTick()
+    const el = dtRef.value?.$el
+    if (!el) return
+    const ths = el.querySelectorAll('thead th')
+    ths.forEach((th, i) => {
+      if (widths[i]) th.style.width = widths[i]
+    })
+  } catch (e) {
+    console.error('Error restoring column widths:', e)
+  }
+}
+
+const saveColumnFilters = () => {
+  try {
+    localStorage.setItem(
+      COLUMN_FILTER_STORAGE_KEY,
+      JSON.stringify({
+        filters: filters.value,
+        sttsCoderFilter: sttsCoderFilter.value,
+      }),
+    )
+  } catch (e) {
+    console.error('Error saving column filters:', e)
+  }
+}
+
+const loadColumnFilters = () => {
+  try {
+    const saved = localStorage.getItem(COLUMN_FILTER_STORAGE_KEY)
+    if (!saved) return
+    const parsed = JSON.parse(saved)
+    if (parsed.filters) {
+      Object.keys(parsed.filters).forEach((key) => {
+        if (filters.value[key] !== undefined) {
+          filters.value[key].value = parsed.filters[key].value
+        }
+      })
+    }
+    if (parsed.sttsCoderFilter !== undefined) {
+      sttsCoderFilter.value = parsed.sttsCoderFilter
+    }
+  } catch (e) {
+    console.error('Error loading column filters:', e)
+  }
+}
 
 const saveFilterParams = () => {
   try {
@@ -1111,11 +1649,13 @@ const updateSummary = () => {
 const onFilter = (event) => {
   TempfilteredData.value = event.filteredValue || []
   updateSummary()
+  saveColumnFilters()
 }
 
 const clearFilters = () => {
   filters.value = {
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    NOMR: { value: null, matchMode: FilterMatchMode.CONTAINS },
     STTS_CODER: { value: null, matchMode: FilterMatchMode.IN },
     NAMAPASIEN: { value: null, matchMode: FilterMatchMode.CONTAINS },
     CARABAYAR: { value: null, matchMode: FilterMatchMode.IN },
@@ -1123,10 +1663,12 @@ const clearFilters = () => {
     NAMADOKTER: { value: null, matchMode: FilterMatchMode.IN },
     KETERANGAN: { value: null, matchMode: FilterMatchMode.IN },
     SUDAHFINALCLAIM: { value: null, matchMode: FilterMatchMode.IN },
-    NOSEP: { value: null, matchMode: FilterMatchMode.IN },
+    NOSEP: { value: null, matchMode: FilterMatchMode.CONTAINS },
     TARIFCBG: { value: null, matchMode: FilterMatchMode.IN },
     IS_AKTIF_SEP: { value: null, matchMode: FilterMatchMode.IN },
   }
+  sttsCoderFilter.value = null
+  localStorage.removeItem(COLUMN_FILTER_STORAGE_KEY)
 }
 
 const exportToExcel = () => {
@@ -1146,6 +1688,8 @@ const exportToExcel = () => {
 onMounted(() => {
   loadColumnPreference()
   loadFilterParams()
+  loadColumnFilters()
+  restoreColumnWidths()
 })
 
 const sttsPulangSelected = ref({
@@ -1189,6 +1733,8 @@ watch(
   saveFilterParams,
   { deep: true },
 )
+
+watch(sttsCoderFilter, saveColumnFilters)
 
 // Toast functions
 const showSuccess = (message = 'Operation successful') => {
@@ -1347,6 +1893,7 @@ const fetchData = async () => {
 
     fact.value = [...response.data.response]
     loading.value = false
+    restoreColumnWidths()
   } catch (error) {
     console.error('Error fetching data:', error)
     showError('Gagal mengambil data: ' + error.message)
@@ -1549,6 +2096,10 @@ const formatDateTimeForAPI = (date) => {
   background: #fef5dc;
   color: #7a5a10;
 }
+.tbl-stts-pill-info.active {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
 .tbl-actions {
   display: flex;
   align-items: center;
@@ -1671,7 +2222,7 @@ const formatDateTimeForAPI = (date) => {
   min-width: 48px;
   width: 100%;
   padding: 0.35rem 0.5rem;
-  border-radius: 0.35rem;
+  border-radius: 0.1rem;
   text-transform: uppercase;
   font-weight: 700;
 }
@@ -1686,6 +2237,14 @@ const formatDateTimeForAPI = (date) => {
 .status-cell-danger {
   background: #fde8e8;
   color: #8a2020;
+}
+.status-cell-info {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.badge-info {
+  background-color: #1d4ed8 !important;
+  color: #fff !important;
 }
 
 /* ── Column menu ──────────────────────────────────────────────────── */
@@ -1735,6 +2294,180 @@ const formatDateTimeForAPI = (date) => {
 }
 .column-menu-footer :deep(.p-button) {
   font-size: 0.875rem;
+}
+
+/* ── Batch Export Dialog ──────────────────────────────────────────── */
+.batch-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #f9fafb;
+  margin-bottom: 10px;
+}
+.batch-folder-info {
+  background: #fefce8;
+  border-color: #fde68a;
+}
+
+/* ── Quality selector ── */
+.batch-quality-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #f9fafb;
+  margin-bottom: 10px;
+}
+.batch-quality-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.batch-quality-seg {
+  display: flex;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.batch-qbtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5px 16px;
+  background: #fff;
+  border: none;
+  border-right: 1px solid #d1d5db;
+  cursor: pointer;
+  transition: background 0.15s;
+  line-height: 1.2;
+}
+.batch-qbtn:last-child {
+  border-right: none;
+}
+.batch-qbtn:hover {
+  background: #f3f4f6;
+}
+.batch-qbtn.active {
+  background: #dbeafe;
+}
+.bqbtn-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #111827;
+}
+.batch-qbtn.active .bqbtn-label {
+  color: #1d4ed8;
+}
+.bqbtn-size {
+  font-size: 10px;
+  color: #6b7280;
+  font-weight: 400;
+}
+.batch-qbtn.active .bqbtn-size {
+  color: #3b82f6;
+}
+.batch-info {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px;
+  background: #f0f6ff;
+  border: 1px solid #b2c8f0;
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+.batch-log-scroll {
+  max-height: 340px;
+  overflow-y: auto;
+  border: 1px solid #e0e6ed;
+  border-radius: 6px;
+}
+.batch-log-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid #f0f4f8;
+  font-size: 12px;
+}
+.batch-log-item:last-child {
+  border-bottom: none;
+}
+.batch-log-waiting {
+  color: #888;
+  background: #fafafa;
+}
+.batch-log-processing {
+  color: #1565c0;
+  background: #e8f0fe;
+}
+.batch-log-done {
+  color: #2e7d32;
+  background: #f0fdf4;
+}
+.batch-log-skipped {
+  color: #92400e;
+  background: #fffbeb;
+  opacity: 0.8;
+}
+.batch-log-error {
+  color: #c62828;
+  background: #fff0f0;
+}
+.batch-log-idx {
+  min-width: 24px;
+  font-weight: 700;
+  opacity: 0.6;
+}
+.batch-log-icon {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.batch-log-name {
+  flex: 1;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.batch-log-noreg {
+  font-size: 10px;
+  color: #888;
+  white-space: nowrap;
+}
+.batch-log-err {
+  font-size: 10px;
+  color: #c62828;
+  margin-left: 4px;
+  flex: 1;
+}
+.batch-resume-btn {
+  flex-shrink: 0;
+  margin-left: 6px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+.batch-resume-btn:hover {
+  background: #fde68a;
 }
 
 /* ── Progress table ───────────────────────────────────────────────── */

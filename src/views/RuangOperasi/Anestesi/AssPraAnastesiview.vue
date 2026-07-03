@@ -539,7 +539,6 @@
               <Button
                 label="Tanda Tangan Digital"
                 icon="pi pi-pen-to-square"
-                class="btn-tte"
                 @click="openTTE()"
               />
             </div>
@@ -588,7 +587,7 @@
     <div class="action-bar mt-3">
       <div class="action-bar-inner">
         <div class="action-info">
-          <i class="pi pi-info-circle me-2" style="color: #6c757d"></i>
+          <i class="pi pi-info-circle me-2" style="color: var(--p-text-muted-color)"></i>
           <span>Pastikan semua data sudah diisi dengan benar sebelum menyimpan.</span>
         </div>
         <div class="action-buttons">
@@ -604,7 +603,7 @@
           <Button
             label="Simpan Data"
             icon="pi pi-save"
-            class="btn-save-pra"
+            severity="success"
             :loading="loading"
             @click="simpanData()"
           />
@@ -1014,10 +1013,10 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: linear-gradient(135deg, #1a3a5c 0%, #2563a8 100%);
-  border-radius: 4px;
+  background: var(--p-primary-color);
+  border-radius: var(--p-border-radius);
   padding: 1rem 1.5rem;
-  color: #fff;
+  color: var(--p-primary-contrast-color);
 }
 .banner-title {
   margin: 0 0 0.25rem;
@@ -1033,11 +1032,11 @@ onMounted(async () => {
 
 /* ====== Cards ====== */
 .pra-card {
-  border-radius: 4px;
+  border-radius: var(--p-border-radius);
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  background: #fff;
-  border: 1px solid #e9ecef;
+  box-shadow: var(--p-card-shadow);
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
 }
 .card-section-header {
   display: flex;
@@ -1045,19 +1044,14 @@ onMounted(async () => {
   padding: 0.75rem 1.1rem;
   font-weight: 700;
   font-size: 0.95rem;
-  color: #fff;
+  color: var(--p-primary-contrast-color);
   letter-spacing: 0.04em;
+  background: var(--p-primary-color);
 }
 .card-section-header small {
   font-size: 0.72rem;
   font-weight: 400;
   opacity: 0.88;
-}
-.anamnesa-header,
-.fisik-header,
-.vital-header,
-.rencana-header {
-  background: linear-gradient(135deg, #1a3a5c, #2563a8);
 }
 .card-section-body {
   padding: 1rem 1.1rem;
@@ -1071,7 +1065,7 @@ onMounted(async () => {
   display: block;
   font-size: 0.82rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--p-text-color);
   margin-bottom: 0.35rem;
   line-height: 1.4;
 }
@@ -1079,7 +1073,7 @@ onMounted(async () => {
   display: block;
   font-size: 0.78rem;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--p-text-muted-color);
   margin-bottom: 0.25rem;
 }
 .radio-group {
@@ -1090,16 +1084,16 @@ onMounted(async () => {
 }
 .radio-label {
   font-size: 0.82rem;
-  color: #374151;
+  color: var(--p-text-color);
   cursor: pointer;
 }
 .sub-field {
-  background: #f8f9fa;
-  border-left: 3px solid #dee2e6;
+  background: var(--p-surface-50);
+  border-left: 3px solid var(--p-content-border-color);
   padding: 0.5rem 0.75rem;
   border-radius: 0 6px 6px 0;
   font-size: 0.8rem;
-  color: #6b7280;
+  color: var(--p-text-muted-color);
 }
 
 /* ====== Section Divider ====== */
@@ -1110,7 +1104,7 @@ onMounted(async () => {
   gap: 0.5rem;
   font-size: 0.73rem;
   font-weight: 700;
-  color: #6b7280;
+  color: var(--p-text-muted-color);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -1119,7 +1113,7 @@ onMounted(async () => {
   content: '';
   flex: 1;
   height: 1px;
-  background: #e5e7eb;
+  background: var(--p-content-border-color);
 }
 
 /* ====== IMT Scale ====== */
@@ -1128,13 +1122,13 @@ onMounted(async () => {
   justify-content: space-between;
   margin-top: 4px;
   font-size: 10px;
-  color: #aaa;
+  color: var(--p-text-muted-color);
 }
 
 /* ====== Status Text ====== */
 .status-text {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--p-text-muted-color);
   display: block;
   margin-top: 0.2rem;
 }
@@ -1144,10 +1138,10 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  background: #f9fafb;
-  border-radius: 4px;
+  background: var(--p-surface-50);
+  border-radius: var(--p-border-radius);
   padding: 0.75rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--p-content-border-color);
 }
 .adiksi-item {
   display: flex;
@@ -1173,24 +1167,24 @@ onMounted(async () => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: #fff;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--p-border-radius);
   cursor: pointer;
   transition: all 0.15s ease;
   user-select: none;
 }
 .penyakit-item:hover {
-  border-color: #2563a8;
-  background: #eff6ff;
+  border-color: var(--p-primary-color);
+  background: var(--p-primary-50);
 }
 .penyakit-active {
-  border-color: #2563a8 !important;
-  background: #eff6ff !important;
+  border-color: var(--p-primary-color) !important;
+  background: var(--p-primary-50) !important;
 }
 .penyakit-label {
   font-size: 0.8rem;
-  color: #374151;
+  color: var(--p-text-color);
   cursor: pointer;
   margin: 0;
 }
@@ -1203,10 +1197,10 @@ onMounted(async () => {
   flex: 1;
   min-width: 0;
   height: 36px;
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
-  background: #f8f9fa;
-  color: #495057;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--p-border-radius);
+  background: var(--p-surface-50);
+  color: var(--p-text-color);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -1218,24 +1212,24 @@ onMounted(async () => {
   transform: translateY(-1px);
 }
 .nrs-0 {
-  background: #d1fae5;
-  border-color: #6ee7b7;
-  color: #065f46;
+  background: var(--p-green-100);
+  border-color: var(--p-green-300);
+  color: var(--p-green-800);
 }
 .nrs-mild {
-  background: #dbeafe;
-  border-color: #93c5fd;
-  color: #1e40af;
+  background: var(--p-blue-100);
+  border-color: var(--p-blue-300);
+  color: var(--p-blue-800);
 }
 .nrs-moderate {
-  background: #fef3c7;
-  border-color: #fcd34d;
-  color: #92400e;
+  background: var(--p-yellow-100);
+  border-color: var(--p-yellow-300);
+  color: var(--p-yellow-800);
 }
 .nrs-severe {
-  background: #fee2e2;
-  border-color: #fca5a5;
-  color: #991b1b;
+  background: var(--p-red-100);
+  border-color: var(--p-red-300);
+  color: var(--p-red-800);
 }
 .nrs-active {
   border-width: 2px;
@@ -1244,15 +1238,12 @@ onMounted(async () => {
 }
 
 /* ====== Otorisasi / TTE ====== */
-.otorisasi-header {
-  background: linear-gradient(135deg, #1a3a5c, #2563a8);
-}
 .tte-verified-badge {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.85rem;
-  border-radius: 8px;
+  border-radius: var(--p-border-radius);
   font-size: 0.82rem;
   width: 100%;
 }
@@ -1261,9 +1252,9 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 .otorisasi-verified {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #2563a8;
+  background: var(--p-primary-50);
+  border: 1px solid var(--p-primary-200);
+  color: var(--p-primary-color);
 }
 .tte-info {
   display: flex;
@@ -1308,12 +1299,12 @@ onMounted(async () => {
   flex-shrink: 0;
   width: 56px;
   height: 56px;
-  background: linear-gradient(135deg, #1a3a5c, #2563a8);
+  background: var(--p-primary-color);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--p-primary-contrast-color);
   font-size: 1.4rem;
 }
 .tte-unsigned-info {
@@ -1322,19 +1313,14 @@ onMounted(async () => {
 .tte-unsigned-title {
   font-weight: 700;
   font-size: 0.9rem;
-  color: #1e293b;
+  color: var(--p-text-color);
   margin: 0 0 0.25rem;
 }
 .tte-unsigned-desc {
   font-size: 0.78rem;
-  color: #6b7280;
+  color: var(--p-text-muted-color);
   margin: 0 0 0.75rem;
   line-height: 1.5;
-}
-.btn-tte {
-  background: linear-gradient(135deg, #1a3a5c, #2563a8) !important;
-  border: none !important;
-  font-weight: 600;
 }
 
 /* ====== Signed Area + QR ====== */
@@ -1358,11 +1344,11 @@ onMounted(async () => {
   align-items: center;
   gap: 0.5rem;
   font-size: 0.8rem;
-  color: #6b7280;
+  color: var(--p-text-muted-color);
 }
 .tte-meta-item .pi {
   font-size: 0.75rem;
-  color: #2563a8;
+  color: var(--p-primary-color);
 }
 .tte-qr-wrapper {
   display: flex;
@@ -1374,22 +1360,22 @@ onMounted(async () => {
 .qr-label {
   font-size: 0.72rem;
   font-weight: 700;
-  color: #374151;
+  color: var(--p-text-color);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 .qr-box {
   padding: 0.6rem;
-  background: #fff;
-  border: 2px solid #2563a8;
-  border-radius: 10px;
+  background: var(--p-surface-0);
+  border: 2px solid var(--p-primary-color);
+  border-radius: var(--p-border-radius);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .qr-hint {
   font-size: 0.67rem;
-  color: #9ca3af;
+  color: var(--p-text-muted-color);
   text-align: center;
 }
 
@@ -1406,11 +1392,11 @@ onMounted(async () => {
 
 /* ====== Action Bar ====== */
 .action-bar {
-  background: #fff;
-  border: 1px solid #e9ecef;
-  border-radius: 10px;
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--p-border-radius);
   padding: 0.85rem 1.25rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--p-card-shadow);
 }
 .action-bar-inner {
   display: flex;
@@ -1423,16 +1409,11 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   font-size: 0.82rem;
-  color: #6c757d;
+  color: var(--p-text-muted-color);
 }
 .action-buttons {
   display: flex;
   align-items: center;
-}
-.btn-save-pra {
-  background: linear-gradient(135deg, #1a3a5c, #2563a8) !important;
-  border: none !important;
-  font-weight: 600;
 }
 
 /* ====== PrimeVue overrides ====== */

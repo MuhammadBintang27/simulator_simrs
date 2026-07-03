@@ -159,22 +159,58 @@
               }}</span>
             </div>
             <div class="rs-row">
-              <span class="rs-lbl">Diagnosis Masuk</span><span class="rs-sep">:</span
+              <span class="rs-lbl">Diagnosis Utama</span><span class="rs-sep">:</span
               ><span class="rs-val">{{
-                (resume.dx_masuk?.dx_utama || data_ranap.DIAGNOSA_AWAL || '—').toUpperCase()
+                (resume?.dx_akhir?.response?.dx_utama || '—').toUpperCase()
               }}</span>
             </div>
             <div class="rs-row">
-              <span class="rs-lbl">Diagnosis Keluar</span><span class="rs-sep">:</span
+              <span class="rs-lbl">Diagnosis Sekunder</span><span class="rs-sep">:</span
               ><span class="rs-val rs-bold">{{
-                (data_ranap.DX_CAPTION || resume.dx_sekunder || '—').toUpperCase()
+                (resume.dx_akhir?.response.dx_sekunder || '—').toUpperCase()
               }}</span>
             </div>
           </div>
           <div>
-            <div class="rs-row">
-              <span class="rs-lbl">Pemeriksaan Radiologi</span><span class="rs-sep">:</span
-              ><span class="rs-val">{{ resume.penunjang_radiologi || '—' }}</span>
+            <div class="rs-row rs-row-penunjang">
+              <span class="rs-lbl">Pemeriksaan Radiologi</span><span class="rs-sep">:</span>
+              <span class="rs-val">
+                <template v-if="obat_penunjang.radiologi">
+                  <span
+                    v-for="(item, i) in obat_penunjang.radiologi
+                      .split('|')
+                      .map((s) => s.trim())
+                      .filter(Boolean)"
+                    :key="i"
+                    class="rs-badge rs-badge-radio"
+                    >{{ item }}</span
+                  >
+                </template>
+                <span v-else>—</span>
+              </span>
+            </div>
+            <div class="rs-row rs-row-penunjang">
+              <span class="rs-lbl">Pemeriksaan Lab</span><span class="rs-sep">:</span>
+              <span class="rs-val">
+                <template v-if="obat_penunjang.lab">
+                  <span
+                    v-for="(item, i) in obat_penunjang.lab
+                      .split('|')
+                      .map((s) => s.trim())
+                      .filter(Boolean)"
+                    :key="i"
+                    class="rs-badge rs-badge-lab"
+                    >{{ item }}</span
+                  >
+                </template>
+                <span v-else>—</span>
+              </span>
+            </div>
+            <div class="rs-row rs-row-penunjang">
+              <span class="rs-lbl">Procedure</span><span class="rs-sep">:</span>
+              <span class="rs-val">
+                {{ resume.prosedur || '-' }}
+              </span>
             </div>
           </div>
         </div>
@@ -214,7 +250,7 @@
             </div>
             <div class="rs-row">
               <span class="rs-lbl">Cara Keluar</span><span class="rs-sep">:</span
-              ><span class="rs-val">{{ caraKeluarText }}</span>
+              ><span class="rs-val">{{ data_ranap.STTS_PULANG }}</span>
             </div>
             <div class="rs-row">
               <span class="rs-lbl">Lama Dirawat</span><span class="rs-sep">:</span
@@ -229,7 +265,6 @@
           </div>
         </div>
       </div>
-
       <!-- ── OBAT SELAMA RAWAT ───────────────────────────────────────────────── -->
       <div v-if="listObatRawat.length > 0" class="rs-block">
         <div class="rs-block-hdr">OBAT-OBATAN SELAMA RAWAT INAP</div>
@@ -267,11 +302,22 @@
       <!-- ── TANDA TANGAN / OTORISASI ───────────────────────────────────────── -->
       <div class="rs-footer">
         <div class="rs-footer-inner">
-          <div class="rs-footer-city">{{ configStore.company || '' }}, {{ tanggalCetak }}</div>
-          <div class="rs-footer-title">DOKTER PENANGGUNG JAWAB</div>
-          <div v-if="resume.auth" class="rs-qr-wrap">
-            <img :src="qrUrl" alt="QR Otorisasi" class="rs-qr" />
+          <div class="rs-footer-city">
+            <span v-if="data_ranap.KELUARPOLY_NULL"> {{ ALAMAT || '' }},</span>
+            {{
+              data_ranap.KELUARPOLY_NULL
+                ? new Date(data_ranap.KELUARPOLY_NULL).toLocaleDateString('id-ID', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })
+                : 'Belum di pulangkan'
+            }}
           </div>
+          <div class="rs-footer-title">DOKTER PENANGGUNG JAWAB</div>
+          <!-- <div v-if="resume.auth" class="rs-qr-wrap"> -->
+          <QrcodeVue :value="resume.auth" :size="40" level="M" render-as="svg" />
+          <!-- </div> -->
           <div class="rs-footer-line"></div>
           <div class="rs-footer-dokter">{{ data_ranap.NAMADOKTER || '—' }}</div>
         </div>
@@ -289,6 +335,7 @@ import { ref, computed, watch, inject } from 'vue'
 import { useConfigStore, useAuthStore } from '@/stores/config'
 import { storeToRefs } from 'pinia'
 import axios from 'axios'
+import QrcodeVue from 'qrcode.vue'
 
 const props = defineProps({
   noreg: { type: String, required: true },
@@ -297,7 +344,7 @@ const props = defineProps({
 
 const configStore = useConfigStore()
 const authStore = useAuthStore()
-const { id_client } = storeToRefs(authStore)
+const { id_client, ALAMAT } = storeToRefs(authStore)
 
 const reportSectionData = inject('reportSectionData', () => {})
 const addTimelineEvent = inject('addTimelineEvent', () => {})
@@ -345,11 +392,6 @@ const listObatRawat = computed(() => {
 const tanggalCetak = computed(() => {
   const d = new Date()
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
-})
-
-const qrUrl = computed(() => {
-  if (!resume.value?.auth) return ''
-  return `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(resume.value.auth)}`
 })
 
 // ── Fetch ──────────────────────────────────────────────────────────────────────
@@ -405,7 +447,7 @@ watch(
 <style scoped>
 /* ── Body wrapper ────────────────────────────────────────────────── */
 .rs-body {
-  font-size: 12px;
+  font-size: 13px;
   color: #212529;
 }
 
@@ -420,7 +462,7 @@ watch(
 .rs-block-hdr {
   background: linear-gradient(90deg, #dde8f4 0%, #edf3fa 100%);
   color: #162d4e;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.07em;
   padding: 5px 12px;
@@ -431,7 +473,7 @@ watch(
 }
 .rs-block-hdr::before {
   content: '■';
-  font-size: 9px;
+  font-size: 10px;
   opacity: 0.5;
 }
 
@@ -455,14 +497,14 @@ watch(
   display: flex;
   align-items: baseline;
   gap: 0;
-  font-size: 11px;
+  font-size: 12px;
   padding: 2px 0;
 }
 .rs-lbl {
-  width: 130px;
+  width: 140px;
   flex-shrink: 0;
   color: #6c757d;
-  font-size: 11px;
+  font-size: 12px;
 }
 .rs-sep {
   width: 14px;
@@ -473,13 +515,36 @@ watch(
 .rs-val {
   flex: 1;
   font-weight: 500;
-  font-size: 11px;
+  font-size: 12px;
 }
 .rs-accent {
   color: #1a3a5f;
 }
 .rs-bold {
   font-weight: 700;
+}
+
+/* ── Penunjang Badges ─────────────────────────────────────────────── */
+.rs-row-penunjang {
+  align-items: flex-start;
+}
+.rs-badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  margin: 1px 2px 1px 0;
+  line-height: 1.6;
+}
+.rs-badge-lab {
+  background: #e8f4fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
+}
+.rs-badge-radio {
+  background: #fdf3e8;
+  color: #e65100;
+  border: 1px solid #ffcc80;
 }
 
 /* ── TTV ─────────────────────────────────────────────────────────── */
@@ -492,7 +557,7 @@ watch(
 .rs-ttv-title {
   background: #e6edf7;
   color: #1a3a5f;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.05em;
   padding: 4px 10px;
@@ -511,7 +576,7 @@ watch(
   border-right: none;
 }
 .rs-ttv-lbl {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   color: #6c757d;
   letter-spacing: 0.03em;
@@ -519,13 +584,13 @@ watch(
   text-transform: uppercase;
 }
 .rs-ttv-val {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: #162d4e;
   line-height: 1.2;
 }
 .rs-ttv-val small {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 400;
   color: #6c757d;
 }
@@ -535,7 +600,7 @@ watch(
   margin-bottom: 8px;
 }
 .rs-lab-title {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: #1a3a5f;
   margin: 6px 0 4px;
@@ -551,13 +616,13 @@ watch(
 .rs-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 11px;
+  font-size: 12px;
 }
 .rs-table th {
   background: #e6edf7;
   color: #162d4e;
   font-weight: 700;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.04em;
   padding: 6px 10px;
   text-align: left;
@@ -590,7 +655,7 @@ watch(
   color: #1a3a5f;
   border-radius: 999px;
   padding: 2px 10px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   white-space: nowrap;
 }
@@ -605,12 +670,12 @@ watch(
   text-align: center;
 }
 .rs-footer-city {
-  font-size: 11px;
+  font-size: 12px;
   color: #6c757d;
   margin-bottom: 3px;
 }
 .rs-footer-title {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: #1a3a5f;
   letter-spacing: 0.04em;
@@ -621,19 +686,13 @@ watch(
   justify-content: center;
   margin-bottom: 6px;
 }
-.rs-qr {
-  width: 80px;
-  height: 80px;
-  border: 1px dashed #adb5bd;
-  padding: 2px;
-}
 .rs-footer-line {
   width: 160px;
   border-top: 1px solid #343a40;
   margin: 6px auto 3px;
 }
 .rs-footer-dokter {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: #212529;
 }
@@ -641,7 +700,7 @@ watch(
 /* ── Disclaimer ──────────────────────────────────────────────────── */
 .rs-disclaimer {
   text-align: center;
-  font-size: 10px;
+  font-size: 11px;
   color: #adb5bd;
   font-style: italic;
   padding: 6px 12px 10px;

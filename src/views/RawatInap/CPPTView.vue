@@ -179,6 +179,8 @@
                 <div>
                   <strong>{{ data.caption2 }}:</strong>
                   <span v-html="nl2br(data.object_display || data.object)" class="soap-text" />
+
+                  <span class="soap-text" >{{ data.object }}</span>
                 </div>
                 <div>
                   <strong>{{ data.caption3 }}:</strong>
@@ -229,7 +231,7 @@
                   rounded
                   text
                   size="small"
-                  @click="openForm(true, data.id, data.jenis_dok)"
+                  @click="openForm(true, data.id, data.jenis_dok, data.waktu_display)"
                 />
                 <Button
                   icon="pi pi-trash"
@@ -777,21 +779,29 @@ const chipLevelBP = (sys, dia) => {
   return ''
 }
 
-const tglsoapInput = computed(() => {
-  const d =
-    form.value.tglsoap instanceof Date
-      ? form.value.tglsoap
-      : new Date(form.value.tglsoap || Date.now())
+// "dd/MM/yyyy HH:mm" → "yyyy-MM-ddTHH:mm"
+const waktuDisplayToDatetimeLocal = (str) => {
+  const m = str?.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})/)
+  if (m)
+    return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}T${m[4].padStart(2, '0')}:${m[5]}`
+  return ''
+}
+
+// Date → "yyyy-MM-ddTHH:mm"
+const toDatetimeLocalStr = (d) => {
+  const dt = d instanceof Date ? d : new Date(d || Date.now())
   const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-})
+  return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`
+}
+
+const tglsoapInput = ref(toDatetimeLocalStr(new Date()))
 
 const onTglChange = (e) => {
-  form.value.tglsoap = e.target.value ? new Date(e.target.value) : new Date()
+  tglsoapInput.value = e.target.value || toDatetimeLocalStr(new Date())
 }
 
 const setNow = () => {
-  form.value.tglsoap = new Date()
+  tglsoapInput.value = toDatetimeLocalStr(new Date())
 }
 
 const ambilSoapTerakhir = async () => {
@@ -801,8 +811,7 @@ const ambilSoapTerakhir = async () => {
   }
   const maxId = Math.max(...fact.value.map((item) => parseInt(item.id)))
   await fetchSingle(maxId)
-  // Reset tanggal ke sekarang — yang disalin hanya konten, bukan waktu
-  form.value.tglsoap = new Date()
+  tglsoapInput.value = toDatetimeLocalStr(new Date())
   toast.add({
     severity: 'info',
     summary: 'Disalin',
@@ -812,6 +821,7 @@ const ambilSoapTerakhir = async () => {
 }
 
 const clearForm = () => {
+  tglsoapInput.value = toDatetimeLocalStr(new Date())
   form.value = {
     tglsoap: new Date(),
     subject: '',
@@ -860,7 +870,9 @@ const fetchSingle = async (id) => {
     })
     const d = res.data?.response?.[0]
     if (d) {
-      form.value.tglsoap = d.tglsoap ? new Date(d.tglsoap) : new Date()
+      const dt = d.tglsoap ? new Date(d.tglsoap) : null
+      form.value.tglsoap = dt || new Date()
+      if (dt && !isNaN(dt)) tglsoapInput.value = toDatetimeLocalStr(dt)
       form.value.subject = d.subject || ''
       form.value.object = d.object || ''
       form.value.asessment = d.asessment || ''
@@ -896,11 +908,14 @@ const fetchPasien = async () => {
 }
 
 // ── open form dialog ─────────────────────────────────────────────────────────
-const openForm = async (isEdit, id, jenisDok) => {
+const openForm = async (isEdit, id, jenisDok, waktuDisplay = '') => {
   isUpdate.value = isEdit
   currentSoapId.value = id
   if (isEdit) {
     form.value.jenis_dok = jenisDok
+    tglsoapInput.value = waktuDisplay
+      ? waktuDisplayToDatetimeLocal(waktuDisplay)
+      : toDatetimeLocalStr(new Date())
     await fetchSingle(id)
   } else {
     clearForm()
@@ -928,7 +943,7 @@ const simpan = async () => {
       id: currentSoapId.value,
       lokasi: 'RANAP',
       jenis_dok: form.value.jenis_dok,
-      tglsoap: toLocalDatetime(form.value.tglsoap),
+      tglsoap: toLocalDatetime(tglsoapInput.value ? new Date(tglsoapInput.value) : new Date()),
       subject: form.value.subject,
       object: form.value.object,
       asessment: form.value.asessment,

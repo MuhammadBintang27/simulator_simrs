@@ -196,6 +196,7 @@
           <h3 class="table-title">
             <i class="pi pi-list"></i>
             Daftar Pasien ({{ filteredPasien.length }})
+
             <Button
               icon="pi pi-file-excel"
               @click="exportToExcel"
@@ -220,7 +221,7 @@
               severity="warn"
               icon="pi pi-list"
               class="p-button-secondary w-30"
-              @click="funcListPasienJJKN()"
+              @click="showPasienJKN = true"
               label="Pasien M Jkn"
             />
             <Button
@@ -699,327 +700,7 @@
       </template>
     </Dialog>
 
-    <Dialog
-      v-model:visible="showPasienJKN"
-      modal
-      header="Pasien Mobile JKN"
-      :style="{ width: isMobile ? '95vw' : '1400px' }"
-      :breakpoints="{ '960px': '90vw', '640px': '95vw' }"
-      class="patient-detail-dialog"
-    >
-      <div class="tabs-section">
-        <div class="table-container">
-          <div class="table-header">
-            <h3 class="table-title">
-              <i class="pi pi-list"></i>
-              Daftar Pasien ({{ listPasienJKN.length }})
-            </h3>
-            <div class="table-actions">
-              <Button
-                icon="pi pi-refresh"
-                label="Refresh"
-                @click="funcListPasienJJKN"
-                :loading="loading"
-                class="round-button"
-                size="small"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-      <ProgressBar mode="indeterminate" style="height: 3px" v-if="loaddataMjkn"></ProgressBar>
-
-      <DataTable
-        v-model:filters="filtersJKN"
-        :value="listPasienJKN"
-        paginator
-        :rows="isMobile ? 5 : 10"
-        :rowsPerPageOptions="isMobile ? [5, 10, 25] : [10, 25, 50, 100]"
-        filterDisplay="menu"
-        stripedRows
-        scrollable
-        :scrollHeight="isMobile ? '400px' : '600px'"
-        :globalFilterFields="[
-          'kodebooking',
-          'nomorkartu',
-          'nohp',
-          'kodepoli',
-          'pasien',
-          'namadokter',
-          'jeniskunjungan',
-          'waktu_checkin',
-          'stts',
-          'nomorreferensi',
-        ]"
-        :sortField="'nomorkartu'"
-        :sortOrder="1"
-        responsiveLayout="scroll"
-        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-        currentPageReportTemplate="Menampilkan {first} hingga {last} dari {totalRecords} pasien"
-        class="elegant-datatable"
-      >
-        <!-- Mobile Card View -->
-        <template #empty>
-          <div class="text-center p-3">Tidak ada data</div>
-        </template>
-
-        <!-- For Mobile: Use custom body to show card layout -->
-
-        <Column v-if="!isMobile" field="nomorkartu" header="NOKA" sortable filter>
-          <template #filter="{ filterModel, filterCallback }">
-            <MultiSelect
-              v-model="filterModel.value"
-              :options="uniqueOptions('nomorkartu')"
-              placeholder="Pilih NOKA"
-              optionLabel="label"
-              optionValue="value"
-              @change="filterCallback()"
-              class="w-full"
-            />
-          </template>
-        </Column>
-
-        <Column v-if="!isMobile" field="nohp" header="NO HP" filter>
-          <template #filter="{ filterModel, filterCallback }">
-            <MultiSelect
-              v-model="filterModel.value"
-              :options="uniqueOptions('nohp')"
-              placeholder="Pilih No HP"
-              optionLabel="label"
-              optionValue="value"
-              @change="filterCallback()"
-              class="w-full"
-            />
-          </template>
-        </Column>
-
-        <Column v-if="!isMobile" field="kodepoli" header="POLI" sortable filter>
-          <template #filter="{ filterModel, filterCallback }">
-            <MultiSelect
-              v-model="filterModel.value"
-              :options="uniqueOptions('kodepoli')"
-              placeholder="Pilih Poli"
-              optionLabel="label"
-              optionValue="value"
-              @change="filterCallback()"
-              class="w-full"
-            />
-          </template>
-        </Column>
-
-        <Column v-if="!isMobile" field="pasien" header="PASIEN" filter>
-          <template #filter="{ filterModel, filterCallback }">
-            <InputText
-              v-model="filterModel.value"
-              type="text"
-              placeholder="Cari Pasien"
-              @input="filterCallback()"
-              class="p-column-filter w-full"
-            />
-          </template>
-          <template #body="slotProps">
-            {{ slotProps.data.pasien }} <br />
-            Antrian :<strong> {{ slotProps.data.nomorantrianloket }}</strong>
-          </template>
-        </Column>
-
-        <Column v-if="!isMobile" field="namadokter" header="DOKTER" sortable filter>
-          <template #filter="{ filterModel, filterCallback }">
-            <MultiSelect
-              v-model="filterModel.value"
-              :options="uniqueOptions('namadokter')"
-              placeholder="Pilih Dokter"
-              optionLabel="label"
-              optionValue="value"
-              @change="filterCallback()"
-              class="w-full"
-            />
-          </template>
-          <template #body="slotProps">
-            {{ slotProps.data.kodedokter }} {{ slotProps.data.namadokter }}
-          </template>
-        </Column>
-
-        <Column v-if="!isMobile" field="jeniskunjungan" header="JENIS KUNJUNGAN" filter>
-          <template #filter="{ filterModel, filterCallback }">
-            <MultiSelect
-              v-model="filterModel.value"
-              :options="uniqueOptions('jeniskunjungan')"
-              placeholder="Pilih Jenis"
-              optionLabel="label"
-              optionValue="value"
-              @change="filterCallback()"
-              class="w-full"
-            />
-          </template>
-          <template #body="slotProps">
-            <Tag severity="info" value="Info" v-if="slotProps.data.jeniskunjunganid == 1">
-              <small
-                ><i class="fas fa-user text-sky-200 mr-2"></i
-                >{{ slotProps.data.jeniskunjungan }}</small
-              >
-            </Tag>
-            <Tag severity="warn" value="warn" v-if="slotProps.data.jeniskunjunganid == 3">
-              <small
-                ><i class="fas fa-user text-sky-200 mr-2"></i
-                >{{ slotProps.data.jeniskunjungan }}</small
-              >
-            </Tag>
-            <Tag severity="success" value="warn" v-if="slotProps.data.jeniskunjunganid == 4">
-              <small
-                ><i class="fas fa-user text-sky-200 mr-2"></i
-                >{{ slotProps.data.jeniskunjungan }}</small
-              >
-            </Tag>
-          </template>
-        </Column>
-
-        <Column v-if="!isMobile" field="waktu_checkin" header="STTS CHECKIN" filter>
-          <template #filter="{ filterModel, filterCallback }">
-            <MultiSelect
-              v-model="filterModel.value"
-              :options="uniqueOptions('waktu_checkin')"
-              placeholder="Pilih Waktu"
-              optionLabel="label"
-              optionValue="value"
-              @change="filterCallback()"
-              class="w-full"
-            />
-          </template>
-          <template #body="slotProps">
-            <i class="fas fa-clock text-blue-500 mr-2"></i>{{ slotProps.data.waktu_checkin }}
-          </template>
-        </Column>
-
-        <Column v-if="!isMobile" field="stts" header="STTS AKTIF" filter>
-          <template #filter="{ filterModel, filterCallback }">
-            <MultiSelect
-              v-model="filterModel.value"
-              :options="uniqueOptions('stts')"
-              placeholder="Pilih Status"
-              optionLabel="label"
-              optionValue="value"
-              @change="filterCallback()"
-              class="w-full"
-            />
-          </template>
-          <template #body="slotProps">
-            <Tag severity="warn" v-if="slotProps.data.deleted == 1">
-              <span class="text-red-500 font-semibold">
-                <i class="fas fa-times-circle"></i> {{ slotProps.data.stts }}
-              </span>
-            </Tag>
-          </template>
-        </Column>
-
-        <Column v-if="!isMobile" field="nomorreferensi" header="NO REF" filter>
-          <template #filter="{ filterModel, filterCallback }">
-            <MultiSelect
-              v-model="filterModel.value"
-              :options="uniqueOptions('nomorreferensi')"
-              placeholder="Pilih No Ref"
-              optionLabel="label"
-              optionValue="value"
-              @change="filterCallback()"
-              class="w-full"
-            />
-          </template>
-        </Column>
-
-        <Column v-if="!isMobile" header="AKSI" style="width: 300px">
-          <template #body="slotProps">
-            <Button
-              icon="pi pi-check"
-              label="Terbitkan SEP"
-              @click="TerbitkanSEP(slotProps.data)"
-              :loading="slotProps.data.loading"
-              :disabled="slotProps.data.deleted == 1"
-              class="round-button2 w-full"
-              size="small"
-              style="width: 100%"
-            />
-          </template>
-        </Column>
-
-        <!-- Mobile View: Single column with card layout -->
-        <Column v-if="isMobile" header="Data Pasien" style="width: 100%">
-          <template #body="slotProps">
-            <div class="mobile-card">
-              <div class="mobile-card-header">
-                <div>
-                  <i class="fas fa-user text-sky-500 mr-2"></i>
-                  <strong>{{ slotProps.data.pasien }}</strong>
-                </div>
-                <Tag severity="warn" v-if="slotProps.data.deleted == 1" class="ml-2">
-                  <small>Nonaktif</small>
-                </Tag>
-              </div>
-
-              <div class="mobile-card-body">
-                <div class="mobile-info-row">
-                  <span class="label">Kode Book:</span>
-                  <span class="value">{{ slotProps.data.kodebooking }}</span>
-                </div>
-                <div class="mobile-info-row">
-                  <span class="label">NOKA:</span>
-                  <span class="value">{{ slotProps.data.nomorkartu }}</span>
-                </div>
-                <div class="mobile-info-row">
-                  <span class="label">No HP:</span>
-                  <span class="value">{{ slotProps.data.nohp }}</span>
-                </div>
-                <div class="mobile-info-row">
-                  <span class="label">Poli:</span>
-                  <span class="value">{{ slotProps.data.kodepoli }}</span>
-                </div>
-                <div class="mobile-info-row">
-                  <span class="label">Dokter:</span>
-                  <span class="value"
-                    >{{ slotProps.data.kodedokter }} - {{ slotProps.data.namadokter }}</span
-                  >
-                </div>
-                <div class="mobile-info-row">
-                  <span class="label">Jenis:</span>
-                  <Tag severity="info" v-if="slotProps.data.jeniskunjunganid == 1">
-                    <small>{{ slotProps.data.jeniskunjungan }}</small>
-                  </Tag>
-                  <Tag severity="warn" v-if="slotProps.data.jeniskunjunganid == 3">
-                    <small>{{ slotProps.data.jeniskunjungan }}</small>
-                  </Tag>
-                  <Tag severity="success" v-if="slotProps.data.jeniskunjunganid == 4">
-                    <small>{{ slotProps.data.jeniskunjungan }}</small>
-                  </Tag>
-                </div>
-                <div class="mobile-info-row">
-                  <span class="label">Check-in:</span>
-                  <span class="value">
-                    <i class="fas fa-clock text-blue-500 mr-1"></i
-                    >{{ slotProps.data.waktu_checkin }}
-                  </span>
-                </div>
-                <div class="mobile-info-row">
-                  <span class="label">No Ref:</span>
-                  <span class="value">{{ slotProps.data.nomorreferensi }}</span>
-                </div>
-              </div>
-
-              <div class="mobile-card-footer">
-                <Button
-                  icon="pi pi-check"
-                  label="Terbitkan SEP"
-                  @click="TerbitkanSEP(slotProps.data)"
-                  :loading="slotProps.data.loading"
-                  :disabled="slotProps.data.deleted == 1"
-                  class="round-button2"
-                  size="small"
-                  style="width: 100%"
-                />
-              </div>
-            </div>
-          </template>
-        </Column>
-      </DataTable>
-    </Dialog>
+    <PasienMobileJKNDialog v-model:visible="showPasienJKN" />
 
     <Dialog
       v-model:visible="ShowNotifMobileJkn"
@@ -1107,6 +788,7 @@ import { useConfigStore } from '@/stores/config'
 import { useToast } from 'primevue/usetoast'
 import { useAuthStore } from '@/stores/config'
 import { storeToRefs } from 'pinia'
+import PasienMobileJKNDialog from './PasienMobileJKNDialog.vue'
 
 const globalFilterNotif = ref('')
 
@@ -1284,52 +966,6 @@ const showError = (message = 'Terjadi kesalahan') => {
   })
 }
 
-// ✅ Filters untuk semua kolom (gunakan FilterMatchMode.IN untuk MultiSelect)
-const filtersJKN = ref({
-  nomorkartu: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  nohp: { value: null, matchMode: FilterMatchMode.IN },
-  kodepoli: { value: null, matchMode: FilterMatchMode.IN },
-  pasien: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  namadokter: { value: null, matchMode: FilterMatchMode.IN },
-  jeniskunjungan: { value: null, matchMode: FilterMatchMode.IN },
-  waktu_checkin: { value: null, matchMode: FilterMatchMode.IN },
-  stts: { value: null, matchMode: FilterMatchMode.IN },
-  nomorreferensi: { value: null, matchMode: FilterMatchMode.IN },
-  kodebooking: { value: null, matchMode: FilterMatchMode.IN },
-  global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-})
-
-// ✅ Fungsi untuk ambil opsi unik berdasarkan field
-const uniqueOptions = (field) => {
-  const values = [...new Set(listPasienJKN.value.map((item) => item[field]))]
-  return values.map((v) => ({ label: v, value: v }))
-}
-
-const listPasienJKN = ref([])
-
-const loaddataMjkn = ref(false)
-const funcListPasienJJKN = async () => {
-  try {
-    loaddataMjkn.value = true
-
-    const url = configStore.apiBaseUrl
-
-    showPasienJKN.value = true
-
-    const response = await axios.get(
-      `${url}/index.php/api/mobil_jkn/getdataantrian_mbjkn/${id_client.value}/${formatDate(startDate.value)}`,
-    )
-
-    listPasienJKN.value = response.data.belum_terbit_sep || []
-
-    loaddataMjkn.value = false
-  } catch (error) {
-    console.error('Error fetching Pasien JKN:', error)
-  } finally {
-    loaddataMjkn.value = false
-  }
-}
-
 const listNotifObat2an = ref([])
 
 const notif_obat2an_penunjang_v2 = async () => {
@@ -1380,52 +1016,6 @@ const funtionSendToPoli = async (status) => {
   window.open(routeData.href, '_blank')
 
   await SetTaskID_4(status)
-}
-
-const TerbitkanSEP = async (data) => {
-  try {
-    data.loading = true
-    const url = configStore.apiBaseUrl
-
-    const param = {
-      id_client: id_client.value,
-      nomorreferensi: data.nomorreferensi,
-      jenis_kunjungan: data.jeniskunjunganid,
-      user_id: user_id.value,
-      tglsep: formatDate(startDate.value),
-      kd_dokter: data.kodedokter,
-      dokterSelected: {
-        KDDOKTER: data.kodedokter,
-      },
-      kd_poli: data.kodepoli == 'PAR' ? '097' : data.kodepoli,
-      kode_booking: data.kodebooking,
-    }
-    let wich_url = ''
-
-    if (data.jeniskunjunganid == 3) {
-      wich_url = `${url}/index.php/api/bpjs_api/TerbitsepDariSuratKontrol`
-    } else {
-      wich_url = `${url}/index.php/api/bpjs_api/terbitsepDariRujukan`
-    }
-
-    const response = await axios.post(wich_url, param)
-    console.log(response.data)
-    if (response.data.metadata.code == 200) {
-      showSuccess(response.data.metadata.message)
-      funcListPasienJJKN()
-    } else {
-      showInfo(response.data.metadata.message)
-    }
-
-    data.loading = false
-  } catch (error) {
-    console.log(error)
-    data.loading = false
-  } finally {
-    data.loading = false
-  }
-
-  data.loading = false
 }
 
 const keformpoli = async (status) => {

@@ -86,9 +86,8 @@
         </div>
       </div>
     </div>
-
     <DataTable
-      :value="dataList"
+      :value="filteredDataList"
       paginator
       :rows="10"
       :rowsPerPageOptions="[5, 10, 20]"
@@ -163,9 +162,7 @@
               data.asal_ruangan_display || `Ruang ${data.asal_ruangan}`
             }}</span>
             <i class="pi pi-arrow-right" style="font-size: 10px; color: #6c757d"></i>
-            <span class="badge badge-blue">{{
-              data.tujuan_display || `Tujuan ${data.tujuan}`
-            }}</span>
+            <span class="badge badge-blue">{{ data.tujuan_display }}</span>
           </div>
         </template>
       </Column>
@@ -176,6 +173,16 @@
           <div class="cell-metode">
             <i :class="metodeIcon(data.metode_pemindahan_pasien)" style="font-size: 12px"></i>
             <span>{{ data.metode_pemindahan_pasien }}</span>
+          </div>
+        </template>
+      </Column>
+
+      <!-- Dokter -->
+      <Column header="Dokter" style="min-width: 140px">
+        <template #body="{ data }">
+          <div class="cell-dokter">
+            <i class="pi pi-user-edit" style="font-size: 11px; color: #6c757d"></i>
+            {{ data.nama_dokter || '—' }}
           </div>
         </template>
       </Column>
@@ -197,29 +204,37 @@
       <!-- Status -->
       <Column header="Status" style="min-width: 120px">
         <template #body="{ data }">
-          <span v-if="data.has_confirm === 1" class="badge-status badge-status-done">
+          <span v-if="data.progres_pendaftaran === 1" class="badge-status badge-status-done">
             <i class="pi pi-check-circle"></i>
-            Sudah Diproses
+            Telah Diproses
           </span>
           <span v-else class="badge-status badge-status-pending">
             <i class="pi pi-hourglass"></i>
-            Belum Diproses
+            Menunggu
           </span>
         </template>
       </Column>
 
       <!-- Tindak Lanjut -->
-      <Column header="Aksi" style="min-width: 130px; text-align: center">
+      <Column header="Aksi" style="min-width: 150px; text-align: center">
         <template #body="{ data }">
-          <Button
-            icon="pi pi-arrow-right-arrow-left"
-            label="Tindak Lanjut"
-            size="small"
-            class="btn-tindaklanjut"
-            :severity="data.has_confirm === 1 ? 'secondary' : 'success'"
-            :outlined="data.has_confirm === 1"
-            @click="funtionSendToPoli(data)"
-          />
+          <div class="cell-aksi">
+            <span :class="caraKeluarBadgeClass(data.cara_keluar)" class="badge-cara-keluar">
+              <i :class="caraKeluarIcon(data.cara_keluar)"></i>
+              {{ caraKeluarLabel(data.cara_keluar) }}
+            </span>
+            <Button
+              :icon="caraKeluarIcon(data.cara_keluar)"
+              :label="caraKeluarBtnLabel(data.cara_keluar)"
+              size="small"
+              class="btn-tindaklanjut"
+              :severity="
+                data.progres_pendaftaran === 1 ? 'secondary' : caraKeluarSeverity(data.cara_keluar)
+              "
+              :outlined="data.progres_pendaftaran === 1"
+              @click="funtionSendToPoli(data)"
+            />
+          </div>
         </template>
       </Column>
 
@@ -271,6 +286,21 @@
               <div class="tl-detail-card-title"><i class="pi pi-send"></i> Info Pemindahan</div>
               <table class="tl-info-table">
                 <tbody>
+                  <tr>
+                    <td>Dokter</td>
+                    <td>{{ data.nama_dokter || '—' }}</td>
+                  </tr>
+                  <tr>
+                    <td>Cara Keluar</td>
+                    <td>
+                      <span
+                        :class="caraKeluarBadgeClass(data.cara_keluar)"
+                        class="badge-cara-keluar"
+                      >
+                        {{ caraKeluarLabel(data.cara_keluar) }}
+                      </span>
+                    </td>
+                  </tr>
                   <tr>
                     <td>Asal Ruangan</td>
                     <td>{{ data.asal_ruangan_display || data.asal_ruangan }}</td>
@@ -390,8 +420,16 @@ const tanggal = ref(new Date())
 const expandedRows = ref([])
 const filterStatus = ref(null)
 
-const jumlahBelumProses = computed(() => dataList.value.filter((d) => d.has_confirm !== 1).length)
-const jumlahSudahProses = computed(() => dataList.value.filter((d) => d.has_confirm === 1).length)
+const jumlahBelumProses = computed(
+  () => dataList.value.filter((d) => d.progres_pendaftaran !== 1).length,
+)
+const jumlahSudahProses = computed(
+  () => dataList.value.filter((d) => d.progres_pendaftaran === 1).length,
+)
+const filteredDataList = computed(() => {
+  if (filterStatus.value === null) return dataList.value
+  return dataList.value.filter((d) => d.progres_pendaftaran === filterStatus.value)
+})
 const rataRataDurasi = computed(() => {
   const valid = dataList.value.filter((d) => d.durasi)
   if (!valid.length) return '—'
@@ -451,16 +489,67 @@ async function fetchData() {
   }
 }
 
-const funtionSendToPoli = async (status) => {
+const funtionSendToPoli = async (data) => {
+  if (data.cara_keluar === 7) {
+    const routeData = router.resolve({
+      name: 'HomeProsesPasienView',
+      query: {
+        noreg: data.noregister,
+        noka: data.pasien.no_bpjs,
+        nomr: data.pasien.nomr,
+        kddokter: data.kddokter,
+      },
+    })
+    window.open(routeData.href, '_blank')
+    return
+  }
+
   const routeData = router.resolve({
     name: 'FormPoliKlinikView',
     query: {
-      noreg: status.noregister,
-      noka: status.pasien.no_bpjs,
-      nomr: status.pasien.nomr,
+      noreg: data.noregister,
+      noka: data.pasien.no_bpjs,
+      nomr: data.pasien.nomr,
+      cara_keluar: data.cara_keluar,
+      kddokter: data.kddokter,
     },
   })
   window.open(routeData.href, '_blank')
+}
+
+function caraKeluarLabel(val) {
+  const map = {
+    1: 'Pulang',
+    2: 'Rujuk RS Lain',
+    6: 'Rujuk Internal',
+    7: 'Rujuk Rawat Inap',
+  }
+  return map[val] ?? 'Tindak Lanjut'
+}
+
+function caraKeluarBtnLabel(val) {
+  if (val === 7) return 'Rawat Inap'
+  if (val === 2) return 'RS Lain'
+  return 'Tindak Lanjut'
+}
+
+function caraKeluarIcon(val) {
+  if (val === 7) return 'pi pi-building'
+  if (val === 2) return 'pi pi-arrow-up-right'
+  return 'pi pi-arrow-right-arrow-left'
+}
+
+function caraKeluarSeverity(val) {
+  if (val === 7) return 'info'
+  if (val === 2) return 'warn'
+  return 'success'
+}
+
+function caraKeluarBadgeClass(val) {
+  if (val === 7) return 'ck-ranap'
+  if (val === 2) return 'ck-rslain'
+  if (val === 6) return 'ck-internal'
+  return 'ck-default'
 }
 
 // ── Helpers ──────────────────────────────────────────────
@@ -506,16 +595,6 @@ function metodeIcon(metode) {
 
 function setFilter(val) {
   filterStatus.value = val
-  fetchData()
-}
-
-function onTindakLanjut(data) {
-  toast.add({
-    severity: 'info',
-    summary: 'Tindak Lanjut',
-    detail: `Pasien: ${data.pasien?.NAMAPASIEN} — ${data.tujuan_display || data.tujuan}`,
-    life: 4000,
-  })
 }
 
 onMounted(() => {
@@ -908,6 +987,51 @@ onMounted(() => {
 /* Tindak Lanjut button */
 .btn-tindaklanjut {
   font-size: 12px;
+}
+
+/* Dokter cell */
+.cell-dokter {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Aksi cell */
+.cell-aksi {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+/* Cara keluar badge */
+.badge-cara-keluar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ck-ranap {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.ck-rslain {
+  background: #ffedd5;
+  color: #9a3412;
+}
+.ck-internal {
+  background: #f3e8ff;
+  color: #7e22ce;
+}
+.ck-default {
+  background: #f0fdf4;
+  color: #166534;
 }
 
 .mt-2 {

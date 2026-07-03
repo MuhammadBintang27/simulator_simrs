@@ -44,7 +44,6 @@
             <div class="col-md-6">
               <div class="ops-card h-100">
                 <div class="ops-card-header kondisi-header">
-                  <i class="pi pi-heart me-2"></i>
                   <span>KONDISI PASIEN</span>
                   <small class="ms-auto">Tanda Vital &amp; Diagnosa</small>
                 </div>
@@ -134,9 +133,8 @@
             <div class="col-md-6">
               <div class="ops-card h-100">
                 <div class="ops-card-header persiapan-header">
-                  <i class="pi pi-user me-2"></i>
                   <span>PERSIAPAN PASIEN</span>
-                  <small class="ms-auto">Kondisi Pra-Operasi</small>
+                  <small class="ms-auto"> Kondisi Pra-Operasi</small>
                 </div>
                 <div class="ops-card-body">
                   <div class="section-divider"><span>Kebutuhan Klinis</span></div>
@@ -326,7 +324,6 @@
                       <Button
                         label="Lakukan Otorisasi"
                         icon="pi pi-lock"
-                        class="btn-otorisasi"
                         @click="showDialog = true"
                       />
                     </div>
@@ -383,7 +380,7 @@
                 <Button
                   label="Simpan Data"
                   icon="pi pi-save"
-                  class="btn-simpan"
+                  severity="success"
                   :loading="loading"
                   @click="simpan_data"
                 />
@@ -595,10 +592,10 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: linear-gradient(135deg, #1a3a5c 0%, #2563a8 100%);
-  border-radius: 4px;
+  background: var(--p-primary-color);
+  border-radius: var(--p-border-radius);
   padding: 1rem 1.5rem;
-  color: #fff;
+  color: var(--p-primary-contrast-color);
 }
 .ops-banner-icon {
   flex-shrink: 0;
@@ -619,11 +616,11 @@ onMounted(() => {
 
 /* ====== Cards ====== */
 .ops-card {
-  border-radius: 4px;
+  border-radius: var(--p-border-radius);
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  background: #fff;
-  border: 1px solid #e9ecef;
+  box-shadow: var(--p-card-shadow);
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
 }
 .ops-card-header {
   display: flex;
@@ -631,19 +628,14 @@ onMounted(() => {
   padding: 0.75rem 1.1rem;
   font-weight: 700;
   font-size: 0.92rem;
-  color: #fff;
+  color: var(--p-primary-contrast-color);
   letter-spacing: 0.04em;
+  background: var(--p-primary-color);
 }
 .ops-card-header small {
   font-size: 0.7rem;
   font-weight: 400;
   opacity: 0.88;
-}
-.kondisi-header,
-.persiapan-header,
-.admin-header,
-.otorisasi-header {
-  background: linear-gradient(135deg, #1a3a5c, #2563a8);
 }
 .ops-card-body {
   padding: 1rem 1.1rem;
@@ -657,7 +649,7 @@ onMounted(() => {
   display: block;
   font-size: 0.8rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--p-text-color);
   margin-bottom: 0.3rem;
 }
 .radio-group {
@@ -668,7 +660,7 @@ onMounted(() => {
 }
 .radio-label {
   font-size: 0.8rem;
-  color: #374151;
+  color: var(--p-text-color);
   cursor: pointer;
 }
 
@@ -680,7 +672,7 @@ onMounted(() => {
   gap: 0.5rem;
   font-size: 0.7rem;
   font-weight: 700;
-  color: #6b7280;
+  color: var(--p-text-muted-color);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -689,7 +681,7 @@ onMounted(() => {
   content: '';
   flex: 1;
   height: 1px;
-  background: #e5e7eb;
+  background: var(--p-content-border-color);
 }
 
 /* ====== Checklist Grid ====== */
@@ -708,14 +700,14 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0.45rem 0.75rem;
-  background: #f9fafb;
-  border-radius: 4px;
-  border: 1px solid #e5e7eb;
+  background: var(--p-surface-50);
+  border-radius: var(--p-border-radius);
+  border: 1px solid var(--p-content-border-color);
   gap: 0.75rem;
 }
 .checklist-label {
   font-size: 0.8rem;
-  color: #374151;
+  color: var(--p-text-color);
   font-weight: 500;
   flex: 1;
 }
@@ -731,30 +723,25 @@ onMounted(() => {
   flex-shrink: 0;
   width: 52px;
   height: 52px;
-  background: linear-gradient(135deg, #1a3a5c, #2563a8);
+  background: var(--p-primary-color);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--p-primary-contrast-color);
   font-size: 1.3rem;
 }
 .tte-unsigned-title {
   font-weight: 700;
   font-size: 0.88rem;
-  color: #1e293b;
+  color: var(--p-text-color);
   margin: 0 0 0.2rem;
 }
 .tte-unsigned-desc {
   font-size: 0.77rem;
-  color: #6b7280;
+  color: var(--p-text-muted-color);
   margin: 0 0 0.65rem;
   line-height: 1.5;
-}
-.btn-otorisasi {
-  background: linear-gradient(135deg, #1a3a5c, #2563a8) !important;
-  border: none !important;
-  font-weight: 600;
 }
 
 /* ====== TTE Signed + QR ====== */
@@ -773,10 +760,10 @@ onMounted(() => {
   align-items: center;
   gap: 0.6rem;
   padding: 0.5rem 0.85rem;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #1d4ed8;
-  border-radius: 8px;
+  background: var(--p-primary-50);
+  border: 1px solid var(--p-primary-200);
+  color: var(--p-primary-color);
+  border-radius: var(--p-border-radius);
   font-size: 0.8rem;
 }
 .tte-verified-badge .pi-verified {
@@ -821,11 +808,11 @@ onMounted(() => {
   align-items: center;
   gap: 0.5rem;
   font-size: 0.78rem;
-  color: #6b7280;
+  color: var(--p-text-muted-color);
 }
 .tte-meta-item .pi {
   font-size: 0.72rem;
-  color: #1d4ed8;
+  color: var(--p-primary-color);
 }
 
 /* ====== QR Code ====== */
@@ -839,20 +826,20 @@ onMounted(() => {
 .qr-label {
   font-size: 0.7rem;
   font-weight: 700;
-  color: #374151;
+  color: var(--p-text-color);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 .qr-box {
   padding: 0.6rem;
-  background: #fff;
-  border: 2px solid #1d4ed8;
-  border-radius: 10px;
+  background: var(--p-surface-0);
+  border: 2px solid var(--p-primary-color);
+  border-radius: var(--p-border-radius);
   display: flex;
 }
 .qr-hint {
   font-size: 0.65rem;
-  color: #9ca3af;
+  color: var(--p-text-muted-color);
   text-align: center;
 }
 
@@ -869,11 +856,11 @@ onMounted(() => {
 
 /* ====== Action Bar ====== */
 .ops-action-bar {
-  background: #fff;
-  border: 1px solid #e9ecef;
-  border-radius: 10px;
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--p-border-radius);
   padding: 0.8rem 1.2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--p-card-shadow);
 }
 .ops-action-inner {
   display: flex;
@@ -886,17 +873,12 @@ onMounted(() => {
   display: flex;
   align-items: center;
   font-size: 0.8rem;
-  color: #6c757d;
+  color: var(--p-text-muted-color);
 }
 .ops-action-buttons {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-.btn-simpan {
-  background: linear-gradient(135deg, #1a3a5c, #2563a8) !important;
-  border: none !important;
-  font-weight: 600;
 }
 
 /* ====== Responsive ====== */

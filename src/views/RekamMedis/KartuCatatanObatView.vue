@@ -34,26 +34,28 @@
           <div class="kco-doc-sub">Medication Administration Record (MAR)</div>
         </div>
         <table class="kco-info-tbl">
-          <tr>
-            <td class="il">No. Register</td>
-            <td class="is">:</td>
-            <td class="iv">
-              <strong>{{ resolvedNoreg }}</strong>
-            </td>
-            <td class="il">Nama Pasien</td>
-            <td class="is">:</td>
-            <td class="iv">
-              <strong>{{ resolvedNama || '-' }}</strong>
-            </td>
-          </tr>
-          <tr>
-            <td class="il">Periode</td>
-            <td class="is">:</td>
-            <td class="iv">{{ form.startdate }} s/d {{ form.enddate }}</td>
-            <td class="il">Ruangan</td>
-            <td class="is">:</td>
-            <td class="iv">{{ resolvedRuangan || '-' }}</td>
-          </tr>
+          <tbody>
+            <tr>
+              <td class="il">No. Register</td>
+              <td class="is">:</td>
+              <td class="iv">
+                <strong>{{ resolvedNoreg }}</strong>
+              </td>
+              <td class="il">Nama Pasien</td>
+              <td class="is">:</td>
+              <td class="iv">
+                <strong>{{ resolvedNama || '-' }}</strong>
+              </td>
+            </tr>
+            <tr>
+              <td class="il">Periode</td>
+              <td class="is">:</td>
+              <td class="iv">{{ form.startdate }} s/d {{ form.enddate }}</td>
+              <td class="il">Ruangan</td>
+              <td class="is">:</td>
+              <td class="iv">{{ resolvedRuangan || '-' }}</td>
+            </tr>
+          </tbody>
         </table>
       </div>
 
@@ -257,7 +259,7 @@ onMounted(fetchData)
 }
 .kco-embedded {
   font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 11px;
+  font-size: 13px;
   color: inherit;
 }
 
@@ -274,7 +276,7 @@ onMounted(fetchData)
   position: sticky;
   top: 0;
   font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 12px;
+  font-size: 13px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 .kco-toolbar-left {
@@ -306,12 +308,12 @@ onMounted(fetchData)
   margin-bottom: 8px;
 }
 .kco-lbl {
-  font-size: 11px;
+  font-size: 12px;
   color: #6a8ab0;
 }
 .kco-date-input {
   font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   border: 1px solid #b2c8dd;
   border-radius: 4px;
   padding: 3px 7px;
@@ -325,7 +327,7 @@ onMounted(fetchData)
 .kco-btn-reload,
 .kco-btn-print {
   font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -373,19 +375,19 @@ onMounted(fetchData)
   flex-wrap: wrap;
 }
 .kco-doc-title {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 800;
   letter-spacing: 0.05em;
 }
 .kco-doc-sub {
-  font-size: 11px;
+  font-size: 12px;
   color: #a8c8e8;
   margin-top: 2px;
 }
 .kco-info-tbl {
   border-collapse: collapse;
   font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 11px;
+  font-size: 12px;
 }
 .kco-info-tbl td {
   padding: 1px 5px;
@@ -410,7 +412,7 @@ onMounted(fetchData)
   gap: 10px;
   padding: 36px 16px;
   font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 12px;
+  font-size: 13px;
   color: #7a9cc0;
   text-align: center;
 }
@@ -440,7 +442,7 @@ onMounted(fetchData)
   width: 100%;
   border-collapse: collapse;
   font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 10px;
+  font-size: 12px;
   table-layout: fixed;
 }
 .kco-tbl th {
@@ -449,17 +451,17 @@ onMounted(fetchData)
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.02em;
-  padding: 4px 3px;
+  padding: 5px 4px;
   border: 1px solid #b2c8dd;
   white-space: nowrap;
   text-align: center;
   vertical-align: middle;
-  font-size: 9.5px;
+  font-size: 11px;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
 .kco-tbl td {
-  padding: 3px 3px;
+  padding: 4px 4px;
   border: 1px solid #cdd8e8;
   vertical-align: middle;
   overflow: hidden;
@@ -499,7 +501,7 @@ onMounted(fetchData)
   color: #5a7090;
 }
 .td-kode {
-  font-size: 9px;
+  font-size: 11px;
   color: #5a7090;
   white-space: nowrap;
   overflow: hidden;
@@ -529,7 +531,7 @@ onMounted(fetchData)
 }
 .obat-pengganti {
   display: inline-block;
-  font-size: 9px;
+  font-size: 10.5px;
   color: #7a5800;
   background: #fff8e1;
   border: 1px solid #f0d080;
@@ -560,12 +562,12 @@ onMounted(fetchData)
 }
 .total-badge {
   display: inline-block;
-  padding: 1px 5px;
+  padding: 1px 6px;
   background: #162d4e;
   color: #fff;
   border-radius: 8px;
   font-weight: 700;
-  font-size: 9.5px;
+  font-size: 11px;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
@@ -582,7 +584,7 @@ onMounted(fetchData)
   background: #f5f8fc;
   border-top: 1px solid #dde8f4;
   font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 10px;
+  font-size: 11px;
   color: #4a6080;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
@@ -637,7 +639,7 @@ onMounted(fetchData)
   min-width: 100px;
 }
 .sign-label {
-  font-size: 10px;
+  font-size: 11px;
   color: #4a6080;
   margin-bottom: 22px;
 }
@@ -646,7 +648,7 @@ onMounted(fetchData)
 }
 .sign-name {
   border-top: 1px solid #162d4e;
-  font-size: 9.5px;
+  font-size: 11px;
   color: #6a80a0;
   padding-top: 3px;
 }

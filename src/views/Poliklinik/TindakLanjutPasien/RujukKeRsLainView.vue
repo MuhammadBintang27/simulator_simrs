@@ -366,8 +366,7 @@ const faskesSelected = ref(null)
 const SpesialistikSelected = ref(null)
 const Catatan = ref('-')
 
-import { RouterLink, useRoute } from 'vue-router'
-import { type } from 'jquery'
+import { useRoute } from 'vue-router'
 import RujukanServerBPJS from '@/components/PoliklinikComponent/RujukanServerBPJS.vue'
 const route = useRoute()
 

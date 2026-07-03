@@ -484,10 +484,10 @@ const saveAsImage = async () => {
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: linear-gradient(135deg, #0f2942 0%, #1a56a8 100%);
-  border-radius: 4px;
+  background: var(--p-primary-color);
+  border-radius: var(--p-border-radius);
   padding: 1rem 1.5rem;
-  color: #fff;
+  color: var(--p-primary-contrast-color);
 }
 .marking-banner-icon {
   flex-shrink: 0;
@@ -509,7 +509,7 @@ const saveAsImage = async () => {
   flex-shrink: 0;
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
+  border-radius: var(--p-border-radius);
   padding: 0.25rem 0.75rem;
   font-size: 0.78rem;
   font-weight: 600;
@@ -518,11 +518,11 @@ const saveAsImage = async () => {
 
 /* ====== Main Card ====== */
 .marking-card {
-  background: #fff;
-  border-radius: 4px;
+  background: var(--p-content-background);
+  border-radius: var(--p-border-radius);
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e9ecef;
+  box-shadow: var(--p-card-shadow);
+  border: 1px solid var(--p-content-border-color);
 }
 
 /* ====== Toolbar ====== */
@@ -531,14 +531,14 @@ const saveAsImage = async () => {
   align-items: center;
   gap: 0.75rem;
   padding: 0.65rem 1rem;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
+  background: var(--p-surface-50);
+  border-bottom: 1px solid var(--p-content-border-color);
   flex-wrap: wrap;
 }
 .toolbar-title {
   font-size: 0.82rem;
   font-weight: 700;
-  color: #374151;
+  color: var(--p-text-color);
 }
 .toolbar-tools {
   display: flex;
@@ -549,7 +549,7 @@ const saveAsImage = async () => {
 .toolbar-divider {
   width: 1px;
   height: 24px;
-  background: #dee2e6;
+  background: var(--p-content-border-color);
   margin: 0 0.2rem;
 }
 .toolbar-right {
@@ -561,56 +561,52 @@ const saveAsImage = async () => {
   align-items: center;
   gap: 0.3rem;
   padding: 0.35rem 0.75rem;
-  border: 1px solid #dee2e6;
-  border-radius: 6px;
-  background: #fff;
-  color: #374151;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--p-border-radius);
+  background: var(--p-content-background);
+  color: var(--p-text-color);
   font-size: 0.78rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 .tool-btn:hover:not(:disabled) {
-  background: #f1f5f9;
-  border-color: #9ca3af;
+  background: var(--p-surface-100);
+  border-color: var(--p-surface-400);
 }
 .tool-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 .tool-btn.tool-active-draw {
-  background: #dbeafe;
-  border-color: #3b82f6;
-  color: #1d4ed8;
+  background: var(--p-primary-50);
+  border-color: var(--p-primary-color);
+  color: var(--p-primary-color);
 }
-.tool-btn.tool-erase:hover:not(:disabled) {
-  background: #fee2e2;
-  border-color: #ef4444;
-  color: #dc2626;
-}
+.tool-btn.tool-erase:hover:not(:disabled),
 .tool-btn.tool-erase.tool-active-erase {
-  background: #fee2e2;
-  border-color: #ef4444;
-  color: #dc2626;
+  background: var(--p-red-100);
+  border-color: var(--p-red-500);
+  color: var(--p-red-700);
 }
 .tool-btn.tool-clear:hover:not(:disabled) {
-  background: #fef3c7;
-  border-color: #d97706;
-  color: #92400e;
+  background: var(--p-yellow-100);
+  border-color: var(--p-yellow-500);
+  color: var(--p-yellow-800);
 }
 .tool-btn.tool-reset:hover {
-  background: #eff6ff;
-  border-color: #3b82f6;
-  color: #1d4ed8;
+  background: var(--p-primary-50);
+  border-color: var(--p-primary-color);
+  color: var(--p-primary-color);
 }
 .tool-btn-save {
   display: flex;
   align-items: center;
   padding: 0.4rem 1rem;
-  background: linear-gradient(135deg, #14532d, #16a34a);
+  background: var(--p-green-600);
   color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--p-border-radius);
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
@@ -635,10 +631,10 @@ const saveAsImage = async () => {
   position: relative;
   display: inline-block;
   width: 100%;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
+  border: 2px solid var(--p-content-border-color);
+  border-radius: var(--p-border-radius);
   overflow: hidden;
-  background: #f9fafb;
+  background: var(--p-surface-50);
 }
 .image-container {
   position: relative;
@@ -670,9 +666,9 @@ const saveAsImage = async () => {
   gap: 0.75rem;
   margin-top: 0.5rem;
   padding: 0.4rem 0.75rem;
-  background: #f8f9fa;
-  border-radius: 6px;
-  border: 1px solid #e9ecef;
+  background: var(--p-surface-50);
+  border-radius: var(--p-border-radius);
+  border: 1px solid var(--p-content-border-color);
   flex-wrap: wrap;
 }
 .status-indicator {
@@ -680,25 +676,17 @@ const saveAsImage = async () => {
   align-items: center;
   gap: 0.3rem;
   font-size: 0.72rem;
-  color: #6b7280;
+  color: var(--p-text-muted-color);
 }
 .status-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
 }
-.dot-ok {
-  background: #16a34a;
-}
-.dot-off {
-  background: #d1d5db;
-}
-.dot-draw {
-  background: #3b82f6;
-}
-.dot-erase {
-  background: #ef4444;
-}
+.dot-ok    { background: var(--p-green-600); }
+.dot-off   { background: var(--p-surface-400); }
+.dot-draw  { background: var(--p-primary-color); }
+.dot-erase { background: var(--p-red-500); }
 
 .status-msg {
   display: flex;
@@ -710,18 +698,9 @@ const saveAsImage = async () => {
   padding: 0.2rem 0.6rem;
   border-radius: 20px;
 }
-.status-msg.info {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-.status-msg.success {
-  background: #dcfce7;
-  color: #15803d;
-}
-.status-msg.error {
-  background: #fee2e2;
-  color: #dc2626;
-}
+.status-msg.info    { background: var(--p-primary-50);  color: var(--p-primary-color); }
+.status-msg.success { background: var(--p-green-100);   color: var(--p-green-700); }
+.status-msg.error   { background: var(--p-red-100);     color: var(--p-red-700); }
 
 /* ====== Saved Info ====== */
 .saved-info-bar {
@@ -730,15 +709,15 @@ const saveAsImage = async () => {
   gap: 0.75rem;
   margin: 0 1rem 1rem;
   padding: 0.65rem 1rem;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: 8px;
-  border-left: 4px solid #16a34a;
+  background: var(--p-green-50);
+  border: 1px solid var(--p-green-200);
+  border-radius: var(--p-border-radius);
+  border-left: 4px solid var(--p-green-600);
 }
 .saved-info-icon {
   width: 36px;
   height: 36px;
-  background: #16a34a;
+  background: var(--p-green-600);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -757,18 +736,18 @@ const saveAsImage = async () => {
 .saved-info-title {
   font-size: 0.82rem;
   font-weight: 700;
-  color: #14532d;
+  color: var(--p-green-800);
 }
 .saved-info-url {
   font-size: 0.7rem;
-  color: #6b7280;
+  color: var(--p-text-muted-color);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .saved-info-badge {
   flex-shrink: 0;
-  background: #16a34a;
+  background: var(--p-green-600);
   color: #fff;
   padding: 0.2rem 0.7rem;
   border-radius: 20px;
@@ -780,7 +759,7 @@ const saveAsImage = async () => {
 .loading-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.9);
+  background: color-mix(in srgb, var(--p-surface-0) 90%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -791,13 +770,13 @@ const saveAsImage = async () => {
 }
 .loading-spinner i {
   font-size: 2rem;
-  color: #1d4ed8;
+  color: var(--p-primary-color);
   display: block;
   margin-bottom: 0.5rem;
 }
 .loading-spinner p {
   font-size: 0.82rem;
-  color: #6b7280;
+  color: var(--p-text-muted-color);
   margin: 0;
 }
 

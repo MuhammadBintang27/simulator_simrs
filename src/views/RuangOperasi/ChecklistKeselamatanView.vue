@@ -4,7 +4,7 @@
   <!-- Header Banner -->
   <div class="checklist-banner mb-3">
     <div class="banner-icon">
-      <i class="pi pi-shield" style="font-size: 2rem; color: #fff"></i>
+      <i class="pi pi-shield" style="font-size: 2rem; color: var(--p-primary-contrast-color)"></i>
     </div>
     <div class="banner-content">
       <h4 class="banner-title">Checklist Keselamatan Pasien Operasi</h4>
@@ -585,7 +585,7 @@
   <div class="action-bar mt-3">
     <div class="action-bar-inner">
       <div class="action-info">
-        <i class="pi pi-info-circle me-2" style="color: #6c757d"></i>
+        <i class="pi pi-info-circle me-2" style="color: var(--p-text-muted-color)"></i>
         <span>Pastikan semua field telah diisi sebelum menyimpan data checklist.</span>
       </div>
       <div class="action-buttons">
@@ -600,7 +600,7 @@
         <Button
           label="Simpan Checklist"
           icon="pi pi-save"
-          class="btn-save-checklist"
+          severity="success"
           @click="simpan_data"
         />
       </div>
@@ -961,10 +961,10 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: linear-gradient(135deg, #1a3a5c 0%, #2563a8 100%);
-  border-radius: 4px;
+  background: var(--p-primary-color);
+  border-radius: var(--p-border-radius);
   padding: 1rem 1.5rem;
-  color: #fff;
+  color: var(--p-primary-contrast-color);
 }
 .banner-title {
   margin: 0 0 0.25rem;
@@ -985,9 +985,9 @@ onMounted(() => {
   justify-content: center;
   gap: 0;
   padding: 0.75rem 1rem;
-  background: #f8f9fa;
-  border-radius: 4px;
-  border: 1px solid #e9ecef;
+  background: var(--p-surface-50);
+  border-radius: var(--p-border-radius);
+  border: 1px solid var(--p-content-border-color);
 }
 .phase-step {
   display: flex;
@@ -996,35 +996,35 @@ onMounted(() => {
   gap: 0.2rem;
   cursor: pointer;
   padding: 0.4rem 1.5rem;
-  border-radius: 4px;
+  border-radius: var(--p-border-radius);
   transition: background 0.2s;
 }
 .phase-step:hover {
-  background: #e9ecef;
+  background: var(--p-content-border-color);
 }
 .phase-step.active {
-  background: #e8f0fe;
+  background: var(--p-primary-50);
 }
 .phase-step .step-label {
   font-weight: 700;
   font-size: 0.85rem;
-  color: #333;
+  color: var(--p-text-color);
 }
 .phase-step small {
   font-size: 0.72rem;
-  color: #6c757d;
+  color: var(--p-text-muted-color);
   text-align: center;
 }
 .phase-connector {
   flex: 1;
   height: 2px;
-  background: linear-gradient(to right, #dee2e6, #dee2e6);
+  background: var(--p-content-border-color);
   max-width: 60px;
 }
 .step-badge {
   width: 32px;
   height: 32px;
-  border-radius: 4px;
+  border-radius: var(--p-border-radius);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1032,23 +1032,17 @@ onMounted(() => {
   font-size: 0.9rem;
   color: #fff;
 }
-.signin-badge {
-  background: #2563a8;
-}
-.timeout-badge {
-  background: #d97706;
-}
-.signout-badge {
-  background: #16a34a;
-}
+.signin-badge  { background: var(--p-primary-color); }
+.timeout-badge { background: var(--p-yellow-600); }
+.signout-badge { background: var(--p-green-600); }
 
 /* ====== Cards ====== */
 .checklist-card {
-  border-radius: 4px;
+  border-radius: var(--p-border-radius);
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  background: #fff;
-  border: 1px solid #e9ecef;
+  box-shadow: var(--p-card-shadow);
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
   height: 100%;
 }
 .card-phase-header {
@@ -1065,15 +1059,9 @@ onMounted(() => {
   font-weight: 400;
   opacity: 0.88;
 }
-.signin-header {
-  background: linear-gradient(135deg, #1a3a5c, #2563a8);
-}
-.timeout-header {
-  background: linear-gradient(135deg, #92400e, #d97706);
-}
-.signout-header {
-  background: linear-gradient(135deg, #14532d, #16a34a);
-}
+.signin-header  { background: var(--p-primary-color); }
+.timeout-header { background: var(--p-yellow-600); }
+.signout-header { background: var(--p-green-600); }
 
 .card-phase-body {
   padding: 1rem 1.1rem;
@@ -1087,7 +1075,7 @@ onMounted(() => {
   display: block;
   font-size: 0.82rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--p-text-color);
   margin-bottom: 0.35rem;
   line-height: 1.4;
 }
@@ -1095,10 +1083,9 @@ onMounted(() => {
   display: block;
   font-size: 0.78rem;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--p-text-muted-color);
   margin-bottom: 0.25rem;
 }
-
 .radio-group {
   display: flex;
   flex-wrap: wrap;
@@ -1107,13 +1094,12 @@ onMounted(() => {
 }
 .radio-label {
   font-size: 0.82rem;
-  color: #374151;
+  color: var(--p-text-color);
   cursor: pointer;
 }
-
 .sub-field {
-  background: #f8f9fa;
-  border-left: 3px solid #dee2e6;
+  background: var(--p-surface-50);
+  border-left: 3px solid var(--p-content-border-color);
   padding: 0.5rem 0.75rem;
   border-radius: 0 6px 6px 0;
 }
@@ -1131,7 +1117,7 @@ onMounted(() => {
 }
 .checkbox-item label {
   font-size: 0.81rem;
-  color: #374151;
+  color: var(--p-text-color);
   line-height: 1.4;
   cursor: pointer;
 }
@@ -1144,7 +1130,7 @@ onMounted(() => {
   gap: 0.5rem;
   font-size: 0.73rem;
   font-weight: 700;
-  color: #6b7280;
+  color: var(--p-text-muted-color);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -1153,16 +1139,16 @@ onMounted(() => {
   content: '';
   flex: 1;
   height: 1px;
-  background: #e5e7eb;
+  background: var(--p-content-border-color);
 }
 
 /* ====== Action Bar ====== */
 .action-bar {
-  background: #fff;
-  border: 1px solid #e9ecef;
-  border-radius: 4px;
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--p-border-radius);
   padding: 0.85rem 1.25rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--p-card-shadow);
 }
 .action-bar-inner {
   display: flex;
@@ -1175,16 +1161,11 @@ onMounted(() => {
   display: flex;
   align-items: center;
   font-size: 0.82rem;
-  color: #6c757d;
+  color: var(--p-text-muted-color);
 }
 .action-buttons {
   display: flex;
   align-items: center;
-}
-.btn-save-checklist {
-  background: linear-gradient(135deg, #1a3a5c, #2563a8) !important;
-  border: none !important;
-  font-weight: 600;
 }
 
 /* ====== TTE Actions ====== */
@@ -1197,7 +1178,7 @@ onMounted(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.4rem 0.75rem;
-  border-radius: 4px;
+  border-radius: var(--p-border-radius);
   font-size: 0.78rem;
   width: 100%;
 }
@@ -1206,19 +1187,19 @@ onMounted(() => {
   flex-shrink: 0;
 }
 .signin-verified {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #1d4ed8;
+  background: var(--p-primary-50);
+  border: 1px solid var(--p-primary-200);
+  color: var(--p-primary-color);
 }
 .timeout-verified {
-  background: #fffbeb;
-  border: 1px solid #fde68a;
-  color: #92400e;
+  background: var(--p-yellow-50);
+  border: 1px solid var(--p-yellow-200);
+  color: var(--p-yellow-800);
 }
 .signout-verified {
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  color: #14532d;
+  background: var(--p-green-50);
+  border: 1px solid var(--p-green-200);
+  color: var(--p-green-800);
 }
 .tte-info {
   display: flex;
@@ -1244,19 +1225,19 @@ onMounted(() => {
 
 /* ====== QR Code Section ====== */
 .qr-section {
-  border-radius: 4px;
+  border-radius: var(--p-border-radius);
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--p-card-shadow);
 }
 .qr-card {
-  background: #fff;
-  border: 2px solid #16a34a;
+  background: var(--p-content-background);
+  border: 2px solid var(--p-green-600);
 }
 .qr-header {
   display: flex;
   align-items: center;
   padding: 0.75rem 1.25rem;
-  background: linear-gradient(135deg, #14532d, #16a34a);
+  background: var(--p-green-600);
   color: #fff;
   font-weight: 700;
   font-size: 0.9rem;
@@ -1274,9 +1255,9 @@ onMounted(() => {
 .qr-code-wrapper {
   flex-shrink: 0;
   padding: 0.75rem;
-  background: #fff;
-  border: 2px solid #e5e7eb;
-  border-radius: 4px;
+  background: var(--p-surface-0);
+  border: 2px solid var(--p-content-border-color);
+  border-radius: var(--p-border-radius);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1288,12 +1269,12 @@ onMounted(() => {
 .qr-title {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--p-text-color);
   margin: 0 0 0.25rem;
 }
 .qr-subtitle {
   font-size: 0.78rem;
-  color: #6b7280;
+  color: var(--p-text-muted-color);
   margin: 0 0 0.75rem;
 }
 .qr-signers {
@@ -1307,24 +1288,24 @@ onMounted(() => {
   gap: 0.5rem;
   font-size: 0.78rem;
   padding: 0.3rem 0.5rem;
-  background: #f9fafb;
-  border-radius: 6px;
-  border-left: 3px solid #16a34a;
+  background: var(--p-surface-50);
+  border-radius: var(--p-border-radius);
+  border-left: 3px solid var(--p-green-600);
 }
 .signer-role {
   font-weight: 700;
-  color: #374151;
+  color: var(--p-text-color);
   min-width: 120px;
   flex-shrink: 0;
 }
 .signer-name {
-  color: #111827;
+  color: var(--p-text-color);
   font-weight: 600;
   flex: 1;
 }
 .signer-time {
   font-size: 0.7rem;
-  color: #9ca3af;
+  color: var(--p-text-muted-color);
   white-space: nowrap;
 }
 

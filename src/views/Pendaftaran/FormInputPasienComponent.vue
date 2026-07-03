@@ -256,16 +256,37 @@
               <div class="col-md-6">
                 <!-- Pekerjaan -->
                 <div class="form-group">
-                  <label class="font-bold">Pekerjaan</label>
-
-                  <Select
-                    v-model="form.pekerjaan"
-                    :options="pekerjaanOptions"
-                    optionLabel="label"
-                    :class="{ 'input-error': errors.pekerjaan }"
-                    placeholder="Contoh: Pegawai Swasta"
-                    style="width: 100%"
-                  />
+                  <div class="d-flex gap-2">
+                    <div :style="['TNI', 'POLRI'].includes(form.pekerjaan?.label) ? 'width: 50%' : 'width: 100%'">
+                      <label class="font-bold">Pekerjaan</label>
+                      <Select
+                        v-model="form.pekerjaan"
+                        :options="pekerjaanOptions"
+                        optionLabel="label"
+                        :class="{ 'input-error': errors.pekerjaan }"
+                        placeholder="Contoh: Pegawai Swasta"
+                        style="width: 100%"
+                      />
+                    </div>
+                    <div v-if="['TNI', 'POLRI'].includes(form.pekerjaan?.label)" style="width: 50%">
+                      <label class="font-bold">NRP</label>
+                      <InputText
+                        v-model="form.no_nrp"
+                        placeholder="No NRP"
+                        style="width: 100%"
+                      />
+                    </div>
+                  </div>
+                  <div v-if="['TNI', 'POLRI'].includes(form.pekerjaan?.label)" class="mt-2">
+                    <label class="font-bold">Hubungan dengan TNI/POLRI</label>
+                    <Select
+                      v-model="form.hubungan_tni_polri"
+                      :options="hubunganTNIOptions"
+                      optionLabel="label"
+                      placeholder="Pilih Hubungan"
+                      style="width: 100%"
+                    />
+                  </div>
                   <small class="text-danger" v-if="errors.pekerjaan">{{ errors.pekerjaan }}</small>
                 </div>
               </div>
@@ -398,11 +419,19 @@ const listStatus = ref([
 
 const pekerjaanOptions = ref([
   { kode: '1', label: 'PNS' },
-  { kode: '2', label: 'TNI/POLRI' },
+  { kode: '2', label: 'POLRI' },
+  { kode: '7', label: 'TNI' },
   { kode: '3', label: 'SWASTA' },
   { kode: '4', label: 'BUMN' },
   { kode: '5', label: 'MAHASISWA' },
   { kode: '6', label: 'TIDAK/BELUM BEKERJA' },
+])
+
+const hubunganTNIOptions = ref([
+  { kode: '1', label: 'Diri Sendiri' },
+  { kode: '2', label: 'Suami' },
+  { kode: '3', label: 'Istri' },
+  { kode: '4', label: 'Anak' },
 ])
 
 const HakKelasList = ref([
@@ -452,6 +481,8 @@ const form = ref({
   desaselected: null,
   pendidikan: '',
   pekerjaan: localOs.value?.jenisPeserta?.keterangan || '',
+  no_nrp: '',
+  hubungan_tni_polri: null,
   agama: '',
   suku: '',
   no_telp: '',
@@ -704,6 +735,7 @@ const GetDataPasienLocal = async (mode, parameter) => {
       `${url}/index.php/api/data_referensi/GetDataPasien_v3`,
       payload,
     )
+
     if (response?.data?.metadata?.code === 200 && response.data.response?.length) {
       const first = response.data.response[0]
       listDataRiwayat.value = first
@@ -732,6 +764,11 @@ const GetDataPasienLocal = async (mode, parameter) => {
         desaselected: datalokasi.value[0],
         pendidikan: listPendidikan.value.find((x) => x.kode === listDataRiwayat.value.PENDIDIKAN),
         pekerjaan: pekerjaanOptions.value.find((x) => x.kode === listDataRiwayat.value.PEKERJAAN),
+        no_nrp: listDataRiwayat.value.NO_NRP || '',
+        hubungan_tni_polri:
+          hubunganTNIOptions.value.find(
+            (x) => x.kode === listDataRiwayat.value.HUBUNGAN_TNI_POLRI,
+          ) || null,
         agama: listAgama.value.find((x) => x.kode === listDataRiwayat.value.AGAMA),
         suku: listSuku.value.find((x) => x.id_suku === listDataRiwayat.value.SUKU),
         no_telp: listDataRiwayat.value.NOTELP || '',
@@ -879,14 +916,13 @@ const handleSave = async () => {
       form.value,
     )
     loading.value = false
-
     console.log(response.data)
 
     if (response.data.code == 200) {
       form.value = {
         rm: response.data.no_rm,
       }
-      showSuccess(response.data)
+      showSuccess(response.data.message)
 
       if (props.mode == 2) {
         setTimeout(() => {

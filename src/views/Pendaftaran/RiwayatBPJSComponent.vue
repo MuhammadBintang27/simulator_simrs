@@ -87,13 +87,23 @@
       <div v-else-if="isMobile" class="mobile-view">
         <div v-for="(item, index) in historiData" :key="item.noSep || index" class="histori-card">
           <div class="card-header-row">
-            <div>
+            <div class="card-header-left">
               <Tag
                 :severity="getJenisSeverity(item.jnsPelayanan)"
                 :value="getJenisLabel(item.jnsPelayanan)"
                 style="font-size: 0.72rem"
               />
-              <span class="card-date ml-2">{{ item.tglSep }}</span>
+              <div class="card-dates">
+                <span class="card-date-item">
+                  <i class="pi pi-sign-in card-date-icon"></i>
+                  {{ item.tglSep || '—' }}
+                </span>
+                <span v-if="item.tglPlgSep" class="card-date-sep">→</span>
+                <span v-if="item.tglPlgSep" class="card-date-item card-date-pulang">
+                  <i class="pi pi-sign-out card-date-icon"></i>
+                  {{ item.tglPlgSep }}
+                </span>
+              </div>
             </div>
             <Button
               v-if="!viewOnly"
@@ -108,14 +118,15 @@
           <div class="card-body">
             <div class="info-row">
               <span class="label">No. SEP</span>
-              <code class="value">{{ item.noSep }}</code>
+
+              {{ item.noSep }}
             </div>
             <div class="info-row">
               <span class="label">Peserta</span>
               <span class="value">
                 <strong>{{ item.namaPeserta }}</strong>
                 <br />
-                <small class="text-muted">{{ item.noKartu }}</small>
+                {{ item.noKartu }}
               </span>
             </div>
             <div class="info-row">
@@ -132,11 +143,15 @@
             </div>
             <div class="info-row">
               <span class="label">No. Rujukan</span>
-              <code class="value">{{ item.noRujukan || '-' }}</code>
+              {{ item.noRujukan || '-' }}
             </div>
             <div class="info-row" v-if="item.tglPlgSep">
               <span class="label">Tgl Pulang</span>
               <span class="value">{{ item.tglPlgSep }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">RS Penerbit SEP</span>
+              <span class="value">{{ item.ppkPelayanan || '-' }}</span>
             </div>
           </div>
         </div>
@@ -147,16 +162,17 @@
         <table class="table table-bordered table-striped table-hover">
           <thead class="thead-light sticky-top">
             <tr>
-              <th style="width: 4%">#</th>
+              <th style="width: 3%">#</th>
               <th style="width: 13%">No. SEP</th>
-              <th style="width: 9%">Tgl SEP</th>
-              <th style="width: 11%">Peserta</th>
-              <th style="width: 8%">Jenis</th>
-              <th style="width: 8%">Kelas</th>
-              <th style="width: 22%">Diagnosa</th>
-              <th style="width: 12%">Poli / Unit</th>
+              <th style="width: 8%">Tgl SEP</th>
+              <th style="width: 12%">Peserta</th>
+              <th style="width: 7%">Jenis</th>
+              <th style="width: 5%">Kelas</th>
+              <th style="width: 17%">Diagnosa</th>
+              <th style="width: 10%">Poli / Unit</th>
               <th style="width: 9%">No. Rujukan</th>
-              <th v-if="!viewOnly" style="width: 6%; text-align: center">Aksi</th>
+              <th style="width: 11%">PPK Perujuk</th>
+              <th v-if="!viewOnly" style="width: 5%; text-align: center">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -166,11 +182,16 @@
                 <code style="font-size: 0.75rem; color: #2563eb">{{ item.noSep }}</code>
               </td>
               <td>
-                <span style="font-size: 0.8rem; white-space: nowrap">{{ item.tglSep }}</span>
-                <br v-if="item.tglPlgSep" />
-                <small v-if="item.tglPlgSep" class="text-muted">
-                  Pulang: {{ item.tglPlgSep }}
-                </small>
+                <div class="tgl-sep-wrap">
+                  <span class="tgl-masuk">
+                    <i class="pi pi-sign-in" style="font-size: 0.65rem; margin-right: 3px"></i>
+                    {{ item.tglSep || '—' }}
+                  </span>
+                  <span v-if="item.tglPlgSep" class="tgl-pulang">
+                    <i class="pi pi-sign-out" style="font-size: 0.65rem; margin-right: 3px"></i>
+                    {{ item.tglPlgSep }}
+                  </span>
+                </div>
               </td>
               <td>
                 <strong style="font-size: 0.82rem">{{ item.namaPeserta }}</strong>
@@ -197,6 +218,9 @@
               </td>
               <td>
                 <code style="font-size: 0.72rem">{{ item.noRujukan || '-' }}</code>
+              </td>
+              <td>
+                <span style="font-size: 0.78rem">{{ item.ppkPelayanan || '-' }}</span>
               </td>
               <td v-if="!viewOnly" class="text-center">
                 <Button
@@ -551,6 +575,58 @@ onMounted(() => {
   flex: 1;
   color: #1e293b;
   word-break: break-word;
+}
+
+/* ── Tgl SEP (desktop) ── */
+.tgl-sep-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.tgl-masuk {
+  font-size: 0.78rem;
+  white-space: nowrap;
+  color: #1e293b;
+}
+.tgl-pulang {
+  font-size: 0.75rem;
+  white-space: nowrap;
+  color: #0369a1;
+  background: #e0f2fe;
+  border-radius: 4px;
+  padding: 1px 5px;
+  display: inline-block;
+}
+
+/* ── Card dates (mobile) ── */
+.card-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.card-dates {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.card-date-item {
+  font-size: 0.75rem;
+  color: #475569;
+}
+.card-date-pulang {
+  color: #0369a1;
+  background: #e0f2fe;
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+.card-date-sep {
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+.card-date-icon {
+  font-size: 0.65rem;
+  opacity: 0.7;
 }
 
 /* ── Table ── */

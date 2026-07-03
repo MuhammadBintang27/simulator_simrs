@@ -16,7 +16,16 @@
         </div>
 
         <div class="reg-field">
-          <label class="reg-label">Tanggal & Jam Masuk RS <span class="req">*</span></label>
+          <div class="reg-label-row">
+            <label class="reg-label">Tanggal & Jam Masuk RS <span class="req">*</span></label>
+            <label class="jam-realtime-toggle" title="Gunakan jam realtime">
+              <input type="checkbox" v-model="jamRealtime" class="jam-realtime-check" />
+              <span class="jam-realtime-label">
+                <i class="pi" :class="jamRealtime ? 'pi-clock' : 'pi-lock'"></i>
+                {{ jamRealtime ? 'Realtime' : 'Manual' }}
+              </span>
+            </label>
+          </div>
           <DatePicker
             v-model="TanggalRawat"
             dateFormat="dd M yy"
@@ -26,7 +35,9 @@
             hourFormat="24"
             iconDisplay="input"
             class="w-100"
+            style="margin-top: -4px"
             :class="{ 'p-invalid': formErrors.TanggalRawat }"
+            :disabled="jamRealtime"
             @update:modelValue="formErrors.TanggalRawat = ''"
           />
           <small v-if="formErrors.TanggalRawat" class="reg-field-error">
@@ -85,7 +96,6 @@
             placeholder="Pilih Cara Bayar"
             class="w-100"
             filter
-            showClear
             :class="{ 'p-invalid': formErrors.carabayarSelected }"
             @change="formErrors.carabayarSelected = ''"
           />
@@ -124,6 +134,48 @@
             class="w-100"
           />
         </div>
+        <div
+          class="reg-field"
+          v-if="jenisrawatSelected?.code == 2 && !isPoliIGD && route.query.mode !== 'IGDRANAP'"
+        >
+          <label class="reg-label">Asal Rujukan</label>
+          <Select
+            v-model="asalRujukanSelected"
+            :options="asalRujukanOptions"
+            optionLabel="caption"
+            placeholder="Pilih Asal Rujukan"
+            class="w-100"
+          />
+        </div>
+        <div
+          class="reg-field"
+          v-if="jenisrawatSelected?.code == 2 && !isPoliIGD && route.query.mode !== 'IGDRANAP'"
+        >
+          <label class="reg-label">
+            No. Rujukan
+            <span v-if="loadingRujukanFaskes" class="reg-label-loading">
+              <i class="pi pi-spin pi-spinner"></i> Mengambil data...
+            </span>
+          </label>
+          <InputText
+            v-model="noRujukan"
+            class="w-100"
+            placeholder="Nomor rujukan — tekan Enter untuk cari..."
+            :disabled="loadingRujukanFaskes"
+            @keydown.enter.prevent="getRujukanDariFaskes"
+          />
+        </div>
+        <div
+          class="reg-field"
+          v-if="jenisrawatSelected?.code == 2 && !isPoliIGD && route.query.mode !== 'IGDRANAP'"
+        >
+          <label class="reg-label">No. Kontrol Ulang</label>
+          <InputText
+            v-model="noKontrolUlang"
+            class="w-100"
+            placeholder="Nomor kontrol ulang (opsional)..."
+          />
+        </div>
       </div>
     </Panel>
 
@@ -143,7 +195,6 @@
           v-model="poliSelected"
           :options="listPolyKlinik"
           optionLabel="nama"
-          :showClear="true"
           :loading="load_ruangan"
           placeholder="Pilih Poli Klinik"
           appendTo="body"
@@ -441,7 +492,7 @@
           icon="pi pi-send"
           severity="info"
           outlined
-          @click="PrintSEP"
+          @click="goToTindakLanjut"
         />
         <!-- <Button
           label="Cetak SEP"
@@ -649,120 +700,6 @@
   </Dialog>
 
   <RecentPendaftaranView ref="childRef" />
-
-  <!-- <Dialog
-    v-model:visible="showListSPRI"
-    modal
-    :style="{ width: '900px' }"
-    :closable="true"
-    header="Riwayat Perintah Rawat Inap"
-  >
-    <div class="table-responsive" style="max-height: 500px; overflow-y: auto">
-      <table class="table table-bordered table-striped table-hover">
-        <thead class="thead-light sticky-top">
-          <tr>
-            <th style="width: 5%">#</th>
-            <th style="width: 15%">No. SPRI</th>
-            <th style="width: 10%">Tanggal</th>
-            <th style="width: 20%">Dokter</th>
-            <th style="width: 10%">Jenis Rawat</th>
-            <th style="width: 15%">Poli/Ruang</th>
-            <th style="width: 10%">No. Register</th>
-            <th style="width: 10%">Cetak</th>
-            <th style="width: 10%">Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="isLoadingSPRI">
-            <td colspan="9" class="text-center py-4">
-              <i class="pi pi-spin pi-spinner mr-2"></i>
-              Memuat data SPRI...
-            </td>
-          </tr>
-          <tr v-else-if="spriHistoryData.length === 0">
-            <td colspan="9" class="text-center py-4 text-muted">
-              <i class="pi pi-info-circle mr-2"></i>
-              Tidak ada data SPRI ditemukan
-            </td>
-          </tr>
-          <tr v-else v-for="(spri, index) in spriHistoryData" :key="spri.SPRI || index">
-            <td class="text-center">{{ index + 1 }}</td>
-            <td>
-              <div style="display: flex; align-items: center; justify-content: space-between">
-                <div>
-                  <strong>{{ spri?.SPRI }}</strong>
-                  <br />
-                  <small class="text-muted">{{ spri?.NO_KARTU }}</small>
-                </div>
-                <Button
-                  icon="pi pi-copy"
-                  @click="copySPRI(spri.SPRI, index)"
-                  class="p-button-text p-button-sm copy-btn"
-                  :title="copiedSPRIIndex === index ? 'Tersalin!' : 'Salin SPRI'"
-                  style="padding: 0.25rem; margin-left: 8px"
-                />
-              </div>
-            </td>
-            <td>{{ spri.TANGGAL }}</td>
-            <td>
-              <strong>{{ spri.NAMADOKTER }}</strong>
-              <br />
-              <small class="text-muted">Kode: {{ spri.KODE_DOKTER_BPJS }}</small>
-            </td>
-            <td>{{ spri.JENISRAWAT }}</td>
-            <td>{{ spri.POLI_KONTROL || '-' }}</td>
-            <td>
-              <code>{{ spri.NOREGISTER }}</code>
-            </td>
-            <td>
-              <Button
-                label="Cetak"
-                @click="cetakSPRI(spri)"
-                icon="pi pi-print"
-                style="padding: 0.25rem"
-              />
-            </td>
-            <td>
-              <div class="flex items-center space-x-2">
-                <Button
-                  severity="warn"
-                  class="round-button2"
-                  icon="pi pi-times"
-                  @click="hapus_SPRI(spri?.SPRI)"
-                  style="padding: 0.25rem"
-                  title="Hapus SPRI"
-                />
-                <Button
-                  severity="info"
-                  class="round-button2"
-                  icon="pi pi-pencil"
-                  style="padding: 0.25rem"
-                  title="Edit SPRI"
-                />
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="button-group mt-2">
-      <Button
-        label="Terbitkan SPRI Baru"
-        @click="doterbitkanSPRI()"
-        :loading="loading"
-        severity="success"
-        icon="pi pi-save"
-        class="p-button p-button-warning flex-button"
-      />
-      <Button
-        label="Batal"
-        icon="pi pi-times"
-        @click="showListSPRI = false"
-        class="p-button p-button-warning flex-button p-button p-button-secondary"
-      />
-    </div>
-  </Dialog> -->
 
   <Dialog
     v-model:visible="showListSPRI"
@@ -974,7 +911,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, defineEmits, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, onMounted, watch, onBeforeUnmount, nextTick } from 'vue'
 import DatePicker from 'primevue/datepicker'
 import Select from 'primevue/select'
 import InputText from 'primevue/inputtext'
@@ -1043,8 +980,47 @@ const ShowFormPendaftaran = async () => {
 }
 
 const nomor_sep = ref(null)
+const noRujukan = ref(null)
+const tglRujukan = ref(null)
+const ppkRujukan = ref(null)
+const noKontrolUlang = ref(null)
+const asalRujukanSelected = ref(null)
+
+const asalRujukanOptions = ref([
+  { caption: 'Faskes I', code: 1 },
+  { caption: 'Faskes II', code: 2 },
+])
 // Reactive data
 const TanggalRawat = ref(new Date())
+
+const jamRealtime = ref(true)
+let clockInterval = null
+
+const startClock = () => {
+  TanggalRawat.value = new Date()
+  clockInterval = setInterval(() => {
+    TanggalRawat.value = new Date()
+  }, 1000)
+}
+
+const stopClock = () => {
+  if (clockInterval) {
+    clearInterval(clockInterval)
+    clockInterval = null
+  }
+}
+
+watch(
+  jamRealtime,
+  (val) => {
+    if (val) {
+      startClock()
+    } else {
+      stopClock()
+    }
+  },
+  { immediate: true },
+)
 
 const TanggalSEP = ref(new Date())
 const loading = ref(false)
@@ -1147,6 +1123,8 @@ const klsRawatNaik = ref([
 ])
 
 const poliSelected = ref(null)
+
+const isPoliIGD = computed(() => poliSelected.value?.nama?.toUpperCase().includes('IGD') ?? false)
 
 // Methods
 const formatDateOnlyForAPI = (date) => {
@@ -1258,6 +1236,80 @@ const searchDiagnose = async (event) => {
     showError('Error searching diagnose')
   } finally {
     isLoading.value = false
+  }
+}
+
+const loadingRujukanFaskes = ref(false)
+
+const namaPPKPerujuk = ref(null)
+
+const dataRujukanPasien = ref(null)
+const getRujukanDariFaskes = async () => {
+  if (!noRujukan.value) return
+  if (!asalRujukanSelected.value) {
+    showError('Pilih Asal Rujukan terlebih dahulu')
+    return
+  }
+  if (!props.os?.noKartu) {
+    showError('Data peserta belum ditemukan, cari pasien terlebih dahulu')
+    return
+  }
+
+  loadingRujukanFaskes.value = true
+  try {
+    const url = configStore.apiBaseUrl
+    const response = await axios.post(`${url}/index.php/api/bpjs_api/get_rujukan_dari_faskes`, {
+      no_kartu: props.os.noKartu,
+      id_client: String(id_client.value),
+      asal_faskes: String(asalRujukanSelected.value.code),
+      norujukan: noRujukan.value,
+    })
+
+    if (response.data?.metaData?.code !== '200') {
+      showError(response.data?.metaData?.message || 'Rujukan tidak ditemukan')
+      return
+    }
+    dataRujukanPasien.value = response.data?.response?.rujukan
+    const rj = response.data?.response?.rujukan
+
+    if (!rj) {
+      showError('Data rujukan tidak ditemukan')
+      return
+    }
+
+    // Auto-fill diagnosa
+    if (rj.diagnosa?.kode) {
+      const diagnosaItem = {
+        dx: rj.diagnosa.nama ? `${rj.diagnosa.kode} - ${rj.diagnosa.nama}` : rj.diagnosa.kode,
+        icd_code: rj.diagnosa.kode,
+        jenis_penyakit: rj.diagnosa.nama,
+      }
+      listDiagnose.value = [diagnosaItem]
+      diagnoseSelected.value = diagnosaItem
+    }
+
+    // Auto-fill poli — cari di listPolyKlinik berdasarkan KodePoliBPJS
+    if (rj.poliRujukan?.kode) {
+      const foundPoli = listPolyKlinik.value.find((p) => p.KodePoliBPJS === rj.poliRujukan.kode)
+      if (foundPoli) {
+        poliSelected.value = foundPoli
+      } else {
+        showInfo(
+          `Poli "${rj.poliRujukan.nama}" (${rj.poliRujukan.kode}) tidak ditemukan di daftar poli RS`,
+        )
+      }
+    }
+
+    tglRujukan.value = rj.tglKunjungan || null
+    ppkRujukan.value = rj.provPerujuk?.kode || null
+    namaPPKPerujuk.value = rj.provPerujuk?.nama || null
+
+    showSuccess(`Data rujukan dari ${rj.provPerujuk?.nama || 'faskes'} berhasil dimuat`)
+  } catch (error) {
+    console.error('Error getRujukanDariFaskes:', error)
+    showError('Gagal mengambil data rujukan')
+  } finally {
+    loadingRujukanFaskes.value = false
   }
 }
 
@@ -1560,6 +1612,12 @@ const submitForm = async () => {
         pasienkatarak: pasienkatarak.value ? 1 : 0,
         hanya_simpan_bpjs: hanyaSimpanKeBPJS.value ? 1 : 0,
         lakaLantas: lakaLantasSelected.value,
+        provPerujuk: {
+          kode: ppkRujukan.value,
+          tglRujukan: tglRujukan.value,
+          noRujukan: noRujukan.value,
+          nama: namaPPKPerujuk.value,
+        },
         nospri: NoSPRI.value,
         dokterSelected: dokterSelected.value,
         provSelected: provinsiKLL.value,
@@ -1573,12 +1631,20 @@ const submitForm = async () => {
               ? ruanganSelected.value?.KD_RUANGAN
               : poliSelected.value?.kode,
         },
+        rujukan: noRujukan.value
+          ? {
+              asalRujukan: asalRujukanSelected.value?.code
+                ? String(asalRujukanSelected.value.code)
+                : null,
+              tglRujukan: tglRujukan.value,
+              noRujukan: noRujukan.value,
+              ppkRujukan: ppkRujukan.value,
+            }
+          : null,
       },
       id_client: id_client.value,
       user_id: user_id.value,
     }
-
-    console.log('Response from createSEP:', payload)
 
     const response = await axios.post(`${url}/index.php/api/Bpjs_api/createSEP`, payload)
 
@@ -1753,8 +1819,8 @@ const openConfirmDialog = () => {
 
 const resetForm = () => {
   // ── Tanggal ──
-  TanggalRawat.value = new Date()
   TanggalSEP.value = new Date()
+  jamRealtime.value = true // watch(immediate) akan restart clock otomatis
 
   // ── Pelayanan ──
   // jenisrawatSelected.value = { code: 1, caption: 'INAP' }
@@ -1766,6 +1832,12 @@ const resetForm = () => {
   ruanganSelected.value = null
   poliSelected.value = null
   NoSPRI.value = null
+  noRujukan.value = null
+  tglRujukan.value = null
+  ppkRujukan.value = null
+  namaPPKPerujuk.value = null
+  noKontrolUlang.value = null
+  asalRujukanSelected.value = null
 
   // ── KLL ──
   lakaLantasSelected.value = {
@@ -1878,6 +1950,9 @@ const saveDraft = () => {
       kecamatanKLL: kecamatanKLL.value,
       Catatan: Catatan.value,
       NoSPRI: NoSPRI.value,
+      noRujukan: noRujukan.value,
+      noKontrolUlang: noKontrolUlang.value,
+      asalRujukanSelected: asalRujukanSelected.value,
       pasienkatarak: pasienkatarak.value,
       hanyaSimpanKeBPJS: hanyaSimpanKeBPJS.value,
       norm: norm.value,
@@ -1916,6 +1991,9 @@ const loadDraft = () => {
     if (d.kecamatanKLL) kecamatanKLL.value = d.kecamatanKLL
     if (d.Catatan !== undefined) Catatan.value = d.Catatan
     if (d.NoSPRI !== undefined) NoSPRI.value = d.NoSPRI
+    if (d.noRujukan !== undefined) noRujukan.value = d.noRujukan
+    if (d.noKontrolUlang !== undefined) noKontrolUlang.value = d.noKontrolUlang
+    if (d.asalRujukanSelected !== undefined) asalRujukanSelected.value = d.asalRujukanSelected
     if (d.pasienkatarak !== undefined) pasienkatarak.value = d.pasienkatarak
     if (d.hanyaSimpanKeBPJS !== undefined) hanyaSimpanKeBPJS.value = d.hanyaSimpanKeBPJS
     if (d.norm) norm.value = d.norm
@@ -1956,6 +2034,9 @@ watch(
     kecamatanKLL,
     Catatan,
     NoSPRI,
+    noRujukan,
+    noKontrolUlang,
+    asalRujukanSelected,
     pasienkatarak,
     hanyaSimpanKeBPJS,
     () => props.os,
@@ -1996,6 +2077,7 @@ const handleGlobalKeydown = (e) => {
 onBeforeUnmount(() => {
   window.removeEventListener('resize', checkMobile)
   document.removeEventListener('keydown', handleGlobalKeydown)
+  stopClock()
 })
 // Lifecycle
 onMounted(() => {
@@ -2074,11 +2156,57 @@ onMounted(() => {
   color: #dc3545;
 }
 
+.reg-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 18px;
+}
+
+.jam-realtime-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.jam-realtime-check {
+  display: none;
+}
+.jam-realtime-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  color: #6b7280;
+  transition: all 0.15s;
+  user-select: none;
+}
+.jam-realtime-check:checked + .jam-realtime-label {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #15803d;
+}
+
 .reg-label-meta {
   font-size: 10px;
   color: #adb5bd;
   font-weight: 400;
   display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.reg-label-loading {
+  font-size: 10px;
+  color: #3b82f6;
+  font-weight: 400;
+  display: inline-flex;
   align-items: center;
   gap: 3px;
 }

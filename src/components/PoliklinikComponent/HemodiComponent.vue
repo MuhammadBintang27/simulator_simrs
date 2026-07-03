@@ -672,8 +672,6 @@ const props = defineProps({
 })
 
 import HDHistoryDialog from '@/views/Poliklinik/HD/HemodiHistoryView.vue'
-
-// â”€â”€â”€ OTP / TTE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const handleOtpSuccess = (data) => {
   if (data?.verified == true) {
     Get_data_from_db(props.datapasien?.NOPENDAFTARAN, 2)

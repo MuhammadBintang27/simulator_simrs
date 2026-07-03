@@ -661,7 +661,6 @@ import RiwayatBPJSDialog from '@/views/Pendaftaran/RiwayatBPJSComponent.vue'
 const riwayatBpjsRef = ref(null)
 const spriDialogRef = ref(null)
 
-
 const lakaLantasSelected = ref({
   caption: '0 - Bukan Kecelakaan lalu lintas [BKLL]',
   code: 0,
@@ -828,6 +827,11 @@ const getda_tadokter = async () => {
 
     if (response.data && response.data.response) {
       list_dokter.value = response.data.response
+
+      if (route.query.kddokter) {
+        dokterSelected.value =
+          list_dokter.value.find((d) => d.KDDOKTER == route.query.kddokter) ?? null
+      }
     }
   } catch (error) {
     console.error('Error fetching doctors:', error)
@@ -853,7 +857,7 @@ const searchDiagnose = async (event) => {
     isLoading.value = true
     const url = configStore.apiBaseUrl
     const response = await axios.post(`${url}/index.php/api/data_referensi/get_icd_v2`, payload)
-    console.log(response.data)
+
     listDiagnose.value = response.data
   } catch (error) {
     console.error('Error searching diagnose:', error)
@@ -947,9 +951,6 @@ const doterbitkanSPRI = async () => {
     const url = configStore.apiBaseUrl
     const response = await axios.post(`${url}/index.php/api/transaksi_pasien/terbitkan_SPRI`, param)
 
-    console.log(`${url}/index.php/api/transaksi_pasien/terbitkan_SPRI`)
-
-    console.log(response.data)
     if (response.data.metadata.code == 200) {
       showSuccess(response.data.metadata.message)
       GetListSPRI()
@@ -1245,6 +1246,10 @@ const validateForm = () => {
     showInfo('Silahkan pilih DPJP')
     return false
   }
+  if (!ruanganSelected.value) {
+    showInfo('Silahkan pilih ruangan')
+    return false
+  }
   if (ruanganSelected.value.TERSEDIA <= 0) {
     showInfo('Ruang rawat inap yang dipiliih tidak tersedia')
     return false
@@ -1256,10 +1261,6 @@ const validateForm = () => {
   }
   if (!carabayarSelected.value) {
     showInfo('Silahkan pilih cara bayar')
-    return false
-  }
-  if (!ruanganSelected.value) {
-    showInfo('Silahkan pilih ruangan')
     return false
   }
   if (lakaLantasSelected.value?.code > 0) {

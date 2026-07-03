@@ -158,7 +158,7 @@
             <tr v-for="(item, index) in historiData" :key="item.noSep || index">
               <td class="text-center">{{ index + 1 }}</td>
               <td>
-                <code style="font-size: 0.75rem; color: #2563eb">{{ item.noSep }}</code>
+                {{ item.noSep }}
               </td>
               <td>
                 <span style="font-size: 0.8rem; white-space: nowrap">{{ item.tglSep }}</span>

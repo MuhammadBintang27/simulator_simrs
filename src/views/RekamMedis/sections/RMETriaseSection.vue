@@ -1,332 +1,558 @@
 <template>
-  <div class="rme-section">
-    <div class="rme-section-title">
-      <i class="pi pi-heart-fill no-print" style="color: #e53935"></i>
-      TRIASE IGD
+  <!-- ══ Loading / Error / Kosong ══════════════════════════════════════════ -->
+  <div v-if="loading || error || !hasData" class="rme-a4-page triase-a4-page" data-section="triase">
+    <div class="rme-page-header-repeat">
+      <span class="rme-phr-rm">RM: {{ dataPasien?.NOMR }}</span>
+      <span class="rme-phr-name">{{ dataPasien?.NAMAPASIEN }}</span>
+      <span class="rme-phr-reg">Reg: {{ dataPasien?.NOPENDAFTARAN }}</span>
     </div>
-
+    <div class="rme-section-title">TRIASE IGD</div>
     <div v-if="loading" class="rme-loading-row">
       <span class="rme-loading-dot"></span> Memuat data triase...
     </div>
-
     <div v-else-if="error" class="rme-empty-note">
       <i class="pi pi-info-circle"></i> {{ error }}
     </div>
-
-    <div v-else-if="!hasData" class="rme-empty-note">
+    <div v-else class="rme-empty-note">
       <i class="pi pi-minus-circle"></i> Tidak ada data triase untuk kunjungan ini.
     </div>
+  </div>
 
-    <div v-else>
-      <!-- ── Ringkasan Nilai Triase ─────────────────────────────────────────── -->
-      <div v-if="nilaiTriase" class="triase-score-row">
-        <div class="triase-score-box ts-emergensi">
-          <div class="ts-count">{{ nilaiTriase.EMERGENSI || 0 }}</div>
-          <div class="ts-lbl">EMERGENSI</div>
-        </div>
-        <div class="triase-score-box ts-urgent">
-          <div class="ts-count">{{ nilaiTriase.URGENT || 0 }}</div>
-          <div class="ts-lbl">URGENT</div>
-        </div>
-        <div class="triase-score-box ts-nonurgent">
-          <div class="ts-count">{{ nilaiTriase.NON_URGENT || 0 }}</div>
-          <div class="ts-lbl">NON URGENT</div>
-        </div>
-        <div class="triase-score-box ts-death">
-          <div class="ts-count">{{ nilaiTriase.DEATH_ON_ARRIVAL || 0 }}</div>
-          <div class="ts-lbl">DEATH ON ARRIVAL</div>
-        </div>
-        <div class="triase-score-kesimpulan" :class="'ts-kes-' + kesimpulanKey">
-          Kategori: <strong>{{ kesimpulanTriase }}</strong>
-        </div>
-      </div>
+  <!-- ══ Halaman 1 : Info dasar triase ══════════════════════════════════════ -->
+  <div v-else class="rme-a4-page triase-a4-page" data-section="triase">
+    <div class="rme-page-header-repeat">
+      <span class="rme-phr-rm">RM: {{ dataPasien?.NOMR }}</span>
+      <span class="rme-phr-name">{{ dataPasien?.NAMAPASIEN }}</span>
+      <span class="rme-phr-reg">Triase IGD — Hal. 1/{{ totalPages }}</span>
+    </div>
+    <div class="rme-section-title">
+      <i class="pi pi-heart-fill no-print" style="color: #e53935"></i> TRIASE IGD
+    </div>
 
-      <!-- ── Cara Masuk Pasien ──────────────────────────────────────────────── -->
-      <div class="rme-subsection-title">Cara Masuk Pasien</div>
-      <div class="rme-info-grid">
-        <div class="rme-info-col">
-          <table class="rme-tbl-info">
-            <tbody>
-              <tr>
-                <td class="rme-td-lbl">Waktu Masuk</td>
-                <td class="rme-td-sep">:</td>
-                <td class="rme-td-val">{{ header.waktu || '-' }}</td>
-              </tr>
-              <tr>
-                <td class="rme-td-lbl">Diantar Oleh</td>
-                <td class="rme-td-sep">:</td>
-                <td class="rme-td-val">{{ header.diantar_oleh || '-' }}</td>
-              </tr>
-              <tr>
-                <td class="rme-td-lbl">Transportasi</td>
-                <td class="rme-td-sep">:</td>
-                <td class="rme-td-val">{{ header.transportasi || '-' }}</td>
-              </tr>
-              <tr>
-                <td class="rme-td-lbl">DPJP</td>
-                <td class="rme-td-sep">:</td>
-                <td class="rme-td-val">{{ header.namadokter_sp || '-' }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="rme-info-col">
-          <table class="rme-tbl-info">
-            <tbody>
-              <tr>
-                <td class="rme-td-lbl">Kesadaran</td>
-                <td class="rme-td-sep">:</td>
-                <td class="rme-td-val">{{ header.kesadaran || '-' }}</td>
-              </tr>
-              <tr>
-                <td class="rme-td-lbl">Status Psikologi</td>
-                <td class="rme-td-sep">:</td>
-                <td class="rme-td-val">{{ header.status_psikologi || '-' }}</td>
-              </tr>
-              <tr>
-                <td class="rme-td-lbl">Resiko Jatuh</td>
-                <td class="rme-td-sep">:</td>
-                <td class="rme-td-val">
-                  <span
-                    :class="[
-                      'rme-badge',
-                      header.resiko_jatuh === 'YA' ? 'rme-badge-danger' : 'rme-badge-success',
-                    ]"
-                  >
-                    {{ header.resiko_jatuh || '-' }}
-                  </span>
-                </td>
-              </tr>
-              <tr v-if="header.telah_verif">
-                <td class="rme-td-lbl">Verifikasi</td>
-                <td class="rme-td-sep">:</td>
-                <td class="rme-td-val" style="color: #2e7d32">
-                  {{ header.telah_verif }}
-                  <span v-if="header.jam_verif"> — {{ header.jam_verif }}</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+    <!-- ── Ringkasan Nilai Triase ─────────────────────────────────────────── -->
+    <div v-if="nilaiTriase" class="triase-score-row">
+      <div class="triase-score-box ts-emergensi">
+        <div class="ts-count">{{ nilaiTriase.EMERGENSI || 0 }}</div>
+        <div class="ts-lbl">EMERGENSI</div>
       </div>
+      <div class="triase-score-box ts-urgent">
+        <div class="ts-count">{{ nilaiTriase.URGENT || 0 }}</div>
+        <div class="ts-lbl">URGENT</div>
+      </div>
+      <div class="triase-score-box ts-nonurgent">
+        <div class="ts-count">{{ nilaiTriase.NON_URGENT || 0 }}</div>
+        <div class="ts-lbl">NON URGENT</div>
+      </div>
+      <div class="triase-score-box ts-death">
+        <div class="ts-count">{{ nilaiTriase.DEATH_ON_ARRIVAL || 0 }}</div>
+        <div class="ts-lbl">DEATH ON ARRIVAL</div>
+      </div>
+      <div class="triase-score-kesimpulan" :class="'ts-kes-' + kesimpulanKey">
+        Kategori: <strong>{{ kesimpulanTriase }}</strong>
+      </div>
+    </div>
 
-      <!-- ── Anamnese Singkat ───────────────────────────────────────────────── -->
-      <div class="rme-subsection-title">Anamnese Singkat</div>
-      <div class="rme-info-grid">
-        <div class="rme-info-col">
-          <div class="triase-field-lbl">Keluhan Utama</div>
-          <div class="rme-textarea-box">{{ header.keluhan_utama || '-' }}</div>
-        </div>
-        <div class="rme-info-col">
-          <div class="triase-field-lbl">Riwayat Penyakit Dahulu</div>
-          <div class="rme-textarea-box">{{ header.riwayat_penyakit_dahulu || '-' }}</div>
-        </div>
-      </div>
-
-      <!-- ── Tanda-Tanda Vital ──────────────────────────────────────────────── -->
-      <div class="rme-subsection-title">Keadaan Umum / Tanda-Tanda Vital</div>
-      <div class="rme-vital-grid">
-        <div class="rme-vital-card">
-          <div class="rme-vital-label">Suhu</div>
-          <div class="rme-vital-value">{{ header.suhu ?? '-' }}</div>
-          <div class="rme-vital-unit">°C</div>
-        </div>
-        <div class="rme-vital-card">
-          <div class="rme-vital-label">TD</div>
-          <div class="rme-vital-value">
-            {{ header.tensi_sistol ?? '-' }}/{{ header.tensi_distol ?? '-' }}
-          </div>
-          <div class="rme-vital-unit">mmHg</div>
-        </div>
-        <div class="rme-vital-card">
-          <div class="rme-vital-label">Nadi</div>
-          <div class="rme-vital-value">{{ header.nadipermenit ?? '-' }}</div>
-          <div class="rme-vital-unit">x/mnt</div>
-        </div>
-        <div class="rme-vital-card">
-          <div class="rme-vital-label">Saturasi O₂</div>
-          <div class="rme-vital-value">{{ header.saturasi ?? '-' }}</div>
-          <div class="rme-vital-unit">%</div>
-        </div>
-        <div class="rme-vital-card">
-          <div class="rme-vital-label">Pernapasan</div>
-          <div class="rme-vital-value">{{ header.respirasi ?? '-' }}</div>
-          <div class="rme-vital-unit">x/mnt</div>
-        </div>
-        <div class="rme-vital-card">
-          <div class="rme-vital-label">Berat Badan</div>
-          <div class="rme-vital-value">{{ header.bb ?? '-' }}</div>
-          <div class="rme-vital-unit">kg</div>
-        </div>
-        <div class="rme-vital-card">
-          <div class="rme-vital-label">Tinggi Badan</div>
-          <div class="rme-vital-value">{{ header.tb ?? '-' }}</div>
-          <div class="rme-vital-unit">cm</div>
-        </div>
-        <div class="rme-vital-card">
-          <div class="rme-vital-label">Skala Nyeri</div>
-          <div class="rme-vital-value">{{ header.nyeri ?? '-' }}</div>
-          <div class="rme-vital-unit">/10</div>
-        </div>
-        <div class="rme-vital-card">
-          <div class="rme-vital-label">Kesadaran</div>
-          <div class="rme-vital-value" style="font-size: 10px; line-height: 1.3">
-            {{ header.kesadaran ?? '-' }}
-          </div>
-          <div class="rme-vital-unit">&nbsp;</div>
-        </div>
-      </div>
-      <div v-if="header.lokasinyeri" class="triase-field-note">
-        <strong>Lokasi Nyeri:</strong> {{ header.lokasinyeri }}
-      </div>
-
-      <!-- ── Tabel Pemeriksaan Triase ───────────────────────────────────────── -->
-      <div v-if="triaseFact && triaseFact.length > 0">
-        <div class="rme-subsection-title">Hasil Pemeriksaan Triase</div>
-        <table class="rme-tbl-data triase-tbl">
-          <thead>
-            <tr>
-              <th style="width: 18%">PEMERIKSAAN</th>
-              <th class="tc-head tc-head-emergensi" style="width: 20.5%">EMERGENSI</th>
-              <th class="tc-head tc-head-urgent" style="width: 20.5%">URGENT</th>
-              <th class="tc-head tc-head-nonurgent" style="width: 20.5%">NON URGENT</th>
-              <th class="tc-head tc-head-death" style="width: 20.5%">DEATH ON ARRIVAL</th>
-            </tr>
-          </thead>
+    <!-- ── Cara Masuk Pasien ──────────────────────────────────────────────── -->
+    <div class="rme-subsection-title">Cara Masuk Pasien</div>
+    <div class="rme-info-grid">
+      <div class="rme-info-col">
+        <table class="rme-tbl-info">
           <tbody>
-            <tr v-for="group in triaseFact" :key="group.grouping">
-              <td>
-                <strong>{{ group.grouping }}</strong>
-              </td>
-
-              <!-- EMERGENSI col (sk_1/val_1) -->
-              <td>
-                <template v-for="(det, idx) in group.details" :key="'e' + idx">
-                  <div
-                    v-if="det.sk_1"
-                    :class="[
-                      'triase-item',
-                      det.checked_val_1 ? 'triase-checked tc-txt-emergensi' : 'triase-unchecked',
-                    ]"
-                  >
-                    <span v-if="det.checked_val_1" class="triase-check-icon">✓</span>
-                    {{ det.sk_1 }}
-                  </div>
-                </template>
-              </td>
-
-              <!-- URGENT col (sk_2/val_2) -->
-              <td>
-                <template v-for="(det, idx) in group.details" :key="'u' + idx">
-                  <div
-                    v-if="det.sk_2"
-                    :class="[
-                      'triase-item',
-                      det.checked_val_2 ? 'triase-checked tc-txt-urgent' : 'triase-unchecked',
-                    ]"
-                  >
-                    <span v-if="det.checked_val_2" class="triase-check-icon">✓</span>
-                    {{ det.sk_2 }}
-                  </div>
-                </template>
-              </td>
-
-              <!-- NON URGENT col (sk_4/val_4) -->
-              <td>
-                <template v-for="(det, idx) in group.details" :key="'n' + idx">
-                  <div
-                    v-if="det.sk_4"
-                    :class="[
-                      'triase-item',
-                      det.checked_val_4 ? 'triase-checked tc-txt-nonurgent' : 'triase-unchecked',
-                    ]"
-                  >
-                    <span v-if="det.checked_val_4" class="triase-check-icon">✓</span>
-                    {{ det.sk_4 }}
-                  </div>
-                </template>
-              </td>
-
-              <!-- DEATH ON ARRIVAL col (sk_5/val_5) -->
-              <td>
-                <template v-for="(det, idx) in group.details" :key="'d' + idx">
-                  <div
-                    v-if="det.sk_5"
-                    :class="[
-                      'triase-item',
-                      det.checked_val_5 ? 'triase-checked tc-txt-death' : 'triase-unchecked',
-                    ]"
-                  >
-                    <span v-if="det.checked_val_5" class="triase-check-icon">✓</span>
-                    {{ det.sk_5 }}
-                  </div>
-                </template>
-              </td>
+            <tr>
+              <td class="rme-td-lbl">Waktu Masuk</td>
+              <td class="rme-td-sep">:</td>
+              <td class="rme-td-val">{{ header.waktu || '-' }}</td>
+            </tr>
+            <tr>
+              <td class="rme-td-lbl">Diantar Oleh</td>
+              <td class="rme-td-sep">:</td>
+              <td class="rme-td-val">{{ header.diantar_oleh || '-' }}</td>
+            </tr>
+            <tr>
+              <td class="rme-td-lbl">Transportasi</td>
+              <td class="rme-td-sep">:</td>
+              <td class="rme-td-val">{{ header.transportasi || '-' }}</td>
+            </tr>
+            <tr>
+              <td class="rme-td-lbl">DPJP</td>
+              <td class="rme-td-sep">:</td>
+              <td class="rme-td-val">{{ header.namadokter_sp || '-' }}</td>
             </tr>
           </tbody>
         </table>
       </div>
-
-      <!-- ── Secondary Survey ──────────────────────────────────────────────── -->
-      <div v-if="secondarySurvey && secondarySurvey.length > 0">
-        <div class="rme-subsection-title">Secondary Survey</div>
-        <table class="rme-tbl-data">
-          <thead>
-            <tr>
-              <th style="width: 30%">OBJEK</th>
-              <th>KONDISI</th>
-            </tr>
-          </thead>
+      <div class="rme-info-col">
+        <table class="rme-tbl-info">
           <tbody>
-            <tr v-for="item in secondarySurvey" :key="item.id">
-              <td>
-                <strong>{{ item.organ }}</strong>
-              </td>
-              <td>
-                <span v-if="item.kondisi === 'NORMAL'" class="rme-badge rme-badge-success">
-                  NORMAL
+            <tr>
+              <td class="rme-td-lbl">Kesadaran</td>
+              <td class="rme-td-sep">:</td>
+              <td class="rme-td-val">{{ header.kesadaran || '-' }}</td>
+            </tr>
+            <tr>
+              <td class="rme-td-lbl">Status Psikologi</td>
+              <td class="rme-td-sep">:</td>
+              <td class="rme-td-val">{{ header.status_psikologi || '-' }}</td>
+            </tr>
+            <tr>
+              <td class="rme-td-lbl">Resiko Jatuh</td>
+              <td class="rme-td-sep">:</td>
+              <td class="rme-td-val">
+                <span
+                  :class="[
+                    'rme-badge',
+                    header.resiko_jatuh === 'YA' ? 'rme-badge-danger' : 'rme-badge-success',
+                  ]"
+                >
+                  {{ header.resiko_jatuh || '-' }}
                 </span>
-                <span v-else>{{ item.kondisi || 'NORMAL' }}</span>
+              </td>
+            </tr>
+            <tr v-if="header.telah_verif">
+              <td class="rme-td-lbl">Verifikasi</td>
+              <td class="rme-td-sep">:</td>
+              <td class="rme-td-val" style="color: #2e7d32">
+                {{ header.telah_verif }}
+                <span v-if="header.jam_verif"> — {{ header.jam_verif }}</span>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
+    </div>
 
-      <!-- ── Catatan Penting ────────────────────────────────────────────────── -->
-      <div v-if="header.catatanpenting || header.CATATANPENTING">
-        <div class="rme-subsection-title">Catatan Penting</div>
-        <div class="rme-textarea-box">
-          {{ header.catatanpenting || header.CATATANPENTING }}
-        </div>
+    <!-- ── Anamnese Singkat ───────────────────────────────────────────────── -->
+    <div class="rme-subsection-title">Anamnese Singkat</div>
+    <div class="rme-info-grid">
+      <div class="rme-info-col">
+        <div class="triase-field-lbl">Keluhan Utama</div>
+        <div class="rme-textarea-box">{{ header.keluhan_utama || '-' }}</div>
       </div>
+      <div class="rme-info-col">
+        <div class="triase-field-lbl">Riwayat Penyakit Dahulu</div>
+        <div class="rme-textarea-box">{{ header.riwayat_penyakit_dahulu || '-' }}</div>
+      </div>
+    </div>
 
-      <!-- ── Rencana Tindak Lanjut ─────────────────────────────────────────── -->
-      <div v-if="rtl">
-        <div class="rme-subsection-title">Rencana Tindak Lanjut</div>
-        <div class="triase-rtl-row">
-          <span :class="['rme-badge', getRtlBadge(rtl.STATUS)]">{{ rtlLabel }}</span>
-          <span v-if="rtl.KETERANGAN" style="margin-left: 8px; font-size: 12px">
-            {{ rtl.KETERANGAN }}
+    <!-- ── Tanda-Tanda Vital ──────────────────────────────────────────────── -->
+    <div class="rme-subsection-title">Keadaan Umum / Tanda-Tanda Vital</div>
+    <div class="rme-vital-grid">
+      <div class="rme-vital-card">
+        <div class="rme-vital-label">Suhu</div>
+        <div class="rme-vital-value">{{ header.suhu ?? '-' }}</div>
+        <div class="rme-vital-unit">°C</div>
+      </div>
+      <div class="rme-vital-card">
+        <div class="rme-vital-label">TD</div>
+        <div class="rme-vital-value">
+          {{ header.tensi_sistol ?? '-' }}/{{ header.tensi_distol ?? '-' }}
+        </div>
+        <div class="rme-vital-unit">mmHg</div>
+      </div>
+      <div class="rme-vital-card">
+        <div class="rme-vital-label">Nadi</div>
+        <div class="rme-vital-value">{{ header.nadipermenit ?? '-' }}</div>
+        <div class="rme-vital-unit">x/mnt</div>
+      </div>
+      <div class="rme-vital-card">
+        <div class="rme-vital-label">Saturasi O₂</div>
+        <div class="rme-vital-value">{{ header.saturasi ?? '-' }}</div>
+        <div class="rme-vital-unit">%</div>
+      </div>
+      <div class="rme-vital-card">
+        <div class="rme-vital-label">Pernapasan</div>
+        <div class="rme-vital-value">{{ header.respirasi ?? '-' }}</div>
+        <div class="rme-vital-unit">x/mnt</div>
+      </div>
+      <div class="rme-vital-card">
+        <div class="rme-vital-label">Berat Badan</div>
+        <div class="rme-vital-value">{{ header.bb ?? '-' }}</div>
+        <div class="rme-vital-unit">kg</div>
+      </div>
+      <div class="rme-vital-card">
+        <div class="rme-vital-label">Tinggi Badan</div>
+        <div class="rme-vital-value">{{ header.tb ?? '-' }}</div>
+        <div class="rme-vital-unit">cm</div>
+      </div>
+      <div class="rme-vital-card">
+        <div class="rme-vital-label">Skala Nyeri</div>
+        <div class="rme-vital-value">{{ header.nyeri ?? '-' }}</div>
+        <div class="rme-vital-unit">/10</div>
+      </div>
+      <div class="rme-vital-card">
+        <div class="rme-vital-label">Kesadaran</div>
+        <div class="rme-vital-value" style="font-size: 12px; line-height: 1.3">
+          {{ header.kesadaran ?? '-' }}
+        </div>
+        <div class="rme-vital-unit">&nbsp;</div>
+      </div>
+    </div>
+    <!-- ── Visual Skala Nyeri ─────────────────────────────────────────────── -->
+    <div class="nyeri-visual-wrap">
+      <div class="nyeri-visual-face">
+        <img :src="nyeriPic" class="nyeri-face-img" />
+        <div class="nyeri-face-score">{{ header.nyeri ?? 0 }}</div>
+      </div>
+      <div class="nyeri-visual-body">
+        <div class="nyeri-btn-row">
+          <div
+            v-for="btn in nyeriButtons"
+            :key="btn.nilai"
+            :class="[
+              'nyeri-btn-item',
+              btn.color,
+              Number(header.nyeri) === btn.nilai ? 'nyeri-btn-active' : 'nyeri-btn-inactive',
+            ]"
+          >
+            <span class="nyeri-btn-num">{{ btn.nilai }}</span>
+            <span class="nyeri-btn-lbl">{{ btn.label }}</span>
+          </div>
+        </div>
+        <div class="nyeri-info-row">
+          <span class="nyeri-desc-text">{{ nyeriKeterangan }}</span>
+          <span v-if="header.lokasinyeri" class="nyeri-lokasi">
+            📍 Lokasi: <strong>{{ header.lokasinyeri }}</strong>
           </span>
         </div>
+        <div class="nyeri-legend-row-print">
+          <span><span class="nyeri-dot nyeri-0-dot"></span> 0: Tidak nyeri</span>
+          <span><span class="nyeri-dot nyeri-ringan-dot"></span> 1–3: Ringan</span>
+          <span><span class="nyeri-dot nyeri-sedang-dot"></span> 4–6: Sedang</span>
+          <span><span class="nyeri-dot nyeri-berat-dot"></span> 7–9: Berat</span>
+          <span><span class="nyeri-dot nyeri-parah-dot"></span> 10: Tak tertahankan</span>
+        </div>
       </div>
+    </div>
+  </div>
 
-      <!-- ═══════════════════════ SOAP / CPPT IGD ═══════════════════════════════ -->
-      <div class="rme-subsection-title igd-soap-section-title">
+  <!-- ══ Halaman 2 : Tabel Triase + Secondary Survey + Catatan + RTL ════════ -->
+  <div v-if="hasData" class="rme-a4-page triase-a4-page" data-section="triase">
+    <div class="rme-page-header-repeat">
+      <span class="rme-phr-rm">RM: {{ dataPasien?.NOMR }}</span>
+      <span class="rme-phr-name">{{ dataPasien?.NAMAPASIEN }}</span>
+      <span class="rme-phr-reg">Triase IGD — Hal. 2/{{ totalPages }}</span>
+    </div>
+
+    <!-- ── Tabel Pemeriksaan Triase ───────────────────────────────────────── -->
+    <div v-if="triaseFact && triaseFact.length > 0">
+      <div class="rme-subsection-title" style="color: #000">Hasil Pemeriksaan Triase</div>
+      <table class="rme-tbl-data triase-tbl">
+        <thead>
+          <tr>
+            <th style="width: 18%">PEMERIKSAAN</th>
+            <th class="tc-head tc-head-emergensi" style="width: 20.5%">EMERGENSI</th>
+            <th class="tc-head tc-head-urgent" style="width: 20.5%">URGENT</th>
+            <th class="tc-head tc-head-nonurgent" style="width: 20.5%">NON URGENT</th>
+            <th class="tc-head tc-head-death" style="width: 20.5%">DEATH ON ARRIVAL</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="group in triaseFact" :key="group.grouping">
+            <td>
+              <strong>{{ group.grouping }}</strong>
+            </td>
+
+            <!-- EMERGENSI col -->
+            <td>
+              <template v-for="(det, idx) in group.details" :key="'e' + idx">
+                <div
+                  v-if="det.sk_1"
+                  :class="[
+                    'triase-item',
+                    det.checked_val_1 ? 'triase-checked tc-txt-emergensi' : 'triase-unchecked',
+                  ]"
+                >
+                  <span v-if="det.checked_val_1" class="triase-check-icon">✓</span>
+                  {{ det.sk_1 }}
+                </div>
+              </template>
+            </td>
+
+            <!-- URGENT col -->
+            <td>
+              <template v-for="(det, idx) in group.details" :key="'u' + idx">
+                <div
+                  v-if="det.sk_2"
+                  :class="[
+                    'triase-item',
+                    det.checked_val_2 ? 'triase-checked tc-txt-urgent' : 'triase-unchecked',
+                  ]"
+                >
+                  <span v-if="det.checked_val_2" class="triase-check-icon">✓</span>
+                  {{ det.sk_2 }}
+                </div>
+              </template>
+            </td>
+
+            <!-- NON URGENT col -->
+            <td>
+              <template v-for="(det, idx) in group.details" :key="'n' + idx">
+                <div
+                  v-if="det.sk_4"
+                  :class="[
+                    'triase-item',
+                    det.checked_val_4 ? 'triase-checked tc-txt-nonurgent' : 'triase-unchecked',
+                  ]"
+                >
+                  <span v-if="det.checked_val_4" class="triase-check-icon">✓</span>
+                  {{ det.sk_4 }}
+                </div>
+              </template>
+            </td>
+
+            <!-- DEATH ON ARRIVAL col -->
+            <td>
+              <template v-for="(det, idx) in group.details" :key="'d' + idx">
+                <div
+                  v-if="det.sk_5"
+                  :class="[
+                    'triase-item',
+                    det.checked_val_5 ? 'triase-checked tc-txt-death' : 'triase-unchecked',
+                  ]"
+                >
+                  <span v-if="det.checked_val_5" class="triase-check-icon">✓</span>
+                  {{ det.sk_5 }}
+                </div>
+              </template>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── Secondary Survey ──────────────────────────────────────────────── -->
+    <div v-if="secondarySurvey && secondarySurvey.length > 0">
+      <div class="rme-subsection-title">Secondary Survey</div>
+      <table class="rme-tbl-data">
+        <thead>
+          <tr>
+            <th style="width: 30%">OBJEK</th>
+            <th>KONDISI</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in secondarySurvey" :key="item.id">
+            <td>
+              <strong>{{ item.organ }}</strong>
+            </td>
+            <td>
+              <span v-if="item.kondisi === 'NORMAL'" class="rme-badge rme-badge-success">
+                NORMAL
+              </span>
+              <span v-else>{{ item.kondisi || 'NORMAL' }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── Diagnosa ─────────────────────────────────────────────────────── -->
+    <div v-if="diagnosa">
+      <div class="rme-subsection-title">
+        Diagnosa
+        <span
+          v-if="diagnosa.id"
+          style="font-size: 12px; font-weight: 400; color: #6c757d; margin-left: 6px"
+        >
+          #{{ diagnosa.id }}
+        </span>
+      </div>
+      <table class="rme-tbl-data">
+        <thead>
+          <tr>
+            <th style="width: 28%">JENIS</th>
+            <th>DIAGNOSA</th>
+            <th style="width: 18%">JENIS KASUS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Diagnosa Utama</strong></td>
+            <td>{{ diagnosa.dx_utama || '-' }}</td>
+            <td>
+              <span
+                :class="[
+                  'rme-badge',
+                  diagnosa.jenis_kasus === 'Baru' ? 'rme-badge-success' : 'rme-badge-secondary',
+                ]"
+                >{{ diagnosa.jenis_kasus || '-' }}</span
+              >
+            </td>
+          </tr>
+          <tr v-if="diagnosa.dx_sekunder">
+            <td><strong>Diagnosa Sekunder</strong></td>
+            <td>{{ diagnosa.dx_sekunder }}</td>
+            <td></td>
+          </tr>
+          <tr v-else>
+            <td><strong>Diagnosa Sekunder</strong></td>
+            <td colspan="2" style="color: #9e9e9e; font-style: italic">
+              Tidak ada diagnosa sekunder
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── Data Penunjang (Lab & Radiologi) ────────────────────────────── -->
+    <div v-if="penunjang.length > 0">
+      <div class="rme-subsection-title">Data Penunjang</div>
+      <table class="rme-tbl-data">
+        <thead>
+          <tr>
+            <th style="width: 28%">KATEGORI</th>
+            <th>NAMA LAYANAN</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(item, i) in penunjang" :key="i">
+            <td>
+              <strong>{{ item.KATEGORI }}</strong>
+            </td>
+            <td>{{ item.NAMA_LAYANAN }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── Catatan Penting ────────────────────────────────────────────────── -->
+    <div v-if="header.catatanpenting || header.CATATANPENTING">
+      <div class="rme-subsection-title">Catatan Penting</div>
+      <div class="rme-textarea-box">
+        {{ header.catatanpenting || header.CATATANPENTING }}
+      </div>
+    </div>
+
+    <!-- ── Rencana Tindak Lanjut ─────────────────────────────────────────── -->
+    <div v-if="rtl">
+      <div class="rme-subsection-title">Rencana Tindak Lanjut</div>
+      <div class="triase-rtl-row">
+        <span :class="['rme-badge', getRtlBadge(rtl.STATUS)]">{{ rtlLabel }}</span>
+        <span v-if="rtl.KETERANGAN" class="triase-rtl-keterangan">{{ rtl.KETERANGAN }}</span>
+        <span v-if="rtl.STATUS == '7' && rtl.NAMADOKTER" class="triase-rtl-dokter-inline">
+          <span class="triase-rtl-doctor-label">DPJP:</span>
+          <span class="triase-rtl-doctor-name">{{ rtl.NAMADOKTER }}</span>
+          <span v-if="rtl.KDDOKTER" class="triase-rtl-doctor-code">({{ rtl.KDDOKTER }})</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Halaman 3 : Formulir Pemberian Obat ══════════════════════════════════ -->
+  <div
+    v-if="hasData && formulirObat.length > 0"
+    class="rme-a4-page triase-a4-page"
+    data-section="triase"
+  >
+    <div class="rme-page-header-repeat">
+      <span class="rme-phr-rm">RM: {{ dataPasien?.NOMR }}</span>
+      <span class="rme-phr-name">{{ dataPasien?.NAMAPASIEN }}</span>
+      <span class="rme-phr-reg">Triase IGD — Hal. 3/{{ totalPages }}</span>
+    </div>
+    <div class="rme-subsection-title fo-section-title">Formulir Pemberian Obat</div>
+    <table class="rme-tbl-data">
+      <thead>
+        <tr>
+          <th class="fo-th-no">No</th>
+          <th class="fo-th-obat">Nama Obat</th>
+          <th>Dosis</th>
+          <th>Frekuensi</th>
+          <th>Rute</th>
+          <th>Waktu Pemberian</th>
+          <th>Ruangan</th>
+          <th>High Alert</th>
+          <th>Verifikasi</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(obat, idx) in formulirObat" :key="obat.id">
+          <td class="fo-td-center">{{ idx + 1 }}</td>
+          <td>
+            <strong>{{ obat.nama_obat || '-' }}</strong>
+          </td>
+          <td>{{ obat.dosis || '-' }}</td>
+          <td>{{ obat.frekwensi || '-' }}</td>
+          <td>{{ obat.rute || '-' }}</td>
+          <td>{{ formatDateTime(obat.waktu) }}</td>
+          <td>{{ obat.ruangan || '-' }}</td>
+          <td>
+            <span
+              :class="[
+                'rme-badge',
+                obat.obat_dc === 'YA' ? 'rme-badge-danger' : 'rme-badge-success',
+              ]"
+              >{{ obat.obat_dc || '-' }}</span
+            >
+          </td>
+          <td>
+            <template v-if="obat.auth == '1'">
+              <div class="fo-verif-name">✓ {{ obat.auth_by }}</div>
+              <div class="fo-verif-time">{{ formatDateTime(obat.time_verif) }}</div>
+            </template>
+            <span v-else class="rme-badge rme-badge-warning">Belum</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ══ Halaman 3+ : SOAP / CPPT IGD ═══════════════════════════════════════ -->
+  <!-- Loading SOAP -->
+  <div v-if="hasData && loadingSOAP" class="rme-a4-page triase-a4-page" data-section="triase">
+    <div class="rme-page-header-repeat">
+      <span class="rme-phr-rm">RM: {{ dataPasien?.NOMR }}</span>
+      <span class="rme-phr-name">{{ dataPasien?.NAMAPASIEN }}</span>
+      <span class="rme-phr-reg">Triase IGD — Hal. {{ soapStartPage }}/{{ totalPages }}</span>
+    </div>
+    <div class="rme-subsection-title igd-soap-section-title">
+      <i class="pi pi-file-edit" style="color: #00897b; margin-right: 4px"></i>
+      Catatan SOAP / CPPT IGD
+    </div>
+    <div class="rme-loading-row" style="margin: 6px 0">
+      <span class="rme-loading-dot"></span> Memuat catatan SOAP...
+    </div>
+  </div>
+  <!-- Empty SOAP -->
+  <div
+    v-else-if="hasData && fact.length === 0"
+    class="rme-a4-page triase-a4-page"
+    data-section="triase"
+  >
+    <div class="rme-page-header-repeat">
+      <span class="rme-phr-rm">RM: {{ dataPasien?.NOMR }}</span>
+      <span class="rme-phr-name">{{ dataPasien?.NAMAPASIEN }}</span>
+      <span class="rme-phr-reg">Triase IGD — Hal. {{ soapStartPage }}/{{ totalPages }}</span>
+    </div>
+    <div class="rme-subsection-title igd-soap-section-title">
+      <i class="pi pi-file-edit" style="color: #00897b; margin-right: 4px"></i>
+      Catatan SOAP / CPPT IGD
+    </div>
+    <div class="rme-empty-note">
+      <i class="pi pi-minus-circle"></i> Belum ada catatan SOAP untuk kunjungan ini.
+    </div>
+  </div>
+  <!-- SOAP chunks: satu halaman A4 per chunk -->
+  <template v-else-if="hasData">
+    <div
+      v-for="(chunk, pageIdx) in soapChunks"
+      :key="'soap-page-' + pageIdx"
+      class="rme-a4-page triase-a4-page"
+      data-section="triase"
+    >
+      <div class="rme-page-header-repeat">
+        <span class="rme-phr-rm">RM: {{ dataPasien?.NOMR }}</span>
+        <span class="rme-phr-name">{{ dataPasien?.NAMAPASIEN }}</span>
+        <span class="rme-phr-reg"
+          >Triase — SOAP Hal. {{ pageIdx + soapStartPage }}/{{ totalPages }}</span
+        >
+      </div>
+      <div v-if="pageIdx === 0" class="rme-subsection-title igd-soap-section-title">
         <i class="pi pi-file-edit" style="color: #00897b; margin-right: 4px"></i>
         Catatan SOAP / CPPT IGD
       </div>
-
-      <div v-if="loadingSOAP" class="rme-loading-row" style="margin: 6px 0">
-        <span class="rme-loading-dot"></span> Memuat catatan SOAP...
-      </div>
-      <div v-else-if="!fact || fact.length === 0" class="rme-empty-note">
-        <i class="pi pi-minus-circle"></i> Belum ada catatan SOAP untuk kunjungan ini.
-      </div>
-      <div v-else class="igd-soap-list">
+      <div class="igd-soap-list">
         <div
-          v-for="item in fact"
+          v-for="item in chunk"
           :key="item.id"
           class="igd-soap-card"
           :class="{ 'igd-soap-auth': item.hasbeen_auth == 1 }"
@@ -382,6 +608,8 @@
                 class="igd-soap-val igd-soap-obj-html"
                 v-html="item.object_display || formatText(item.object)"
               ></div>
+
+              {{ item.object || '' }}
             </div>
             <div v-if="item.asessment" class="igd-soap-field igd-soap-a">
               <div class="igd-soap-lbl">{{ item.caption3 || 'A' }}</div>
@@ -421,7 +649,7 @@
             />
             <div class="igd-soap-qr-info">
               <div class="igd-soap-qr-title">✓ Dokumen Terotorisasi</div>
-              <div v-if="item.time_auth" class="igd-soap-qr-time">{{ item.time_auth }}</div>
+              <!-- <div v-if="item.time_auth" class="igd-soap-qr-time">{{ item.time_auth }}</div> -->
               <div v-if="item.verif_user_display" class="igd-soap-qr-by">
                 {{ item.verif_user_display }}
               </div>
@@ -430,7 +658,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </template>
 </template>
 
 <script setup>
@@ -459,6 +687,12 @@ const triaseFact = ref([])
 const nilaiTriase = ref(null)
 const secondarySurvey = ref([])
 const rtl = ref(null)
+const diagnosa = ref(null)
+const formulirObat = ref([])
+const penunjang = ref([])
+
+const penunjangLab = computed(() => penunjang.value.filter((x) => x.KATEGORI === 'LABORATORIUM'))
+const penunjangRadiologi = computed(() => penunjang.value.filter((x) => x.KATEGORI === 'RADIOLOGI'))
 
 // SOAP / CPPT IGD — state terpisah agar tidak memblokir tampilan triase
 const fact = ref([])
@@ -466,6 +700,62 @@ const loadingSOAP = ref(false)
 
 // Data dianggap ada jika API mengembalikan code 200
 const hasData = computed(() => header.value?.code === 200)
+
+// Chunking SOAP: 2 kartu per halaman A4
+const SOAP_PER_PAGE = 2
+const soapChunks = computed(() => {
+  const result = []
+  for (let i = 0; i < fact.value.length; i += SOAP_PER_PAGE) {
+    result.push(fact.value.slice(i, i + SOAP_PER_PAGE))
+  }
+  return result
+})
+const soapStartPage = computed(() => (formulirObat.value.length > 0 ? 4 : 3))
+// Total halaman = 2 (info + tabel) + halaman formulir obat (opsional) + halaman SOAP (min 1)
+const totalPages = computed(
+  () => 2 + (formulirObat.value.length > 0 ? 1 : 0) + Math.max(soapChunks.value.length, 1),
+)
+
+// Visual skala nyeri
+const nyeriPic = computed(() => {
+  const n = Number(header.value?.nyeri ?? 0)
+  if (n === 0) return 'https://ws-simrs.net/skala_nyeri/a.png'
+  if (n >= 1 && n <= 3) return 'https://ws-simrs.net/skala_nyeri/b.png'
+  if (n >= 4 && n <= 6) return 'https://ws-simrs.net/skala_nyeri/c.png'
+  if (n >= 7 && n <= 9) return 'https://ws-simrs.net/skala_nyeri/d.png'
+  return 'https://ws-simrs.net/skala_nyeri/e.png'
+})
+
+const nyeriButtons = [
+  { nilai: 0, color: 'nyeri-btn-0', label: 'Tidak' },
+  { nilai: 1, color: 'nyeri-btn-ringan', label: 'Ringan' },
+  { nilai: 2, color: 'nyeri-btn-ringan', label: 'Ringan' },
+  { nilai: 3, color: 'nyeri-btn-ringan', label: 'Ringan' },
+  { nilai: 4, color: 'nyeri-btn-sedang', label: 'Sedang' },
+  { nilai: 5, color: 'nyeri-btn-sedang', label: 'Sedang' },
+  { nilai: 6, color: 'nyeri-btn-sedang', label: 'Sedang' },
+  { nilai: 7, color: 'nyeri-btn-berat', label: 'Berat' },
+  { nilai: 8, color: 'nyeri-btn-berat', label: 'Berat' },
+  { nilai: 9, color: 'nyeri-btn-berat', label: 'Berat' },
+  { nilai: 10, color: 'nyeri-btn-parah', label: 'Parah' },
+]
+
+const nyeriKeterangan = computed(() => {
+  const map = {
+    0: 'Tidak ada nyeri',
+    1: 'Nyeri sangat ringan',
+    2: 'Nyeri ringan',
+    3: 'Nyeri ringan terasa',
+    4: 'Nyeri sedang',
+    5: 'Nyeri sedang lebih kuat',
+    6: 'Nyeri sedang-berat',
+    7: 'Nyeri berat',
+    8: 'Nyeri berat sekali',
+    9: 'Nyeri sangat berat',
+    10: 'Nyeri tak tertahankan',
+  }
+  return map[Number(header.value?.nyeri ?? 0)] || '-'
+})
 
 // Tentukan kategori triase tertinggi
 const kesimpulanKey = computed(() => {
@@ -547,11 +837,35 @@ const hasTTV = (item) =>
   Number(item.respirasi) > 0 ||
   Number(item.gcs) > 0
 
+/** Format datetime YYYY-MM-DD HH:MM:SS → HH:MM DD/MM/YYYY */
+const formatDateTime = (dt) => {
+  if (!dt) return '-'
+  const [date, time] = String(dt).split(' ')
+  if (!date) return dt
+  const [y, m, d] = date.split('-')
+  const hm = time ? time.slice(0, 5) : ''
+  return hm ? `${hm} ${d}/${m}/${y}` : `${d}/${m}/${y}`
+}
+
 /** Nilai QR untuk SOAP yang sudah otorisasi */
 const qrValueSOAP = (item) =>
-  ['SOAP-IGD', item.id, props.noreg, item.time_auth, item.profesi, item.verif_user_display]
+  ['SOAP-IGD', item.id, props.noreg, item.profesi, item.verif_user_display]
     .map((v) => v ?? '')
     .join('|')
+
+const fetchPenunjang = async () => {
+  try {
+    const url = configStore.apiBaseUrl
+    const response = await axios.post(
+      `${url}/index.php/api/transaksi_pasien/get_notif_penunjang_json`,
+      { mode: 1, noregister: [getNoregTriase()] },
+      { headers: { 'Content-Type': 'application/json' } },
+    )
+    penunjang.value = response.data?.results || []
+  } catch (e) {
+    console.error('Gagal memuat data penunjang:', e)
+  }
+}
 
 const fetchDatasOAP_igd = async () => {
   loadingSOAP.value = true
@@ -592,12 +906,30 @@ const fetchData = async () => {
       secondarySurvey.value = data.survey
     }
 
-    // Rencana tindak lanjut ada di dalam header
-    if (data.header?.STATUS !== undefined && data.header?.STATUS !== null) {
+    // Rencana tindak lanjut — ambil dari rencana_tindak_lanjut, fallback ke header
+    const rtlSrc = data.rencana_tindak_lanjut
+    if (rtlSrc?.STATUS !== undefined && rtlSrc?.STATUS !== null) {
+      rtl.value = {
+        STATUS: rtlSrc.STATUS,
+        KETERANGAN: rtlSrc.KETERANGAN || '',
+        KDDOKTER: rtlSrc.KDDOKTER || '',
+        NAMADOKTER: rtlSrc.NAMADOKTER || '',
+      }
+    } else if (data.header?.STATUS !== undefined && data.header?.STATUS !== null) {
       rtl.value = {
         STATUS: data.header.STATUS,
         KETERANGAN: data.header.KETERANGAN || '',
+        KDDOKTER: '',
+        NAMADOKTER: '',
       }
+    }
+
+    if (data.diagnosa?.metadata?.code === 200 && data.diagnosa?.response) {
+      diagnosa.value = data.diagnosa.response
+    }
+
+    if (data.formulir_obat?.metadata?.code === 200 && data.formulir_obat?.response) {
+      formulirObat.value = data.formulir_obat.response
     }
   } catch (e) {
     error.value = 'Gagal memuat data triase: ' + (e.message || '')
@@ -630,6 +962,7 @@ watch(
     if (jenisrawat) {
       fetchData()
       fetchDatasOAP_igd()
+      fetchPenunjang()
     }
   },
   { immediate: true },
@@ -637,6 +970,12 @@ watch(
 </script>
 
 <style scoped>
+/* ── Ukuran A4 untuk setiap halaman ───────────────────────────────── */
+/* min-height: 297mm diwarisi dari .rme-a4-page — JANGAN override di sini */
+.triase-a4-page {
+  box-sizing: border-box;
+}
+
 /* ── Ringkasan skor triase ─────────────────────────────────────────── */
 .triase-score-row {
   display: flex;
@@ -658,7 +997,7 @@ watch(
   line-height: 1;
 }
 .ts-lbl {
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.4px;
   margin-top: 3px;
@@ -714,7 +1053,7 @@ watch(
 
 /* ── Tabel triase ─────────────────────────────────────────────────── */
 .triase-tbl thead th {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   text-align: center;
   padding: 5px 4px;
@@ -737,7 +1076,7 @@ watch(
 }
 
 .triase-item {
-  font-size: 10px;
+  font-size: 12px;
   padding: 1px 0;
   line-height: 1.4;
   display: flex;
@@ -748,11 +1087,11 @@ watch(
   font-weight: 700;
 }
 .triase-unchecked {
-  color: #bbb;
-  font-size: 9.5px;
+  color: #3f3f3f;
+  font-size: 11px;
 }
 .triase-check-icon {
-  font-size: 11px;
+  font-size: 13px;
   flex-shrink: 0;
 }
 .tc-txt-emergensi {
@@ -787,6 +1126,27 @@ watch(
   padding: 6px 8px;
   font-size: 12px;
   gap: 6px;
+}
+.triase-rtl-keterangan {
+  flex: 1;
+}
+.triase-rtl-dokter-inline {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.triase-rtl-doctor-label {
+  font-weight: 600;
+  color: #555;
+}
+.triase-rtl-doctor-name {
+  font-style: italic;
+}
+.triase-rtl-doctor-code {
+  color: #888;
+  font-size: 11px;
 }
 
 /* ══════════════════════════════════════════════
@@ -835,7 +1195,7 @@ watch(
 }
 
 .igd-soap-counter {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   color: #00695c;
   background: rgba(0, 105, 92, 0.12);
@@ -849,15 +1209,15 @@ watch(
   border-color: #00897b !important;
 }
 .igd-soap-time {
-  font-size: 10px;
+  font-size: 12px;
   color: #555;
 }
 .igd-soap-ppa {
-  font-size: 10px;
+  font-size: 12px;
   color: #444;
 }
 .igd-soap-ppa-sm {
-  font-size: 10px;
+  font-size: 12px;
   color: #555;
   margin-left: 6px;
 }
@@ -870,7 +1230,7 @@ watch(
   padding: 5px 10px;
   background: #f0faf9;
   border-bottom: 1px dashed #b2dfdb;
-  font-size: 10px;
+  font-size: 12px;
 }
 .igd-soap-ttv span {
   background: #e0f2f1;
@@ -912,7 +1272,7 @@ watch(
 }
 
 .igd-soap-lbl {
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   color: #00897b;
   text-transform: uppercase;
@@ -922,12 +1282,12 @@ watch(
   padding-bottom: 2px;
 }
 .igd-soap-val {
-  font-size: 11px;
+  font-size: 13px;
   color: #333;
   line-height: 1.5;
 }
 .igd-soap-obj-html :deep(*) {
-  font-size: 11px !important;
+  font-size: 13px !important;
   font-family: 'Segoe UI', Arial, sans-serif !important;
   line-height: 1.5 !important;
   color: #333 !important;
@@ -940,7 +1300,7 @@ watch(
   background: #fff8e1;
   border-left: 3px solid #f9a825;
   border-radius: 2px;
-  font-size: 11px;
+  font-size: 13px;
   color: #5d4037;
 }
 .igd-soap-catatan-lbl {
@@ -955,7 +1315,7 @@ watch(
   gap: 6px;
   padding: 4px 10px;
   border-top: 1px dashed #b2dfdb;
-  font-size: 11px;
+  font-size: 13px;
 }
 .igd-soap-qr {
   display: flex;
@@ -977,7 +1337,7 @@ watch(
   flex: 1;
 }
 .igd-soap-qr-title {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   color: #2e7d32;
   text-transform: uppercase;
@@ -985,12 +1345,179 @@ watch(
 }
 .igd-soap-qr-time,
 .igd-soap-qr-by {
-  font-size: 10px;
+  font-size: 12px;
   color: #555;
   margin-top: 1px;
 }
 .igd-soap-qr-by {
   font-style: italic;
+}
+
+/* ── Visual Skala Nyeri ──────────────────────────────────────────── */
+.nyeri-visual-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 6px 0 4px;
+  padding: 7px 10px;
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+}
+.nyeri-visual-face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.nyeri-face-img {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+.nyeri-face-score {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #1565c0;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nyeri-visual-body {
+  flex: 1;
+  min-width: 0;
+}
+.nyeri-btn-row {
+  display: flex;
+  gap: 2px;
+}
+.nyeri-btn-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 4px;
+  padding: 3px 0;
+  flex: 1;
+  min-width: 0;
+}
+.nyeri-btn-num {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+.nyeri-btn-lbl {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.85);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-top: 1px;
+  white-space: nowrap;
+}
+.nyeri-btn-active {
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 3.5px rgba(0, 0, 0, 0.45);
+  transform: scale(1.1);
+  position: relative;
+  z-index: 1;
+}
+.nyeri-btn-inactive {
+  opacity: 0.4;
+}
+.nyeri-btn-0 {
+  background: #43a047;
+}
+.nyeri-btn-ringan {
+  background: #8bc34a;
+}
+.nyeri-btn-sedang {
+  background: #ffa726;
+}
+.nyeri-btn-berat {
+  background: #ef5350;
+}
+.nyeri-btn-parah {
+  background: #b71c1c;
+}
+
+.nyeri-info-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.nyeri-desc-text {
+  font-style: italic;
+  color: #555;
+}
+.nyeri-lokasi {
+  color: #444;
+}
+.nyeri-legend-row-print {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid #e0e0e0;
+  font-size: 11px;
+  color: #777;
+}
+.nyeri-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 2px;
+  vertical-align: middle;
+}
+.nyeri-0-dot {
+  background: #43a047;
+}
+.nyeri-ringan-dot {
+  background: #8bc34a;
+}
+.nyeri-sedang-dot {
+  background: #ffa726;
+}
+.nyeri-berat-dot {
+  background: #ef5350;
+}
+.nyeri-parah-dot {
+  background: #b71c1c;
+}
+
+/* ── Formulir Pemberian Obat ─────────────────────────────────────── */
+.fo-section-title {
+  color: #1565c0;
+}
+.fo-th-no {
+  width: 4%;
+  text-align: center;
+}
+.fo-th-obat {
+  width: 20%;
+}
+.fo-td-center {
+  text-align: center;
+}
+.fo-verif-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2e7d32;
+}
+.fo-verif-time {
+  font-size: 11px;
+  color: #666;
+  margin-top: 1px;
 }
 
 @media print {

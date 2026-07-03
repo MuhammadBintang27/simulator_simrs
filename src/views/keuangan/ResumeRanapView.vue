@@ -170,19 +170,11 @@
         <div class="r-grid-2 mt-3">
           <div class="r-col">
             <div class="r-row">
-              <span class="r-lbl">Diagnosis Masuk</span><span class="r-sep">:</span
-              ><span class="r-val">{{
-                (resume.dx_masuk?.dx_utama || data_ranap?.DIAGNOSA_AWAL || '—').toUpperCase()
-              }}</span>
-            </div>
-
-            <div class="r-row">
-              <span class="r-lbl">Diagnosis Keluar</span><span class="r-sep">:</span
-              ><span class="r-val">{{
-                (data_ranap?.DX_CAPTION || resume?.dx_sekunder || '—').toUpperCase()
-              }}</span>
+              <span class="r-lbl">Diagnosis Utama</span><span class="r-sep">:</span
+              ><span class="r-val">{{ (resume?.dx_awal || '—').toUpperCase() }}</span>
             </div>
           </div>
+
           <div class="r-col">
             <div class="r-row">
               <span class="r-lbl">Pemeriksaan Radiologi</span><span class="r-sep">:</span

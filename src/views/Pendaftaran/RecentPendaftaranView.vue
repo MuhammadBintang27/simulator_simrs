@@ -3,221 +3,6 @@
     <loading_overlay :is-loading="loading" message="Memuat data...." />
 
     <!-- ═══════════════ DESKTOP VIEW ═══════════════ -->
-    <div class="hidden md:block">
-      <Dialog
-        v-model:visible="ShowRiwayatPendaftaran"
-        modal
-        :style="{ width: '1280px' }"
-        :closable="true"
-      >
-        <template #header>
-          <div class="dialog-header-content">
-            <div class="dialog-header-icon">
-              <i class="pi pi-list"></i>
-            </div>
-            <div>
-              <p class="dialog-header-title">Riwayat Pendaftaran</p>
-              <p class="dialog-header-sub">Manajemen data registrasi pasien</p>
-            </div>
-          </div>
-        </template>
-
-        <!-- Filter Bar -->
-        <div class="filter-bar">
-          <div class="filter-group">
-            <div class="filter-field">
-              <label class="filter-label"><i class="pi pi-calendar mr-1"></i>Tgl Awal</label>
-              <DatePicker
-                v-model="startDate"
-                dateFormat="yy-mm-dd"
-                showIcon
-                :showButtonBar="true"
-                placeholder="yyyy-mm-dd"
-                class="date-picker-sm"
-              />
-            </div>
-            <div class="filter-field">
-              <label class="filter-label"><i class="pi pi-calendar mr-1"></i>Tgl Akhir</label>
-              <DatePicker
-                v-model="endDate"
-                dateFormat="yy-mm-dd"
-                showIcon
-                :showButtonBar="true"
-                placeholder="yyyy-mm-dd"
-                class="date-picker-sm"
-              />
-            </div>
-            <div class="filter-field filter-search">
-              <label class="filter-label"><i class="pi pi-search mr-1"></i>Pencarian</label>
-              <InputText
-                v-model="searchKeyword"
-                placeholder="Nama, NIK, No MR..."
-                @keyup.enter="onSearch"
-                class="search-input"
-              />
-            </div>
-          </div>
-          <Button
-            label="Cari Data"
-            icon="pi pi-search"
-            :loading="loading"
-            class="btn-search"
-            @click="onSearch"
-          />
-        </div>
-
-        <!-- Stats Summary -->
-        <div class="stats-row">
-          <div class="stat-chip">
-            <i class="pi pi-users stat-chip-icon"></i>
-            <span class="stat-chip-label">Total</span>
-            <span class="stat-chip-value">{{ fact.length }}</span>
-          </div>
-          <div class="stat-chip stat-chip-success">
-            <i class="pi pi-check-circle stat-chip-icon"></i>
-            <span class="stat-chip-label">Aktif</span>
-            <span class="stat-chip-value">{{ fact.filter((f) => f.BATAL === '0').length }}</span>
-          </div>
-          <div class="stat-chip stat-chip-danger">
-            <i class="pi pi-times-circle stat-chip-icon"></i>
-            <span class="stat-chip-label">Dibatalkan</span>
-            <span class="stat-chip-value">{{ fact.filter((f) => f.BATAL === '1').length }}</span>
-          </div>
-        </div>
-
-        <DataTable
-          :value="fact"
-          stripedRows
-          paginator
-          :rows="10"
-          :rowsPerPageOptions="[5, 10, 20, 50]"
-          scrollable
-          scrollHeight="560px"
-          showGridlines
-          responsiveLayout="scroll"
-          rowHover
-          class="pro-table"
-          :rowClass="rowStatusClass"
-        >
-          <Column field="NOPENDAFTARAN" header="NO REG" sortable style="min-width: 120px">
-            <template #body="{ data }">
-              <span class="noreg-badge">{{ data.NOPENDAFTARAN }}</span>
-            </template>
-          </Column>
-          <Column field="NOMR" header="NO MR" sortable style="min-width: 90px">
-            <template #body="{ data }">
-              <span class="nomr-text">{{ data.NOMR }}</span>
-            </template>
-          </Column>
-          <Column field="NAMAPASIEN" header="Pasien" sortable style="min-width: 200px">
-            <template #body="{ data }">
-              <div class="patient-cell">
-                <div class="patient-avatar">{{ initials(data.NAMAPASIEN) }}</div>
-                <div>
-                  <p class="patient-name">{{ data.NAMAPASIEN }}</p>
-                  <p class="patient-age">
-                    {{ data.USIA_PASIEN.tahun }}T {{ data.USIA_PASIEN.bulan }}B
-                    {{ data.USIA_PASIEN.hari }}H
-                  </p>
-                </div>
-              </div>
-            </template>
-          </Column>
-          <Column field="NOSEP" header="No SEP" sortable style="min-width: 140px">
-            <template #body="{ data }">
-              <span class="nosep-text">{{ data.NOSEP || '-' }}</span>
-            </template>
-          </Column>
-          <Column field="NAMADOKTER" header="Dokter" sortable style="min-width: 150px">
-            <template #body="{ data }">
-              <div class="dokter-cell">
-                <i class="pi pi-user-edit dokter-icon"></i>
-                <span>{{ data.NAMADOKTER }}</span>
-              </div>
-            </template>
-          </Column>
-          <Column field="POLI" header="Poli / Ruang" sortable style="min-width: 130px">
-            <template #body="{ data }">
-              <span class="poli-badge">{{ data.POLI }}</span>
-            </template>
-          </Column>
-          <Column field="CARABAYAR" header="Cara Bayar" sortable style="min-width: 110px">
-            <template #body="{ data }">
-              <span :class="['bayar-badge', bayarClass(data.CARABAYAR)]">{{ data.CARABAYAR }}</span>
-            </template>
-          </Column>
-          <Column field="TGLREG" header="Tgl Reg" sortable style="min-width: 100px">
-            <template #body="{ data }">
-              <span class="date-text">{{ data.TGLREG }}</span>
-            </template>
-          </Column>
-          <Column field="JENISRAWAT" header="Jenis Rawat" sortable style="min-width: 100px">
-            <template #body="{ data }">
-              <span :class="['rawat-badge', rawatClass(data.JENISRAWAT)]">{{
-                data.JENISRAWAT
-              }}</span>
-            </template>
-          </Column>
-          <Column header="Status" style="min-width: 90px; text-align: center">
-            <template #body="{ data }">
-              <span v-if="data.BATAL === '0'" class="status-badge status-aktif">
-                <i class="pi pi-check-circle mr-1"></i>Aktif
-              </span>
-              <span v-else class="status-badge status-batal">
-                <i class="pi pi-times-circle mr-1"></i>Batal
-              </span>
-            </template>
-          </Column>
-          <Column header="Aksi" style="min-width: 120px; text-align: center">
-            <template #body="{ data }">
-              <div class="action-group">
-                <Button
-                  v-tooltip.top="'Cetak SEP'"
-                  icon="pi pi-print"
-                  severity="info"
-                  size="small"
-                  rounded
-                  text
-                  :loading="data.isLoading"
-                  @click="PrintSEP(data.NOSEP, data.NOPENDAFTARAN, data)"
-                  class="action-btn"
-                />
-                <Button
-                  v-tooltip.top="'Edit'"
-                  icon="pi pi-pencil"
-                  severity="success"
-                  size="small"
-                  rounded
-                  text
-                  @click="editPendaftaran(data)"
-                  class="action-btn"
-                />
-                <Button
-                  v-tooltip.top="'Inform Consent'"
-                  icon="pi pi-file-edit"
-                  severity="warning"
-                  size="small"
-                  rounded
-                  text
-                  @click="openConsentDialog(data)"
-                  class="action-btn"
-                />
-                <Button
-                  v-tooltip.top="'Batalkan'"
-                  icon="pi pi-trash"
-                  severity="danger"
-                  size="small"
-                  rounded
-                  text
-                  @click="confirmDelete(data)"
-                  class="action-btn"
-                />
-              </div>
-            </template>
-          </Column>
-        </DataTable>
-      </Dialog>
-    </div>
 
     <!-- ═══════════════ MOBILE VIEW ═══════════════ -->
     <div class="md:hidden">
@@ -240,43 +25,33 @@
         </template>
 
         <div class="mobile-filter">
-          <div class="mobile-filter-dates">
-            <div class="flex-1">
-              <label class="filter-label">Tgl Awal</label>
-              <DatePicker
-                v-model="startDate"
-                dateFormat="yy-mm-dd"
-                showIcon
-                :showButtonBar="true"
-                placeholder="yyyy-mm-dd"
-                class="w-full"
-              />
-            </div>
-            <div class="flex-1">
-              <label class="filter-label">Tgl Akhir</label>
-              <DatePicker
-                v-model="endDate"
-                dateFormat="yy-mm-dd"
-                showIcon
-                :showButtonBar="true"
-                placeholder="yyyy-mm-dd"
-                class="w-full"
-              />
-            </div>
-          </div>
-          <InputText
-            v-model="searchKeyword"
-            placeholder="Cari nama, NIK, No MR..."
-            @keyup.enter="onSearch"
-            class="w-full"
-          />
-          <Button
-            label="Cari Data"
-            icon="pi pi-search"
-            :loading="loading"
-            class="w-full btn-search"
-            @click="onSearch"
-          />
+          <InputGroup class="filter-row-full">
+            <InputGroupAddon class="mf-addon">Awal</InputGroupAddon>
+            <DatePicker
+              v-model="startDate"
+              dateFormat="yy-mm-dd"
+              showIcon
+              :showButtonBar="true"
+              placeholder="Tgl Awal"
+              class="mf-datepicker"
+            />
+            <InputGroupAddon class="mf-addon">Akhir</InputGroupAddon>
+            <DatePicker
+              v-model="endDate"
+              dateFormat="yy-mm-dd"
+              showIcon
+              :showButtonBar="true"
+              placeholder="Tgl Akhir"
+              class="mf-datepicker"
+            />
+            <InputText
+              v-model="searchKeyword"
+              placeholder="Nama / NIK / No MR"
+              @keyup.enter="onSearch"
+              class="mf-search-input"
+            />
+            <Button icon="pi pi-search" :loading="loading" class="btn-search" @click="onSearch" />
+          </InputGroup>
         </div>
 
         <div class="mobile-cards">
@@ -295,6 +70,7 @@
               <div>
                 <p class="card-label">No Registrasi</p>
                 <p class="card-noreg">{{ item.NOPENDAFTARAN }}</p>
+                <p v-if="item.NOSEP" class="card-nosep">SEP: {{ item.NOSEP }}</p>
               </div>
 
               <div class="card-header-time">
@@ -375,6 +151,17 @@
                 <i class="pi pi-exclamation-triangle mr-1"></i>
                 Pasien unclaim &mdash; by: {{ item.DILAKUKAN_OLEH }}
               </div>
+
+              <div
+                v-if="item.BATAL === '0' && item.JENISRAWAT === 'JALAN' && item.ALASAN_BATAL"
+                class="sep-batal-notice"
+              >
+                <i class="pi pi-info-circle mr-1"></i>
+                <span
+                  >SEP dibatalkan &mdash; Rujuk Rawat Inap:
+                  <strong>{{ item.ALASAN_BATAL }}</strong></span
+                >
+              </div>
             </div>
 
             <div class="card-mobile-footer">
@@ -427,6 +214,16 @@
                 size="small"
                 @click="funtionSendToPoli(item)"
                 class="card-btn"
+              />
+              <Button
+                icon="pi pi-file-pdf"
+                label="RM EL"
+                severity="info"
+                size="small"
+                outlined
+                @click="PrintRekamMedisEl(item)"
+                class="card-btn"
+                v-tooltip.top="'Rekam Medis Elektronik'"
               />
             </div>
           </div>
@@ -632,6 +429,8 @@ const initials = (name = '') =>
 
 const bayarClass = (carabayar = '') => {
   const v = carabayar.toUpperCase()
+  if (v.includes('WAITING LIST')) return 'bayar-waiting'
+  if (v.includes('KETENAGAKERJAAN')) return 'bayar-ketenagakerjaan'
   if (v.includes('BPJS')) return 'bayar-bpjs'
   if (v.includes('UMUM')) return 'bayar-umum'
   return 'bayar-other'
@@ -639,9 +438,9 @@ const bayarClass = (carabayar = '') => {
 
 const rawatClass = (jenis = '') => {
   const v = jenis.toUpperCase()
-  if (v.includes('RAWAT JALAN') || v.includes('RAJAL')) return 'rawat-jalan'
-  if (v.includes('RAWAT INAP') || v.includes('RANAP')) return 'rawat-inap'
-  if (v.includes('IGD') || v.includes('UGD')) return 'rawat-igd'
+  if (v.includes('JALAN') || v.includes('JALAN')) return 'rawat-jalan'
+  if (v.includes('INAP') || v.includes('INAP')) return 'rawat-inap'
+  if (v.includes('IGD') || v.includes('IGD')) return 'rawat-igd'
   return 'rawat-other'
 }
 
@@ -659,6 +458,14 @@ const funtionSendToPoli = (status) => {
   const routeData = router.resolve({
     name: 'FormPoliKlinikView',
     query: { noreg: status.NOPENDAFTARAN, noka: status.NOJAMINAN, nomr: status.NOMR },
+  })
+  window.open(routeData.href, '_blank')
+}
+
+const PrintRekamMedisEl = (item) => {
+  const routeData = router.resolve({
+    name: 'RMEViewer',
+    query: { noreg: item.NOPENDAFTARAN },
   })
   window.open(routeData.href, '_blank')
 }
@@ -842,9 +649,9 @@ onMounted(() => {})
 
 .filter-bar {
   display: flex;
-  align-items: flex-end;
-  gap: 0.75rem;
-  padding: 0.875rem 1rem;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1rem;
   background: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
@@ -852,27 +659,21 @@ onMounted(() => {})
   flex-wrap: wrap;
 }
 
-.filter-group {
-  display: flex;
-  gap: 0.625rem;
-  flex-wrap: wrap;
+.filter-date-group {
+  flex-shrink: 0;
+}
+
+.filter-search-group {
   flex: 1;
-  align-items: flex-end;
+  min-width: 180px;
 }
 
-.filter-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.filter-search {
-  flex: 1;
-  min-width: 200px;
-}
-
-.search-input {
-  width: 100%;
+.filter-addon {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
 }
 
 .filter-label {
@@ -999,7 +800,7 @@ onMounted(() => {})
   color: #1e3a5f;
   background: #eff6ff;
   padding: 0.15rem 0.4rem;
-  border-radius: 4px;
+  border-radius: 1px;
   border: 1px solid #bfdbfe;
 }
 
@@ -1095,6 +896,18 @@ onMounted(() => {})
   border: 1px solid #fde68a;
 }
 
+.bayar-waiting {
+  background: #ede9fe;
+  color: #5b21b6;
+  border: 1px solid #ddd6fe;
+}
+
+.bayar-ketenagakerjaan {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
 .bayar-other {
   background: #f3f4f6;
   color: #4b5563;
@@ -1118,21 +931,21 @@ onMounted(() => {})
 }
 
 .rawat-jalan {
-  background: #eff6ff;
-  color: #1d4ed8;
-  border: 1px solid #bfdbfe;
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
 }
 
 .rawat-inap {
-  background: #faf5ff;
-  color: #7e22ce;
-  border: 1px solid #e9d5ff;
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
 }
 
 .rawat-igd {
-  background: #fff7ed;
-  color: #c2410c;
-  border: 1px solid #fed7aa;
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
 }
 
 .rawat-other {
@@ -1180,16 +993,40 @@ onMounted(() => {})
   display: flex;
   flex-direction: column;
   gap: 0.625rem;
-  padding: 0.875rem;
+  padding: 0.75rem;
   background: #f9fafb;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 1px;
   margin-bottom: 1rem;
 }
 
-.mobile-filter-dates {
-  display: flex;
-  gap: 0.625rem;
+.filter-row-full {
+  width: 100%;
+}
+
+.mf-addon {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #6b7280;
+  white-space: nowrap;
+  padding: 0 0.45rem;
+}
+
+:deep(.mf-datepicker .p-inputtext) {
+  min-width: 78px;
+  max-width: 110px;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.3rem;
+}
+
+:deep(.mf-datepicker .p-datepicker-trigger) {
+  padding: 0 0.35rem;
+}
+
+:deep(.mf-search-input) {
+  flex: 1 1 80px;
+  min-width: 0;
+  font-size: 0.78rem;
 }
 
 .w-full {
@@ -1208,7 +1045,7 @@ onMounted(() => {})
 
 .card-mobile {
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: box-shadow 0.2s;
@@ -1264,6 +1101,14 @@ onMounted(() => {})
   font-weight: 700;
   color: #fff;
   margin: 0;
+}
+
+.card-nosep {
+  font-family: monospace;
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.65);
+  margin: 1px 0 0;
+  letter-spacing: 0.01em;
 }
 
 .card-date {
@@ -1364,7 +1209,9 @@ onMounted(() => {})
   font-size: 0.65rem;
   cursor: pointer;
   line-height: 1;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
   flex-shrink: 0;
 }
 .riwayat-bpjs-btn:hover {
@@ -1411,6 +1258,19 @@ onMounted(() => {})
   padding: 0.4rem 0.6rem;
   font-size: 0.72rem;
   color: #c2410c;
+  font-weight: 500;
+}
+
+.sep-batal-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3rem;
+  background: #eff6ff;
+  border: 1px solid #93c5fd;
+  border-radius: 4px;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.62rem;
+  color: #1d4ed8;
   font-weight: 500;
 }
 
@@ -1548,7 +1408,7 @@ onMounted(() => {})
 .consent-dialog-icon {
   width: 38px;
   height: 38px;
-  border-radius: 10px;
+  border-radius: 2px;
   background: linear-gradient(135deg, #f59e0b, #d97706);
   display: flex;
   align-items: center;

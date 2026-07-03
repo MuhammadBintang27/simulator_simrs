@@ -1,10 +1,17 @@
 <template>
-  <div class="content">
+  <div class="page-wrapper">
     <loading_overlay :is-loading="loading" message="Memuat data...." />
 
-    <!-- Back Navigation -->
-    <div class="back-nav">
-      <Button icon="pi pi-arrow-left" label="Kembali" text @click="$router.push('/penugasan-layanan')" />
+    <!-- Page Header with Breadcrumb -->
+    <div class="page-header">
+      <div class="breadcrumb-nav">
+        <button class="breadcrumb-link" @click="$router.push('/penugasan-layanan')">
+          <i class="pi pi-th-large"></i>
+          <span>Penugasan Layanan</span>
+        </button>
+        <i class="pi pi-chevron-right breadcrumb-sep"></i>
+        <span class="breadcrumb-current">{{ isKabid ? 'Laporan Bidang Saya' : 'Tugas Saya' }}</span>
+      </div>
     </div>
 
     <!-- Hero Section -->
@@ -25,106 +32,110 @@
       search-placeholder="Cari judul, lokasi..."
       @refresh="loadData"
       @reset="resetFilters"
-    >
-  
-    </FilterSection>
+    />
 
-    <!-- Custom Tabs for Status Filter -->
-    <div class="custom-tabs-wrapper">
-      <div class="custom-tabs">
-        <button 
-          class="custom-tab" 
+    <!-- Status Tab Navigation -->
+    <div class="tab-nav-card">
+      <div class="tab-nav-header">
+        <i class="pi pi-sliders-h tab-nav-icon"></i>
+        <span>Filter Status Tugas</span>
+      </div>
+      <div class="tab-nav-list">
+        <button
+          class="tab-nav-item"
           :class="{ active: activeTab === 0 }"
           @click="activeTab = 0"
         >
           <i class="pi pi-list"></i>
-          <span>Semua</span>
-          <span class="tab-badge">{{ tabCounts.all }}</span>
+          <span class="tab-label">Semua</span>
+          <span class="tab-count">{{ tabCounts.all }}</span>
         </button>
-        <button 
+
+        <button
           v-if="isKabid"
-          class="custom-tab" 
+          class="tab-nav-item"
           :class="{ active: activeTab === 1 }"
           @click="activeTab = 1"
         >
           <i class="pi pi-clock"></i>
-          <span>Perlu Ditugaskan</span>
-          <span class="tab-badge">{{ tabCounts.needsAssign }}</span>
+          <span class="tab-label">Perlu Ditugaskan</span>
+          <span class="tab-count" :class="{ 'count-warn': tabCounts.needsAssign > 0 }">{{ tabCounts.needsAssign }}</span>
         </button>
-        <button 
+
+        <button
           v-if="!isKabid"
-          class="custom-tab" 
+          class="tab-nav-item"
           :class="{ active: activeTab === 1 }"
           @click="activeTab = 1"
         >
           <i class="pi pi-sync"></i>
-          <span>Sedang Dikerjakan</span>
-          <span class="tab-badge">{{ tabCounts.inProgress }}</span>
+          <span class="tab-label">Sedang Dikerjakan</span>
+          <span class="tab-count">{{ tabCounts.inProgress }}</span>
         </button>
-        <button 
+
+        <button
           v-if="!isKabid"
-          class="custom-tab" 
+          class="tab-nav-item"
           :class="{ active: activeTab === 2 }"
           @click="activeTab = 2"
         >
           <i class="pi pi-pause-circle"></i>
-          <span>Ditunda</span>
-          <span class="tab-badge">{{ tabCounts.suspended }}</span>
+          <span class="tab-label">Ditunda</span>
+          <span class="tab-count">{{ tabCounts.suspended }}</span>
         </button>
-        <button 
+
+        <button
           v-if="isKabid"
-          class="custom-tab" 
+          class="tab-nav-item"
           :class="{ active: activeTab === 2 }"
           @click="activeTab = 2"
         >
           <i class="pi pi-sync"></i>
-          <span>Sedang Dikerjakan</span>
-          <span class="tab-badge">{{ tabCounts.inProgress }}</span>
+          <span class="tab-label">Sedang Dikerjakan</span>
+          <span class="tab-count">{{ tabCounts.inProgress }}</span>
         </button>
-        <button 
-          class="custom-tab" 
+
+        <button
+          class="tab-nav-item"
           :class="{ active: activeTab === 3 }"
           @click="activeTab = 3"
         >
           <i class="pi pi-check-circle"></i>
-          <span>Selesai</span>
-          <span class="tab-badge">{{ tabCounts.completed }}</span>
+          <span class="tab-label">Selesai</span>
+          <span class="tab-count" :class="{ 'count-success': tabCounts.completed > 0 && activeTab !== 3 }">{{ tabCounts.completed }}</span>
         </button>
       </div>
     </div>
 
-    <!-- Tasks Grid -->
-    <div class="tasks-container">
+    <!-- Tasks Content -->
+    <div class="tasks-section">
       <!-- Empty State - No Data -->
       <template v-if="filteredTasks.length === 0 && myTasks.length === 0">
-        <Card class="empty-state-card">
-          <template #content>
-            <div class="empty-state">
-              <i class="pi pi-inbox empty-icon"></i>
-              <h4 class="empty-title">Belum Ada Tugas</h4>
-              <p class="empty-text">Anda belum memiliki tugas yang ditugaskan.</p>
-            </div>
-          </template>
-        </Card>
+        <div class="empty-state-wrapper">
+          <div class="empty-state-icon">
+            <i class="pi pi-inbox"></i>
+          </div>
+          <h4 class="empty-state-title">Belum Ada Tugas</h4>
+          <p class="empty-state-desc">Anda belum memiliki tugas yang ditugaskan saat ini.</p>
+        </div>
       </template>
 
       <!-- Empty State - No Results -->
       <template v-else-if="filteredTasks.length === 0">
-        <Card class="empty-state-card">
-          <template #content>
-            <div class="empty-state">
-              <i class="pi pi-search empty-icon"></i>
-              <h4 class="empty-title">Tidak Ada Hasil</h4>
-              <p class="empty-text">Tidak ada tugas yang sesuai dengan filter yang dipilih.</p>
-              <Button
-                label="Reset Filter"
-                icon="pi pi-filter-slash"
-                @click="resetFilters"
-                outlined
-              />
-            </div>
-          </template>
-        </Card>
+        <div class="empty-state-wrapper">
+          <div class="empty-state-icon secondary">
+            <i class="pi pi-search"></i>
+          </div>
+          <h4 class="empty-state-title">Tidak Ada Hasil</h4>
+          <p class="empty-state-desc">Tidak ada tugas yang sesuai dengan filter yang dipilih. Coba ubah atau reset filter Anda.</p>
+          <Button
+            label="Reset Filter"
+            icon="pi pi-filter-slash"
+            @click="resetFilters"
+            outlined
+            size="small"
+          />
+        </div>
       </template>
 
       <!-- Task Table -->
@@ -140,9 +151,9 @@
           @view-detail="viewDetail"
           @assign-staff="openAssignStaffDialog"
         />
-        
-        <!-- Pagination Controls -->
-        <div class="pagination-wrapper" v-if="pagination && pagination.total > 0">
+
+        <!-- Pagination -->
+        <div class="pagination-card" v-if="pagination && pagination.total > 0">
           <Paginator
             :rows="pageSize"
             :totalRecords="pagination.total"
@@ -151,10 +162,10 @@
             @page="onPageChange"
             template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
           />
-          
-          <div class="pagination-info">
-            Menampilkan {{ myTasks.length }} tugas dari {{ pagination.total }} total
-            (Halaman {{ pagination.page }} dari {{ pagination.total_pages }})
+          <div class="pagination-summary">
+            <i class="pi pi-info-circle"></i>
+            Menampilkan <strong>{{ myTasks.length }}</strong> dari <strong>{{ pagination.total }}</strong> tugas
+            &mdash; Halaman {{ pagination.page }} / {{ pagination.total_pages }}
           </div>
         </div>
       </template>
@@ -170,76 +181,87 @@
     >
       <div class="assign-dialog">
         <!-- Report Info Section -->
-        <div class="form-section">
-          <h6 class="section-title">
-            <i class="pi pi-file"></i>
-            Informasi Laporan
-          </h6>
-          <div class="report-info">
-            <div class="info-row">
-              <label class="info-label">Judul Laporan:</label>
-              <p class="info-value">{{ selectedReport?.problem_title }}</p>
+        <div class="dialog-section">
+          <div class="dialog-section-header">
+            <i class="pi pi-file-edit"></i>
+            <span>Informasi Laporan</span>
+          </div>
+          <div class="report-info-grid">
+            <div class="info-item">
+              <span class="info-key">Judul Laporan</span>
+              <span class="info-val">{{ selectedReport?.problem_title }}</span>
             </div>
-            <div class="info-row">
-              <label class="info-label">Kategori:</label>
-              <p class="info-value">
+            <div class="info-item">
+              <span class="info-key">Kategori</span>
+              <span class="info-val">
                 <CategoryBadge :category="selectedReport?.problem_category" />
-              </p>
+              </span>
             </div>
-            <div class="info-row">
-              <label class="info-label">Prioritas:</label>
-              <p class="info-value">
+            <div class="info-item">
+              <span class="info-key">Prioritas</span>
+              <span class="info-val">
                 <PriorityBadge :priority="selectedReport?.priority" />
-              </p>
+              </span>
             </div>
           </div>
         </div>
 
-        <!-- Assignment Fields Section -->
-        <div class="form-section">
-          <h6 class="section-title">
+        <!-- Assignment Section -->
+        <div class="dialog-section">
+          <div class="dialog-section-header">
             <i class="pi pi-users"></i>
-            Detail Penugasan
-          </h6>
-
-          <!-- Staff Selection -->
-          <div class="form-field">
-            <label class="field-label">
-              Pilih Staff <span class="required">*</span>
-            </label>
-            <Select
-              v-model="selectedStaff"
-              :options="staffList"
-              optionLabel="user_name"
-              optionValue="user_id"
-              placeholder="Pilih staff..."
-              filter
-              showClear
-              class="modern-select"
-            >
-              <template #option="{ option }">
-                <div class="staff-option">
-                  <i class="pi pi-user"></i>
-                  <span>{{ option.user_name }}</span>
-                  <small class="text-muted">({{ option.job_title }})</small>
-                </div>
-              </template>
-            </Select>
-            <small class="field-hint">
-              Pilih satu staff untuk menangani laporan ini
-            </small>
+            <span>Detail Penugasan</span>
           </div>
+          <div class="dialog-section-body">
+            <div class="form-field">
+              <label class="field-label">
+                Pilih Staff <span class="required">*</span>
+              </label>
+              <Select
+                v-model="selectedStaff"
+                :options="staffList"
+                optionLabel="user_name"
+                optionValue="user_id"
+                placeholder="Pilih staff yang akan menangani..."
+                filter
+                showClear
+                class="w-full"
+              >
+                <template #option="{ option }">
+                  <div class="staff-option">
+                    <div class="staff-avatar">
+                      <i class="pi pi-user"></i>
+                    </div>
+                    <div class="staff-info">
+                      <span class="staff-name">{{ option.user_name }}</span>
+                      <small class="staff-title">{{ option.job_title }}</small>
+                    </div>
+                  </div>
+                </template>
+              </Select>
+              <small class="field-hint">
+                <i class="pi pi-info-circle"></i>
+                Pilih satu staff untuk menangani laporan ini
+              </small>
+            </div>
 
-          <!-- Assignment Notes -->
-          <div class="form-field">
-            <label class="field-label">Catatan untuk Staff</label>
-            <Textarea
-              v-model="assignStaffNotes"
-              rows="4"
-              placeholder="Tambahkan instruksi atau catatan khusus untuk staff..."
-              class="modern-textarea"
-            />
-            <small class="field-hint">Maksimal 500 karakter</small>
+            <div class="form-field">
+              <label class="field-label">
+                Catatan untuk Staff
+                <span class="optional">(opsional)</span>
+              </label>
+              <Textarea
+                v-model="assignStaffNotes"
+                rows="4"
+                placeholder="Tambahkan instruksi atau catatan khusus untuk staff..."
+                class="w-full"
+                style="resize: none;"
+              />
+              <small class="field-hint">
+                <i class="pi pi-info-circle"></i>
+                Maksimal 500 karakter
+              </small>
+            </div>
           </div>
         </div>
       </div>
@@ -248,16 +270,16 @@
         <div class="dialog-footer">
           <Button
             label="Batal"
+            icon="pi pi-times"
             @click="showAssignStaffDialog = false"
             severity="secondary"
             outlined
           />
           <Button
-            label="Tugaskan"
+            label="Tugaskan Sekarang"
             icon="pi pi-check"
             @click="handleAssignToStaff"
             :loading="loading"
-            severity="success"
           />
         </div>
       </template>
@@ -612,98 +634,362 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.content {
+/* ── Page Layout ── */
+.page-wrapper {
   padding: 1.5rem;
+  min-height: 100vh;
+  background: #f8fafc;
 }
 
-/* Back Nav */
-.back-nav {
+/* ── Breadcrumb Navigation ── */
+.page-header {
+  margin-bottom: 1.25rem;
+}
+
+.breadcrumb-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.breadcrumb-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.875rem;
+  background: white;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  color: #4f8f7a;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.breadcrumb-link:hover {
+  background: #f0faf6;
+  border-color: #4f8f7a;
+  box-shadow: 0 2px 6px rgba(79, 143, 122, 0.15);
+}
+
+.breadcrumb-sep {
+  color: #cbd5e1;
+  font-size: 0.7rem;
+}
+
+.breadcrumb-current {
+  color: #334155;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+/* ── Status Tab Navigation ── */
+.tab-nav-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
   margin-bottom: 1.5rem;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
-.back-nav :deep(.p-button) {
-  color: #4f8f7a !important;
+.tab-nav-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.tab-nav-icon {
+  color: #4f8f7a;
+}
+
+.tab-nav-list {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.875rem 1rem;
+  overflow-x: auto;
+}
+
+.tab-nav-item {
+  flex: 1;
+  min-width: max-content;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5625rem 1rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-nav-item i {
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.tab-nav-item:hover {
+  background: #f0faf6;
+  border-color: #4f8f7a;
+  color: #4f8f7a;
+}
+
+.tab-nav-item.active {
+  background: #4f8f7a;
+  border-color: #4f8f7a;
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(79, 143, 122, 0.35);
+}
+
+.tab-count {
+  min-width: 1.25rem;
+  height: 1.375rem;
+  padding: 0 0.4rem;
+  background: rgba(0, 0, 0, 0.07);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: all 0.2s ease;
+}
+
+.tab-nav-item.active .tab-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+}
+
+.tab-count.count-warn {
+  background: #fef9c3;
+  color: #a16207;
+}
+
+.tab-count.count-success {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+/* ── Tasks Section ── */
+.tasks-section {
+  min-height: 200px;
+}
+
+/* ── Empty States ── */
+.empty-state-wrapper {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 4rem 2rem;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.empty-state-icon {
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(135deg, rgba(79, 143, 122, 0.12) 0%, rgba(79, 143, 122, 0.05) 100%);
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.empty-state-icon i {
+  font-size: 2rem;
+  color: #4f8f7a;
+}
+
+.empty-state-icon.secondary {
+  background: linear-gradient(135deg, rgba(100, 116, 139, 0.1) 0%, rgba(100, 116, 139, 0.04) 100%);
+}
+
+.empty-state-icon.secondary i {
+  color: #64748b;
+}
+
+.empty-state-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 0.5rem 0;
+}
+
+.empty-state-desc {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin: 0 auto 1.5rem;
+  max-width: 340px;
+  line-height: 1.6;
+}
+
+/* ── Pagination Card ── */
+.pagination-card {
+  margin-top: 1.25rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.25rem 1rem 0.75rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.pagination-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  color: #64748b;
+  padding-top: 0.25rem;
+}
+
+.pagination-summary i {
+  font-size: 0.75rem;
+}
+
+.pagination-summary strong {
+  color: #1e293b;
   font-weight: 600;
 }
 
-.back-nav :deep(.p-button:hover) {
-  background: rgba(79, 143, 122, 0.1) !important;
+:deep(.p-paginator) {
+  padding: 0.5rem;
+  border: none;
+  background: transparent;
+  display: flex;
+  justify-content: center;
+  gap: 0.25rem;
 }
 
-/* Assign Dialog */
+:deep(.p-paginator .p-paginator-pages .p-paginator-page) {
+  min-width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 8px;
+  border: 1.5px solid #e2e8f0;
+  color: #475569;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+:deep(.p-paginator .p-paginator-pages .p-paginator-page.p-highlight) {
+  background: #4f8f7a;
+  border-color: #4f8f7a;
+  color: white;
+  box-shadow: 0 2px 6px rgba(79, 143, 122, 0.3);
+}
+
+:deep(.p-paginator .p-paginator-pages .p-paginator-page:not(.p-highlight):hover) {
+  background: #f0faf6;
+  border-color: #4f8f7a;
+  color: #4f8f7a;
+}
+
+:deep(.p-paginator .p-paginator-first),
+:deep(.p-paginator .p-paginator-prev),
+:deep(.p-paginator .p-paginator-next),
+:deep(.p-paginator .p-paginator-last) {
+  min-width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 8px;
+  border: 1.5px solid #e2e8f0;
+  color: #475569;
+  transition: all 0.2s ease;
+}
+
+:deep(.p-paginator .p-paginator-first):hover,
+:deep(.p-paginator .p-paginator-prev):hover,
+:deep(.p-paginator .p-paginator-next):hover,
+:deep(.p-paginator .p-paginator-last):hover {
+  background: #f0faf6;
+  border-color: #4f8f7a;
+  color: #4f8f7a;
+}
+
+/* ── Dialog ── */
 .assign-dialog {
-  padding: 0.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-/* Dialog Header Styling */
 :deep(.p-dialog .p-dialog-header) {
   background: linear-gradient(135deg, #4f8f7a 0%, #3f7663 100%);
   color: white;
-  padding: 1.25rem 1.5rem;
-  border-radius: 8px 8px 0 0;
+  padding: 1.125rem 1.5rem;
+  border-radius: 12px 12px 0 0;
 }
 
 :deep(.p-dialog .p-dialog-title) {
-  font-size: 1.125rem;
+  font-size: 1.0625rem;
   font-weight: 700;
   color: white;
 }
 
 :deep(.p-dialog .p-dialog-header-icons button) {
-  color: white !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  border-radius: 6px !important;
 }
 
 :deep(.p-dialog .p-dialog-header-icons button:hover) {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: white !important;
 }
 
 :deep(.p-dialog .p-dialog-content) {
-  padding: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: #f8fafc;
+}
+
+:deep(.p-dialog .p-dialog-footer) {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e2e8f0;
   background: white;
+  border-radius: 0 0 12px 12px;
 }
 
-/* Form Section Styling */
-.form-section {
+.dialog-section {
   background: white;
-  padding: 1.5rem;
-  border: 1px solid #e9ecef;
-  border-radius: 12px;
-  margin-bottom: 1.5rem;
-  transition: all 0.3s ease;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
-.form-section:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.form-section:last-child {
-  margin-bottom: 0;
-}
-
-.section-title {
+.dialog-section-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  font-size: 1rem;
+  gap: 0.625rem;
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, rgba(79, 143, 122, 0.07) 0%, rgba(79, 143, 122, 0.03) 100%);
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.875rem;
   font-weight: 700;
   color: #4f8f7a;
-  margin: 0 0 1rem 0;
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid #4f8f7a;
 }
 
-.section-title i {
-  font-size: 1.25rem;
+.report-info-grid {
+  padding: 0.5rem 1.25rem;
 }
 
-/* Report Info Display */
-.report-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.info-row {
+.info-item {
   display: flex;
   align-items: flex-start;
   gap: 1rem;
@@ -711,291 +997,139 @@ onMounted(() => {
   border-bottom: 1px solid #f1f5f9;
 }
 
-.info-row:last-child {
+.info-item:last-child {
   border-bottom: none;
 }
 
-.info-label {
-  font-size: 0.875rem;
+.info-key {
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #64748b;
-  min-width: 130px;
+  min-width: 115px;
   flex-shrink: 0;
 }
 
-.info-value {
+.info-val {
   flex: 1;
-  margin: 0;
-  color: #334155;
   font-size: 0.875rem;
+  color: #1e293b;
+  font-weight: 500;
 }
 
-/* Form Field Styling */
-.form-field {
-  margin-bottom: 1.25rem;
+.dialog-section-body {
+  padding: 1rem 1.25rem;
   display: flex;
   flex-direction: column;
+  gap: 1rem;
 }
 
-.form-field:last-child {
-  margin-bottom: 0;
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
 }
 
 .field-label {
-  font-weight: 600;
-  color: #2c3e50;
   font-size: 0.875rem;
-  margin-bottom: 0.5rem;
-  display: block;
+  font-weight: 600;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
 }
 
 .required {
-  color: #e74c3c;
+  color: #ef4444;
+}
+
+.optional {
+  color: #94a3b8;
+  font-weight: 400;
+  font-size: 0.8rem;
 }
 
 .field-hint {
-  display: block;
-  margin-top: 0.5rem;
-  color: #6c757d;
-  font-size: 0.8125rem;
-}
-
-/* Modern Input Styling */
-.modern-select,
-.modern-multiselect,
-.modern-textarea {
-  width: 100%;
-  border: 2px solid #e9ecef !important;
-  border-radius: 8px !important;
-  font-size: 0.875rem;
-  transition: all 0.3s ease;
-}
-
-.modern-select:hover,
-.modern-multiselect:hover,
-.modern-textarea:hover {
-  border-color: #cbd5e1 !important;
-}
-
-.modern-select:focus,
-.modern-multiselect:focus,
-.modern-textarea:focus,
-.modern-select.p-focus,
-.modern-multiselect.p-focus,
-.modern-textarea.p-focus {
-  border-color: #4f8f7a !important;
-  box-shadow: 0 0 0 3px rgba(79, 143, 122, 0.1) !important;
-}
-
-:deep(.modern-select .p-select-trigger),
-:deep(.modern-multiselect .p-multiselect-trigger) {
-  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #94a3b8;
+  font-size: 0.8rem;
 }
 
 .staff-option {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
+  gap: 0.75rem;
+  padding: 0.125rem 0;
 }
 
-/* Dialog Footer */
+.staff-avatar {
+  width: 30px;
+  height: 30px;
+  background: rgba(79, 143, 122, 0.1);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.staff-avatar i {
+  font-size: 0.8rem;
+  color: #4f8f7a;
+}
+
+.staff-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.staff-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.staff-title {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+/* ── Dialog Footer ── */
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e9ecef;
 }
 
-.dialog-footer :deep(.p-button) {
-  min-width: 120px;
-  padding: 0.625rem 1.25rem;
-  font-weight: 600;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.dialog-footer :deep(.p-button-secondary) {
-  border-color: #cbd5e1 !important;
-  color: #64748b !important;
-}
-
-.dialog-footer :deep(.p-button-secondary):hover {
-  background: #f1f5f9 !important;
-  border-color: #cbd5e1 !important;
-}
-
-.dialog-footer :deep(.p-button-success) {
-  background: linear-gradient(135deg, #4f8f7a 0%, #3f7663 100%);
-  border: none;
-  color: white;
-}
-
-.dialog-footer :deep(.p-button-success):hover {
-  background: linear-gradient(135deg, #3f7663 0%, #2f5d4f 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(79, 143, 122, 0.3);
-}
-
-/* Responsive for dialog */
+/* ── Responsive ── */
 @media (max-width: 768px) {
+  .page-wrapper {
+    padding: 1rem;
+  }
+
+  .tab-nav-list {
+    padding: 0.625rem 0.75rem;
+    gap: 0.375rem;
+  }
+
+  .tab-label {
+    display: none;
+  }
+
+  .tab-nav-item {
+    flex: 0 0 auto;
+    padding: 0.625rem 0.75rem;
+  }
+
   .dialog-footer {
     flex-direction: column-reverse;
   }
 
-  .dialog-footer :deep(.p-button) {
-    width: 100%;
-  }
-}
-
-/* Custom Tabs */
-.custom-tabs-wrapper {
-  background: linear-gradient(135deg, #4f8f7a 0%, #3d7461 100%);
-  padding: 0.75rem 1.5rem;
-  margin-bottom: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.custom-tabs {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.custom-tab {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 0.625rem 1rem;
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  border-radius: 6px;
-  color: white;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-}
-
-.custom-tab i {
-  font-size: 0.95rem;
-}
-
-.custom-tab:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateY(-1px);
-}
-
-.custom-tab.active {
-  background: white;
-  color: #4f8f7a;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-  transform: translateY(-1px);
-}
-
-.tab-badge {
-  background: rgba(79, 143, 122, 0.2);
-  padding: 0.15rem 0.5rem;
-  border-radius: 10px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  min-width: 20px;
-  text-align: center;
-}
-
-.custom-tab.active .tab-badge {
-  background: #4f8f7a;
-  color: white;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .content {
-    padding: 1rem;
-  }
-  
-  .pagination-wrapper {
-    padding: 0.75rem;
-  }
-  
   :deep(.p-paginator) {
     flex-wrap: wrap;
   }
-  
-  .pagination-info {
-    font-size: 0.8rem;
-  }
-}
-
-/* Pagination Styling */
-.pagination-wrapper {
-  margin-top: 1.5rem;
-  padding: 1rem;
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.pagination-info {
-  text-align: center;
-  margin-top: 0.75rem;
-  font-size: 0.875rem;
-  color: #666;
-  font-weight: 500;
-}
-
-:deep(.p-paginator) {
-  padding: 0.75rem;
-  border: none;
-  background: transparent;
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-:deep(.p-paginator .p-paginator-pages .p-paginator-page) {
-  min-width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 6px;
-  border: 1px solid #dee2e6;
-  color: #495057;
-  transition: all 0.2s ease;
-  font-weight: 500;
-}
-
-:deep(.p-paginator .p-paginator-pages .p-paginator-page.p-highlight) {
-  background: #4f8f7a;
-  border-color: #4f8f7a;
-  color: white;
-  box-shadow: 0 2px 4px rgba(79, 143, 122, 0.3);
-}
-
-:deep(.p-paginator .p-paginator-pages .p-paginator-page:not(.p-highlight):hover) {
-  background: #e9ecef;
-  border-color: #adb5bd;
-}
-
-:deep(.p-paginator .p-paginator-first),
-:deep(.p-paginator .p-paginator-prev),
-:deep(.p-paginator .p-paginator-next),
-:deep(.p-paginator .p-paginator-last) {
-  min-width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 6px;
-  border: 1px solid #dee2e6;
-  transition: all 0.2s ease;
-}
-
-:deep(.p-paginator .p-dropdown) {
-  border: 1px solid #dee2e6;
-  border-radius: 6px;
-  height: 2.5rem;
 }
 </style>
 

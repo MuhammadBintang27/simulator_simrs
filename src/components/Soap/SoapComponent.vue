@@ -33,6 +33,7 @@
                 <thead>
                   <tr>
                     <td style="width: 5em"><strong>Tanggal</strong></td>
+
                     <td>
                       <DatePicker
                         v-model="form.tglsoap"

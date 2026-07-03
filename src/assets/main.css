@@ -1,37 +1,10 @@
 @import './base.css';
 
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+  width: 100%;
+  padding: 0;
+  margin: 0;
   font-weight: normal;
-}
-
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
-}
-
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
-}
-
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
-
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
 }
 
 /* ── PrimeVue v4 DatePicker: year/month title buttons ── */
@@ -47,6 +20,51 @@ a,
 .p-datepicker-select-year:hover,
 .p-datepicker-select-month:hover {
   background: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ── PrimeVue Paginator: fix RowsPerPageDropdown vs Bootstrap/AdminLTE ──
+   cssLayer:true menempatkan PrimeVue dalam @layer sehingga AdminLTE (non-layer)
+   selalu menang. Aturan di luar layer ini memulihkan tampilan Select sepenuhnya. */
+.p-paginator .p-select {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-width: 5rem !important;
+  cursor: pointer !important;
+  position: relative !important;
+  border: 1px solid var(--p-select-border-color, #d1d5db) !important;
+  border-radius: 6px !important;
+  background: var(--p-select-background, #ffffff) !important;
+  padding: 0 !important;
+  height: auto !important;
+  width: auto !important;
+  box-shadow: none !important;
+}
+
+.p-paginator .p-select .p-select-label {
+  display: block !important;
+  padding: 0.3rem 0.5rem !important;
+  font-size: 0.82rem !important;
+  white-space: nowrap !important;
+  color: var(--p-select-color, inherit) !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+.p-paginator .p-select .p-select-dropdown {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 2rem !important;
+  flex-shrink: 0 !important;
+  color: var(--p-select-dropdown-color, #6b7280) !important;
+}
+
+/* Overlay panel harus muncul di atas AdminLTE sidebar/header */
+.p-select-overlay {
+  z-index: 9999 !important;
 }
 
 /* ── Global Print: sembunyikan layout AdminLTE, hanya konten halaman yang tercetak ── */
