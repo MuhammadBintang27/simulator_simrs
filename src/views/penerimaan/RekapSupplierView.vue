@@ -50,14 +50,22 @@
           <thead>
             <tr>
               <th style="width:32px;text-align:center">#</th>
-              <th style="min-width:140px;max-width:160px">Supplier</th>
-              <th v-for="bln in BULAN" :key="bln.key" class="th-bulan">{{ bln.label }}</th>
-              <th class="th-total">Total</th>
-              <th class="th-trx">Trx</th>
+              <th style="min-width:140px;max-width:160px" class="th-sortable" @click="toggleTableSort('nama_supplier')">
+                Supplier <i :class="sortIcon('nama_supplier')" class="sort-ico"></i>
+              </th>
+              <th v-for="bln in BULAN" :key="bln.key" class="th-bulan th-sortable" @click="toggleTableSort(bln.key)">
+                {{ bln.label }} <i :class="sortIcon(bln.key)" class="sort-ico"></i>
+              </th>
+              <th class="th-total th-sortable" @click="toggleTableSort('total')">
+                Total <i :class="sortIcon('total')" class="sort-ico"></i>
+              </th>
+              <th class="th-trx th-sortable" @click="toggleTableSort('trx')">
+                Trx <i :class="sortIcon('trx')" class="sort-ico"></i>
+              </th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(row, i) in data" :key="row.id_supplier" class="rekap-row">
+            <tr v-for="(row, i) in sortedData" :key="row.id_supplier" class="rekap-row">
               <td style="text-align:center;color:#94a3b8;font-size:11px">{{ i + 1 }}</td>
               <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
                 <div style="font-size:12px;font-weight:600;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="row.nama_supplier">{{ row.nama_supplier }}</div>
@@ -138,6 +146,36 @@ const grandPerBulan = computed(() => {
 
 const grandTotal = computed(() => data.value.reduce((sum, r) => sum + (r.total || 0), 0))
 const grandTrx = computed(() => data.value.reduce((sum, r) => sum + (r.jumlah_transaksi || 0), 0))
+
+const tableSort = ref({ field: null, dir: 'desc' })
+
+function toggleTableSort(field) {
+  tableSort.value = tableSort.value.field === field
+    ? { field, dir: tableSort.value.dir === 'asc' ? 'desc' : 'asc' }
+    : { field, dir: 'desc' }
+}
+
+function sortIcon(field) {
+  if (tableSort.value.field !== field) return 'pi pi-sort-alt'
+  return tableSort.value.dir === 'asc' ? 'pi pi-arrow-up' : 'pi pi-arrow-down'
+}
+
+const sortedData = computed(() => {
+  if (!tableSort.value.field) return data.value
+  const { field, dir } = tableSort.value
+  return [...data.value].sort((a, b) => {
+    if (field === 'nama_supplier') {
+      const va = a.nama_supplier?.toLowerCase() || ''
+      const vb = b.nama_supplier?.toLowerCase() || ''
+      return dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va)
+    }
+    let va, vb
+    if (field === 'total') { va = a.total || 0; vb = b.total || 0 }
+    else if (field === 'trx') { va = a.jumlah_transaksi || 0; vb = b.jumlah_transaksi || 0 }
+    else { va = a.per_bulan[field] || 0; vb = b.per_bulan[field] || 0 }
+    return dir === 'asc' ? va - vb : vb - va
+  })
+})
 
 async function fetchRekap() {
   loading.value = true
@@ -267,6 +305,11 @@ onMounted(fetchRekap)
 
 .rekap-grand { background:#f0fdfa;border-top:2px solid #99f6e4; }
 .rekap-grand td { padding:7px 8px;font-size:11px;color:#374151; }
+
+.th-sortable { cursor:pointer;user-select:none; }
+.th-sortable:hover { background:#e0f7f4 !important; }
+.sort-ico { font-size:9px;opacity:.6;margin-left:2px; }
+.th-sortable:hover .sort-ico { opacity:1; }
 
 .btn-primary-pm { background:#0d9488 !important;border-color:#0d9488 !important;color:#fff !important; }
 .btn-primary-pm:hover { background:#0f766e !important;border-color:#0f766e !important; }
