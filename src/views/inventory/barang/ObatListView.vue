@@ -437,7 +437,7 @@
                   </td>
                   <td class="mono">{{ batch.BATCH_NUMBER || '-' }}</td>
                   <td>
-                    <span v-if="batch.USE_EXP === '1' && batch.TGL_EXPIRED" class="mono">{{
+                    <span v-if="batch.TGL_EXPIRED" class="mono">{{
                       formatDate(batch.TGL_EXPIRED)
                     }}</span
                     ><span v-else style="color: #94a3b8">-</span>
