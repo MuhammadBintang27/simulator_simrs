@@ -141,7 +141,7 @@
                       v-for="sp in riwayatSP"
                       :key="sp.id_pemesanan"
                       class="riwayat-item"
-                      @click="$router.push({ name: 'PemesananEditView', params: { id_pemesanan: sp.id_pemesanan } })"
+                      @click="openDetailSP(sp.id_pemesanan)"
                     >
                       <div class="riwayat-left">
                         <span class="riwayat-no">{{ sp.no_sp }}</span>
@@ -307,6 +307,69 @@
       </div>
     </div>
 
+    <!-- DETAIL SP MODAL (dari klik riwayat) -->
+    <Dialog
+      v-model:visible="detailVisible"
+      header="Detail Surat Pesanan"
+      modal
+      :style="{ width: '720px', maxWidth: '96vw' }"
+      :contentStyle="{ padding: '1rem' }"
+    >
+      <div v-if="detailLoading" style="text-align:center;padding:30px;color:#94a3b8">
+        <i class="pi pi-spin pi-spinner" style="font-size:1.5rem"></i>
+      </div>
+      <template v-else-if="detailData">
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <div class="det-section-title"><i class="pi pi-file me-1"></i>INFO SURAT PESANAN</div>
+            <div class="det-row"><span class="det-lbl">No SP</span><span class="det-val mono fw-bold" style="color:#0d9488">{{ detailData.head?.no_sp }}</span></div>
+            <div class="det-row"><span class="det-lbl">Tanggal</span><span class="det-val mono">{{ formatDate(detailData.head?.tanggal_sp) }}</span></div>
+            <div class="det-row"><span class="det-lbl">Status</span>
+              <span class="det-val">
+                <span class="status-badge" :class="`status-${(detailData.head?.status_label||'').toLowerCase().replace(/\s+/g, '-')}`">{{ detailData.head?.status_label }}</span>
+              </span>
+            </div>
+            <div class="det-row"><span class="det-lbl">Keterangan</span><span class="det-val">{{ detailData.head?.keterangan || '-' }}</span></div>
+          </div>
+          <div class="col-md-6">
+            <div class="det-section-title"><i class="pi pi-truck me-1"></i>INFO SUPPLIER</div>
+            <div class="det-row"><span class="det-lbl">Nama</span><span class="det-val fw-semibold">{{ detailData.head?.nama_supplier }}</span></div>
+            <div class="det-row"><span class="det-lbl">No Izin PBF</span><span class="det-val mono">{{ detailData.head?.no_izin_pbf || '-' }}</span></div>
+            <div class="det-row"><span class="det-lbl">No CDOB</span><span class="det-val mono">{{ detailData.head?.no_sertifikat_cdob || '-' }}</span></div>
+            <template v-if="detailData.head?.nama_pj">
+              <div class="det-section-title mt-2"><i class="pi pi-user me-1"></i>PJ</div>
+              <div class="det-row"><span class="det-lbl">Nama</span><span class="det-val fw-semibold">{{ detailData.head.nama_pj }}</span></div>
+              <div class="det-row"><span class="det-lbl">No SIPA</span><span class="det-val mono">{{ detailData.head.no_sipa || '-' }}</span></div>
+            </template>
+          </div>
+        </div>
+        <div class="det-section-title"><i class="pi pi-list me-1"></i>DAFTAR ITEM ({{ detailData.details?.length || 0 }})</div>
+        <div style="overflow-x:auto">
+          <table class="det-table">
+            <thead>
+              <tr><th>#</th><th>Nama Barang</th><th>QTY</th><th>Satuan</th><th style="text-align:right">Harga Satuan</th><th style="text-align:right">Subtotal</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="(item, i) in detailData.details" :key="i">
+                <td class="mono" style="color:#94a3b8">{{ i + 1 }}</td>
+                <td><div class="fw-semibold" style="font-size:12px">{{ item.nama_barang }}</div></td>
+                <td class="mono fw-semibold">{{ item.qty_pesan }}</td>
+                <td>{{ item.satuan }}</td>
+                <td class="mono" style="text-align:right">{{ item.harga_satuan ? formatCurrency(item.harga_satuan) : '-' }}</td>
+                <td class="mono" style="text-align:right">{{ item.total_harga ? formatCurrency(item.total_harga) : '-' }}</td>
+              </tr>
+            </tbody>
+            <tfoot v-if="detailData.details?.length">
+              <tr style="background:#f0fdfa;border-top:2px solid #99f6e4">
+                <td colspan="5" style="text-align:right;font-weight:700;font-size:12px;padding:6px 8px;color:#374151">Grand Total</td>
+                <td class="mono" style="text-align:right;font-weight:700;font-size:12px;padding:6px 8px;color:#0d9488">{{ detailData.grand_total ? formatCurrency(detailData.grand_total) : '-' }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </template>
+    </Dialog>
+
     <!-- TTD DIGITAL -->
     <ttdUser
       v-model:showFormOtorisasi="showOtorisasi"
@@ -345,7 +408,7 @@ const authStore = useAuthStore()
 const toast = useToast()
 const confirm = useConfirm()
 
-const idPemesanan = route.params.id_pemesanan
+const idPemesanan = computed(() => route.params.id_pemesanan)
 
 const loading = ref(true)
 const head = ref(null)
@@ -469,6 +532,28 @@ function onSupplierSelect() {
   fetchRiwayatSP(s.IDSUPLIER || s.id || s.ID)
 }
 
+// ── DETAIL SP MODAL (klik riwayat) ──
+const detailVisible = ref(false)
+const detailLoading = ref(false)
+const detailData = ref(null)
+
+async function openDetailSP(id_pemesanan) {
+  detailVisible.value = true
+  detailLoading.value = true
+  detailData.value = null
+  try {
+    const res = await axios.get(
+      `${configStore.apiApotikUrl}/index.php/api/Pemesanan/get_detail_pemesanan/${id_pemesanan}/${authStore.id_client}`
+    )
+    if (res.data?.code !== 200) { detailVisible.value = false; return }
+    detailData.value = res.data?.data || res.data
+  } catch {
+    detailVisible.value = false
+  } finally {
+    detailLoading.value = false
+  }
+}
+
 function validateForm() {
   if (!supplierObj.value) {
     toast.add({ severity: 'warn', summary: 'Validasi', detail: 'Supplier wajib dipilih', life: 3000 })
@@ -488,7 +573,7 @@ function validateForm() {
 
 function buildPayload() {
   const payload = {
-    id_pemesanan: idPemesanan,
+    id_pemesanan: idPemesanan.value,
     idclient: authStore.id_client,
     id_supplier: supplierObj.value.IDSUPLIER || supplierObj.value.id || supplierObj.value.ID,
     id_lokasi: authStore.id_lokasi,
@@ -589,14 +674,20 @@ function onOtorisasiSuccess() {
 function goBack() { router.push({ name: 'PemesananListView', query: { mode: jenisSP.value === 'BRG' ? 'brg' : 'obat' } }) }
 
 function cetakSP() {
-  const url = router.resolve({ name: 'PrintSuratPesanan', params: { id_pemesanan: idPemesanan } }).href
+  const url = router.resolve({ name: 'PrintSuratPesanan', params: { id_pemesanan: idPemesanan.value } }).href
   window.open(url, '_blank')
 }
 
-onMounted(async () => {
+async function loadSP() {
+  loading.value = true
+  head.value = null
+  supplierObj.value = null
+  apotekerObj.value = null
+  items.value = []
+  riwayatSP.value = []
   try {
     const [detailRes, supplierRes, apotekerRes] = await Promise.all([
-      axios.get(`${configStore.apiApotikUrl}/index.php/api/Pemesanan/get_detail_pemesanan/${idPemesanan}/${authStore.id_client}`),
+      axios.get(`${configStore.apiApotikUrl}/index.php/api/Pemesanan/get_detail_pemesanan/${idPemesanan.value}/${authStore.id_client}`),
       axios.get(`${configStore.apiApotikUrl}/index.php/api/inventory/supplier_all`, { params: { clientId: authStore.id_client } }),
       axios.get(`${configStore.apiApotikUrl}/index.php/api/Pemesanan/get_apoteker_list/${authStore.id_client}`),
     ])
@@ -650,7 +741,9 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
+
+onMounted(loadSP)
 </script>
 
 <style scoped>
@@ -733,4 +826,16 @@ onMounted(async () => {
 .riwayat-date { font-size:10px;color:#94a3b8; }
 .riwayat-right { display:flex;flex-direction:column;align-items:flex-end;gap:2px; }
 .riwayat-total { font-size:11px;color:#374151;font-family:monospace; }
+
+/* ── DETAIL SP MODAL ── */
+.det-section-title { font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#0d9488;padding:4px 0;border-bottom:1px solid #ccfbf1;margin-bottom:8px; }
+.det-row { display:grid;grid-template-columns:130px 1fr;gap:6px;padding:3px 0;font-size:12px; }
+.det-lbl { color:#64748b; }
+.det-val { color:#1e293b;font-weight:500; }
+.det-table { width:100%;border-collapse:collapse;font-size:12px;margin-top:6px; }
+.det-table thead tr { background:#f0fdfa; }
+.det-table thead th { padding:5px 8px;text-align:left;font-size:10.5px;font-weight:700;color:#0d9488;text-transform:uppercase;letter-spacing:.4px;border-bottom:2px solid #99f6e4;white-space:nowrap; }
+.det-table tbody tr { border-bottom:1px solid #e2e8f0; }
+.det-table tbody tr:hover { background:#f0fdfa; }
+.det-table tbody td { padding:4px 8px;vertical-align:middle; }
 </style>
