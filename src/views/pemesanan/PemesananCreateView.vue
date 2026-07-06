@@ -172,10 +172,7 @@
             />
           </div>
 
-          <div v-if="barangList.length === 0 && barangList.length > 0" class="pm-info-box mb-2">
-            <i class="pi pi-info-circle me-1"></i>
-            Tidak ada barang dengan klasifikasi <strong>{{ jenisSP }}</strong> di master data.
-          </div>
+
 
           <div v-if="itemError" class="pm-warn-box mb-2">
             <i class="pi pi-exclamation-triangle me-1"></i>{{ itemError }}
@@ -202,7 +199,7 @@
                   <td>
                     <Select
                       v-model="item._barangObj"
-                      :options="barangList"
+                      :options="item._options"
                       optionLabel="NAMA"
                       filter
                       filterPlaceholder="Ketik min. 3 huruf untuk cari..."
@@ -210,9 +207,9 @@
                       class="w-100"
                       :class="{ 'p-invalid': item._error }"
                       :disabled="loading"
-                      :loading="barangLoading"
+                      :loading="item._loading"
                       @change="() => onBarangSelect(item)"
-                      @filter="onBarangFilter"
+                      @filter="(e) => onBarangFilter(item, e)"
                     >
                       <template #option="{ option }">
                         <div style="font-size:12px">
@@ -222,8 +219,8 @@
                       </template>
                       <template #empty>
                         <div style="padding:10px 14px;font-size:12px;color:#94a3b8;display:flex;align-items:center;gap:6px">
-                          <i v-if="barangLoading" class="pi pi-spin pi-spinner"></i>
-                          <span>{{ barangLoading ? 'Mencari barang...' : 'Ketik min. 3 huruf untuk mencari barang' }}</span>
+                          <i v-if="item._loading" class="pi pi-spin pi-spinner"></i>
+                          <span>{{ item._loading ? 'Mencari barang...' : 'Ketik min. 3 huruf untuk mencari barang' }}</span>
                         </div>
                       </template>
                     </Select>
@@ -413,7 +410,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useConfigStore, useAuthStore } from '@/stores/config'
 import { useToast } from 'primevue/usetoast'
@@ -431,7 +428,6 @@ const isBRG = computed(() => route.query.mode === 'brg')
 
 const loading = ref(false)
 const supplierList = ref([])
-const barangList = ref([])
 const apotekerList = ref([])
 const supplierObj = ref(null)
 const apotekerObj = ref(null)
@@ -451,28 +447,25 @@ const jenisSPOptions = computed(() => isBRG.value
     ]
 )
 
-const barangLoading = ref(false)
-let _barangTimer = null
-
-async function fetchBarang(search = '') {
-  barangLoading.value = true
+async function fetchBarang(item, search = '') {
+  item._loading = true
   try {
     const params = { clientId: authStore.id_client, lokasiId: authStore.id_lokasi, jenis_sp: jenisSP.value, limit: search ? 50 : 10, page: 1, ARSIPKAN: 0 }
     if (search) params.search = search
     const res = await axios.get(`${configStore.apiApotikUrl}/index.php/api/inventory/barang_list`, { params })
-    barangList.value = res.data?.response || res.data?.data || res.data || []
+    item._options = res.data?.response || res.data?.data || res.data || []
   } catch (err) {
     console.error('Error fetching barang:', err)
   } finally {
-    barangLoading.value = false
+    item._loading = false
   }
 }
 
-function onBarangFilter(e) {
+function onBarangFilter(item, e) {
   const keyword = e.value?.trim() ?? ''
-  clearTimeout(_barangTimer)
+  clearTimeout(item._timer)
   if (keyword.length > 0 && keyword.length < 3) return
-  _barangTimer = setTimeout(() => fetchBarang(keyword), 400)
+  item._timer = setTimeout(() => fetchBarang(item, keyword), 400)
 }
 
 const today = new Date().toISOString().slice(0, 10)
@@ -482,7 +475,7 @@ const items = ref([])
 const itemError = ref('')
 
 function newItem() {
-  return { _barangObj: null, id_barang: '', qty_pesan: 1, satuan: '', harga_satuan: null, satuan_options: [], stok_kecil: null, isi_sedang: null, isi_besar: null, _error: false }
+  return { _barangObj: null, id_barang: '', qty_pesan: 1, satuan: '', harga_satuan: null, satuan_options: [], stok_kecil: null, isi_sedang: null, isi_besar: null, _error: false, _options: [], _loading: false, _timer: null }
 }
 
 function addItem() { items.value.push(newItem()) }
@@ -659,12 +652,15 @@ async function submitDraft() {
   }
 }
 
+let _otorisasiDone = false
+
 async function submitAndOtorisasi() {
   if (!validateForm()) return
   loading.value = true
   try {
     const data = await doSave()
     pendingIdPemesanan.value = data?.id_pemesanan
+    _otorisasiDone = false
     toast.add({ severity: 'success', summary: 'SP Tersimpan', detail: `Silakan lakukan otorisasi ${isBRG.value ? 'PJ' : 'apoteker'}`, life: 4000 })
     showOtorisasi.value = true
   } catch (err) {
@@ -675,8 +671,21 @@ async function submitAndOtorisasi() {
 }
 
 function onOtorisasiSuccess() {
+  _otorisasiDone = true
   router.push({ name: 'PemesananListView', query: { mode: isBRG.value ? 'brg' : 'obat' } })
 }
+
+watch(showOtorisasi, async (val) => {
+  if (!val && pendingIdPemesanan.value && !_otorisasiDone) {
+    try {
+      await axios.post(`${configStore.apiApotikUrl}/index.php/api/Pemesanan/hapus_pemesanan`, {
+        id_pemesanan: pendingIdPemesanan.value,
+        idclient: authStore.id_client,
+      })
+    } catch {}
+    pendingIdPemesanan.value = null
+  }
+})
 
 function goBack() {
   router.push({ name: 'PemesananListView', query: { mode: isBRG.value ? 'brg' : 'obat' } })
@@ -706,7 +715,6 @@ onMounted(async () => {
   } catch (err) {
     console.error('Error fetching supplier:', err)
   }
-  fetchBarang()
   if (!isBRG.value) fetchApoteker()
 })
 </script>
