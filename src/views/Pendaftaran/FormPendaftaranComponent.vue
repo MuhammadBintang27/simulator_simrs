@@ -174,6 +174,7 @@
             v-model="noKontrolUlang"
             class="w-100"
             placeholder="Nomor kontrol ulang (opsional)..."
+            @keydown.enter="get_data_surat_kontrol"
           />
         </div>
       </div>
@@ -1239,11 +1240,95 @@ const searchDiagnose = async (event) => {
   }
 }
 
+const get_data_surat_kontrol = async () => {
+  if (!noKontrolUlang.value) {
+    showError('Nomor kontrol belum diisi')
+    return
+  }
+
+  try {
+    loading.value = true
+    const url = configStore.apiBaseUrl
+    const response = await axios.post(`${url}/index.php/api/bpjs_api/get_data_surat_kontrol`, {
+      nomorreferensi: noKontrolUlang.value,
+      id_client: String(id_client.value),
+    })
+
+    if (response.data?.metaData?.code !== '200') {
+      showError(response.data?.metaData?.message || 'Data surat kontrol tidak ditemukan')
+      return
+    }
+
+    const dataSuratKontrol = response.data.response
+
+    // Auto-select dokter berdasarkan kodeDokter dari surat kontrol
+    if (dataSuratKontrol?.kodeDokter) {
+      const foundDokter = list_dokter.value.find(
+        (d) => d.KODE_DOKTER_BPJS === dataSuratKontrol.kodeDokter,
+      )
+      if (foundDokter) {
+        dokterSelected.value = foundDokter
+        formErrors.value.dokterSelected = ''
+      } else {
+        showInfo(
+          `Dokter dengan kode ${dataSuratKontrol.kodeDokter} (${dataSuratKontrol.namaDokter}) tidak ditemukan dalam daftar DPJP`,
+        )
+      }
+    }
+
+    // Auto-select poli berdasarkan poliTujuan dari surat kontrol
+    if (dataSuratKontrol?.poliTujuan) {
+      const foundPoli = listPolyKlinik.value.find(
+        (p) => p.KodePoliBPJS === dataSuratKontrol.poliTujuan,
+      )
+      if (foundPoli) {
+        poliSelected.value = foundPoli
+        formErrors.value.poliSelected = ''
+      }
+    }
+
+    // Auto-fill asal rujukan dan nomor rujukan dari sep.provPerujuk
+    const provPerujuk = dataSuratKontrol?.sep?.provPerujuk
+    if (provPerujuk?.asalRujukan) {
+      const foundAsal = asalRujukanOptions.value.find(
+        (a) => String(a.code) === String(provPerujuk.asalRujukan),
+      )
+      if (foundAsal) asalRujukanSelected.value = foundAsal
+    }
+    if (provPerujuk?.noRujukan) {
+      noRujukan.value = provPerujuk.noRujukan
+    }
+
+    // Auto-fill diagnosa dari sep.diagnosa surat kontrol ("H11.0 - Pterygium")
+    const rawDiagnosa = dataSuratKontrol?.sep?.diagnosa
+    if (rawDiagnosa) {
+      const separatorIdx = rawDiagnosa.indexOf(' - ')
+      const icd_code =
+        separatorIdx !== -1 ? rawDiagnosa.substring(0, separatorIdx).trim() : rawDiagnosa.trim()
+      const jenis_penyakit =
+        separatorIdx !== -1 ? rawDiagnosa.substring(separatorIdx + 3).trim() : ''
+      const diagnosaItem = {
+        dx: rawDiagnosa,
+        icd_code,
+        jenis_penyakit,
+      }
+      listDiagnose.value = [diagnosaItem]
+      diagnoseSelected.value = diagnosaItem
+    }
+  } catch (error) {
+    console.error('Error fetching surat kontrol:', error)
+    showError('Gagal mengambil data surat kontrol')
+  } finally {
+    loading.value = false
+  }
+}
+
 const loadingRujukanFaskes = ref(false)
 
 const namaPPKPerujuk = ref(null)
 
 const dataRujukanPasien = ref(null)
+
 const getRujukanDariFaskes = async () => {
   if (!noRujukan.value) return
   if (!asalRujukanSelected.value) {

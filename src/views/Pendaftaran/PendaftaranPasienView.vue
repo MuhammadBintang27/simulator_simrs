@@ -397,9 +397,9 @@
                     <div class="pd-rujukan-content">
                       <template v-if="Array.isArray(item.data?.response?.rujukan)">
                         <div
-                          v-for="rj in (rujukanExpanded[item.jenis_rujukan]
+                          v-for="rj in rujukanExpanded[item.jenis_rujukan]
                             ? item.data.response.rujukan
-                            : item.data.response.rujukan.slice(0, 5))"
+                            : item.data.response.rujukan.slice(0, 5)"
                           :key="rj.noKunjungan"
                           class="pd-rujukan-row"
                           :class="{ 'pd-rujukan-row--expired': isRujukanExpired(rj.tglKunjungan) }"
@@ -427,7 +427,11 @@
                         >
                           <i
                             class="pi"
-                            :class="rujukanExpanded[item.jenis_rujukan] ? 'pi-chevron-up' : 'pi-chevron-down'"
+                            :class="
+                              rujukanExpanded[item.jenis_rujukan]
+                                ? 'pi-chevron-up'
+                                : 'pi-chevron-down'
+                            "
                           ></i>
                           {{
                             rujukanExpanded[item.jenis_rujukan]
@@ -538,6 +542,7 @@
 
         <!-- Bottom gradient card -->
         <div
+          v-show="isPoliklinikMode"
           class="mt-4 p-3 rounded"
           style="
             background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
@@ -558,7 +563,7 @@
               <a href="#" class="mr-3 font-weight-bold text-decoration-none" style="color: #2563eb">
                 <i class="fas fa-users mr-1"></i> Antrian Pasien Online
               </a>
-              <span class="mr-3 px-3 py-1 rounded font-weight-bold"> 0 </span>
+              <!-- <span class="mr-3 px-3 py-1 rounded font-weight-bold"> 0 </span> -->
               <Button label="Panggil Ulang" icon="pi pi-refresh" class="p-button-sm mr-2" />
               <Button label="Panggil" icon="pi pi-volume-up" class="p-button-sm" />
             </div>

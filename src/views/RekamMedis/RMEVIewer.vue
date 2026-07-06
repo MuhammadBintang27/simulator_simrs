@@ -365,7 +365,12 @@
       </div>
     </div>
 
-    <!-- Halaman 9: Billing / Rincian Tagihan -->
+    <!-- Halaman: Laporan Operasi (multi-halaman A4, dikelola oleh komponen) -->
+    <template v-if="sectionVisible('operasi-group')">
+      <RMEOperasiGroupSection :noreg="noreg" :dataPasien="dataPasien" />
+    </template>
+
+    <!-- Halaman: Billing / Rincian Tagihan (paling bawah) -->
     <div class="rme-a4-page" data-section="billing" v-if="sectionVisible('billing')">
       <div class="rme-page-header-repeat">
         <span class="rme-phr-rm">RM: {{ dataPasien?.NOMR }}</span>
@@ -493,6 +498,7 @@ import RMEResumeRawatJalan from './sections/RMEResumeRawatJalan.vue'
 import RMELembarKlaim from './sections/RMELembarKlaim.vue'
 import RMERujukan from './sections/RMERujukan.vue'
 import RMEHDViewer from './sections/RMEHDViewer.vue'
+import RMEOperasiGroupSection from './sections/Operasi/RMEOperasiGroupSection.vue'
 import SpeedDial from 'primevue/speeddial'
 import Dialog from 'primevue/dialog'
 
@@ -796,6 +802,17 @@ const sections = ref([
     jenisRawat: null,
   },
   {
+    key: 'operasi-group',
+    shortLabel: 'Operasi',
+    label: 'Laporan Operasi',
+    icon: '🔪',
+    color: '#e64a19',
+    bgColor: '#fff5f0',
+    borderColor: '#ffab91',
+    visible: true,
+    jenisRawat: null,
+  },
+  {
     key: 'billing',
     shortLabel: 'Billing',
     label: 'Rincian Tagihan Pasien',
@@ -957,8 +974,7 @@ const _fetchImageBase64 = async (src) => {
   if (_imgBase64Cache.has(src)) return _imgBase64Cache.get(src)
 
   let b64 = null
-  const _dbg = (step, ok) =>
-    console.debug(`[img-b64] step=${step} ok=${ok} src=${src.slice(-60)}`)
+  const _dbg = (step, ok) => console.debug(`[img-b64] step=${step} ok=${ok} src=${src.slice(-60)}`)
 
   // 1) Dev-proxy Vite: hanya aktif saat npm run dev (Vite dev server)
   if (src.includes('ws-simrs.net')) {
@@ -977,7 +993,9 @@ const _fetchImageBase64 = async (src) => {
         b64 = await _tryFetch(proxyUrl)
         _dbg(2, !!b64)
       }
-    } catch { /* URL tidak valid, skip */ }
+    } catch {
+      /* URL tidak valid, skip */
+    }
   }
 
   // 3) Fetch langsung (same-origin atau server dengan CORS header)
@@ -1127,20 +1145,40 @@ const exportToPDF = async (returnBuffer = false) => {
 
       const imgData = canvas.toDataURL('image/jpeg', preset.imgQuality)
 
-      // Lebar A4 dalam mm (portrait=210, landscape=297)
-      const pageWidthMM = isLandscape ? 297 : 210
-      // Tinggi halaman PDF menyesuaikan tinggi konten aktual (bukan fixed A4)
-      const pageHeightMM = (canvas.height / canvas.width) * pageWidthMM
+      // Dimensi halaman PDF
+      const pageWidthMM  = isLandscape ? 297 : 210
+      // Landscape: tinggi fixed 210mm (A4 landscape). Portrait: ikuti rasio konten.
+      const pageHeightMM = isLandscape ? 210 : (canvas.height / canvas.width) * pageWidthMM
 
       if (i === 0) {
-        pdf = new jsPDF({ unit: 'mm', format: [pageWidthMM, pageHeightMM] })
+        pdf = new jsPDF({
+          unit: 'mm',
+          format: [pageWidthMM, pageHeightMM],
+          orientation: isLandscape ? 'landscape' : 'portrait',
+        })
       } else {
-        pdf.addPage([pageWidthMM, pageHeightMM])
+        pdf.addPage([pageWidthMM, pageHeightMM], isLandscape ? 'landscape' : 'portrait')
       }
 
       const pdfW = pdf.internal.pageSize.getWidth()
       const pdfH = pdf.internal.pageSize.getHeight()
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH)
+
+      // Untuk landscape: scale konten agar muat dalam 297×210mm (pertahankan rasio)
+      if (isLandscape) {
+        const canvasRatio = canvas.height / canvas.width
+        const pdfRatio    = pdfH / pdfW
+        let imgW = pdfW
+        let imgH = pdfW * canvasRatio
+        if (canvasRatio > pdfRatio) {
+          imgH = pdfH
+          imgW = pdfH / canvasRatio
+        }
+        const offsetX = (pdfW - imgW) / 2
+        const offsetY = (pdfH - imgH) / 2
+        pdf.addImage(imgData, 'JPEG', offsetX, offsetY, imgW, imgH)
+      } else {
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH)
+      }
     }
 
     const nosep = dataPasien.value?.NOSEP || noreg.value
@@ -2242,6 +2280,7 @@ body {
 /* ── Landscape page (Kartu Catatan Obat) ── */
 .rme-landscape-page {
   width: 297mm;
+  min-height: 210mm;
   overflow-x: auto;
 }
 
@@ -2492,6 +2531,7 @@ body {
   .rme-landscape-page {
     page: landscape;
     width: 297mm !important;
+    min-height: 210mm !important;
     overflow-x: visible;
   }
 
