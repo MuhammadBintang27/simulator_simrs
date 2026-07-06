@@ -582,11 +582,11 @@ async function batalItem() {
         fetchList()
       }
     } else {
-      toast.add({ severity: 'error', summary: 'Gagal', detail: meta?.message || 'Gagal membatalkan item', life: 5000 })
+      const errMsg = code === 500 ? 'Terjadi kesalahan server, coba lagi' : (meta?.message || 'Gagal membatalkan item')
+      toast.add({ severity: 'error', summary: 'Gagal', detail: errMsg, life: 5000 })
     }
   } catch (err) {
-    const msg = err.response?.data?.metadata?.message || err.response?.data?.message || 'Gagal membatalkan item'
-    toast.add({ severity: 'error', summary: 'Error', detail: msg, life: 5000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Gagal membatalkan item', life: 5000 })
   } finally {
     batalItemLoading.value = false
   }
