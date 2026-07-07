@@ -13,7 +13,7 @@
           <p class="barang-hero-sub">Kelola data tarif layanan dan jasa</p>
         </div>
       </div>
-      <Button icon="pi pi-plus" label="Tambah Jasa" class="round-button2 btn-primary-barang" @click="openForm()" />
+      <Button v-if="isGudang" icon="pi pi-plus" label="Tambah Jasa" class="round-button2 btn-primary-barang" @click="openForm()" />
     </div>
 
     <!-- STAT STRIP -->
@@ -86,7 +86,7 @@
           <template #body="{ data }">
             <div>
               <div style="display:flex;align-items:center;gap:6px">
-                <span style="font-size:12px;font-weight:600;color:#1e293b">{{ data.NAMA }}</span>
+                <span style="font-size:12px;font-weight:600;color:#1e293b">{{ data.NAMA || '(Belum ada nama)' }}</span>
                 <Tag v-if="data.ARSIPKAN==='1'" value="Diarsipkan" severity="secondary" style="font-size:9px;padding:1px 5px" />
               </div>
               <div v-if="data.MEREK" style="font-size:10px;color:#94a3b8">{{ data.MEREK }}</div>
@@ -150,11 +150,13 @@ import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 import axios from 'axios'
 import BarangFormModal from './BarangFormModal.vue'
+import { useLokasiGudang } from '@/composables/useLokasiGudang'
 
 const configStore = useConfigStore()
 const authStore = useAuthStore()
 const confirm = useConfirm()
 const toast = useToast()
+const { isGudang, fetchIsGudang } = useLokasiGudang()
 
 const loading = ref(false)
 const barangs = ref([])
@@ -262,7 +264,10 @@ function resetFilter() {
 function openForm(id = null) { formModal.value = { visible: true, itemId: id || null } }
 function viewBarang(data) { selectedBarang.value = data; detailDialog.value = true }
 
-onMounted(() => fetchBarang())
+onMounted(() => {
+  fetchBarang()
+  fetchIsGudang()
+})
 </script>
 
 <style scoped>
