@@ -988,7 +988,7 @@ const submitForm = async () => {
       response = await axios.post(
         `${configStore.apiApotikUrl}/index.php/api/inventory/barang_create`,
         payload,
-        { params: { clientId } }
+        { params: { clientId, lokasiId: authStore.id_lokasi } }
       )
     }
 

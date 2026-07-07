@@ -14,6 +14,7 @@
         </div>
       </div>
       <Button
+        v-if="isGudang"
         icon="pi pi-plus"
         label="Tambah Obat/BMHP"
         class="round-button2 btn-primary-barang"
@@ -323,7 +324,7 @@
             <div>
               <div style="display: flex; align-items: center; gap: 6px">
                 <span style="font-size: 12px; font-weight: 600; color: #1e293b">{{
-                  data.NAMA
+                  data.NAMA || '(Belum ada nama)'
                 }}</span>
                 <Tag
                   v-if="data.ARSIPKAN === '1'"
@@ -638,7 +639,7 @@
                     <td>
                       <div style="display: flex; align-items: center; gap: 6px">
                         <span style="font-size: 12px; font-weight: 600; color: #1e293b">{{
-                          item.NAMA
+                          item.NAMA || '(Belum ada nama)'
                         }}</span>
                         <Tag
                           v-if="item.ARSIPKAN === '1'"
@@ -956,11 +957,13 @@ import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 import axios from 'axios'
 import BarangFormModal from './BarangFormModal.vue'
+import { useLokasiGudang } from '@/composables/useLokasiGudang'
 
 const configStore = useConfigStore()
 const authStore = useAuthStore()
 const confirm = useConfirm()
 const toast = useToast()
+const { isGudang, fetchIsGudang } = useLokasiGudang()
 
 const loading = ref(false)
 const barangs = ref([])
@@ -1528,7 +1531,10 @@ function exportExcel() {
   })
 }
 
-onMounted(() => fetchBarang())
+onMounted(() => {
+  fetchBarang()
+  fetchIsGudang()
+})
 </script>
 
 <style scoped>
