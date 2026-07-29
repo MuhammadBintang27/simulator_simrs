@@ -501,6 +501,15 @@
                 @click="viewBarang(data)"
               />
               <Button
+                icon="pi pi-book"
+                size="small"
+                text
+                rounded
+                severity="help"
+                v-tooltip.top="'Kartu Stok'"
+                @click="openStockCard(data.ID)"
+              />
+              <Button
                 icon="pi pi-pencil"
                 size="small"
                 text
@@ -698,6 +707,15 @@
                           @click="viewBarang(item)"
                         />
                         <Button
+                          icon="pi pi-book"
+                          size="small"
+                          text
+                          rounded
+                          severity="help"
+                          v-tooltip.top="'Kartu Stok'"
+                          @click="openStockCard(item.ID)"
+                        />
+                        <Button
                           icon="pi pi-pencil"
                           size="small"
                           text
@@ -856,6 +874,9 @@
       @saved="fetchBarang"
     />
 
+    <!-- KARTU STOK MODAL -->
+    <BarangStockCardModal v-model:visible="stockCardModal.visible" :itemId="stockCardModal.itemId" />
+
     <!-- DETAIL DIALOG -->
     <Dialog
       v-model:visible="detailDialog"
@@ -957,6 +978,7 @@ import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 import axios from 'axios'
 import BarangFormModal from './BarangFormModal.vue'
+import BarangStockCardModal from './BarangStockCardModal.vue'
 import { useLokasiGudang } from '@/composables/useLokasiGudang'
 
 const configStore = useConfigStore()
@@ -974,6 +996,7 @@ const expandedRows = ref([])
 const batchData = ref({})
 const batchLoading = ref({})
 const formModal = ref({ visible: false, itemId: null })
+const stockCardModal = ref({ visible: false, itemId: null })
 const expandAll = ref(false)
 const expandMode = ref(1)
 const isGrouped = ref(false)
@@ -1433,6 +1456,9 @@ function resetFilter() {
 }
 function openForm(id = null) {
   formModal.value = { visible: true, itemId: id || null }
+}
+function openStockCard(id) {
+  stockCardModal.value = { visible: true, itemId: id }
 }
 function editFromDetail() {
   openForm(selectedBarang.value?.ID)

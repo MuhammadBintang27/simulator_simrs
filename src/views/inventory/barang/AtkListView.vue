@@ -176,6 +176,7 @@
           <template #body="{ data }">
             <div class="action-btns">
               <Button icon="pi pi-eye" size="small" text rounded severity="info" v-tooltip.top="'Detail'" @click="viewBarang(data)" />
+              <Button icon="pi pi-book" size="small" text rounded severity="help" v-tooltip.top="'Kartu Stok'" @click="openStockCard(data.ID)" />
               <Button icon="pi pi-pencil" size="small" text rounded severity="warn" v-tooltip.top="'Edit'" @click="openForm(data.ID)" />
               <Button v-if="data.ARSIPKAN !== '1'" icon="pi pi-inbox" size="small" text rounded severity="warning" v-tooltip.top="'Arsipkan'" @click="arsipkanBarang(data.ID, data.NAMA)" />
               <Button v-else icon="pi pi-check-circle" size="small" text rounded severity="success" v-tooltip.top="'Aktifkan'" @click="aktifkanBarang(data.ID, data.NAMA)" />
@@ -188,6 +189,9 @@
 
     <!-- FORM MODAL -->
     <BarangFormModal v-model:visible="formModal.visible" bucket="ATK" :itemId="formModal.itemId" @saved="fetchBarang" />
+
+    <!-- KARTU STOK MODAL -->
+    <BarangStockCardModal v-model:visible="stockCardModal.visible" :itemId="stockCardModal.itemId" />
 
     <!-- DETAIL DIALOG -->
     <Dialog v-model:visible="detailDialog" :header="selectedBarang?.NAMA||'Detail ATK'" modal :style="{width:'580px',maxWidth:'95vw'}">
@@ -221,6 +225,7 @@ import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 import axios from 'axios'
 import BarangFormModal from './BarangFormModal.vue'
+import BarangStockCardModal from './BarangStockCardModal.vue'
 import { useLokasiGudang } from '@/composables/useLokasiGudang'
 
 const configStore = useConfigStore()
@@ -238,6 +243,7 @@ const expandedRows = ref([])
 const batchData = ref({})
 const batchLoading = ref({})
 const formModal = ref({ visible: false, itemId: null })
+const stockCardModal = ref({ visible: false, itemId: null })
 const expandAll = ref(false)
 const expandMode = ref(1)
 const showBelowMin = ref(false)
@@ -414,6 +420,7 @@ function resetFilter() {
   fetchBarang()
 }
 function openForm(id = null) { formModal.value = { visible: true, itemId: id || null } }
+function openStockCard(id) { stockCardModal.value = { visible: true, itemId: id } }
 function viewBarang(data) { selectedBarang.value = data; detailDialog.value = true }
 
 function exportExcel() {

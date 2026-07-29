@@ -886,7 +886,7 @@ function onSatuanChange(item) {
     computeHargaJualFromMargin(item)
   } else {
     item._harga_jual = null
-    item._margin = null
+    item._margin = null 
   }
 }
 

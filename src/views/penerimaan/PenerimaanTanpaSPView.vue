@@ -611,6 +611,11 @@ function validate() {
       itemError.value = `Qty harus lebih dari 0 untuk ${item._barangObj?.NAMABARANG}`
       return false
     }
+    if (!item.harga_satuan || item.harga_satuan <= 0) {
+      item._error = true
+      itemError.value = `Harga satuan wajib diisi untuk ${item._barangObj?.NAMABARANG}`
+      return false
+    }
   }
   return true
 }
