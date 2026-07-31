@@ -48,6 +48,10 @@
         <label class="barang-filter-label"><i class="pi pi-archive me-1"></i>STATUS</label>
         <Select v-model="filters.ARSIPKAN" :options="arsipOptions" optionLabel="label" optionValue="value" placeholder="Semua" style="min-width:130px" @change="onFilterChange" :disabled="loading" />
       </div>
+      <div class="barang-filter-group">
+        <label class="barang-filter-label"><i class="pi pi-tag me-1"></i>KATEGORI</label>
+        <Select v-model="filters.KATEGORI" :options="kategoriOptions" optionLabel="label" optionValue="value" placeholder="Semua Kategori" style="min-width:160px" filter @change="onFilterChange" :disabled="loading" />
+      </div>
       <div class="barang-filter-actions ms-auto">
         <Button icon="pi pi-search" label="Cari" class="round-button2 btn-primary-barang" :loading="loading" @click="onEnterSearch" />
         <Button icon="pi pi-refresh" severity="secondary" outlined class="round-button2 ms-1" v-tooltip.top="'Reset'" @click="resetFilter" :disabled="loading" />
@@ -169,9 +173,16 @@ const detailDialog = ref(false)
 const selectedBarang = ref(null)
 const formModal = ref({ visible: false, itemId: null })
 
-const filters = ref({ search: '', ARSIPKAN: '0', currentPage: 1, pageSize: 20, sortField: 'NAMA', sortOrder: 'ASC' })
+const filters = ref({ search: '', ARSIPKAN: '0', KATEGORI: '', currentPage: 1, pageSize: 20, sortField: 'NAMA', sortOrder: 'ASC' })
 const arsipOptions = [{ label: 'Semua Status', value: '' }, { label: 'Aktif', value: '0' }, { label: 'Diarsipkan', value: '1' }]
 const localSearch = ref('')
+const kategoriList = ref([])
+const kategoriOptions = computed(() => [
+  { label: 'Semua Kategori', value: '' },
+  ...kategoriList.value
+    .filter((k) => k.NAMA_KATEGORI?.trim())
+    .map((k) => ({ label: k.NAMA_KATEGORI, value: k.NAMA_KATEGORI })),
+])
 
 const filteredBarangs = computed(() => {
   const q = localSearch.value.trim().toLowerCase()
@@ -198,6 +209,7 @@ async function fetchBarang() {
       sortField: filters.value.sortField, sortOrder: filters.value.sortOrder,
     }
     if (filters.value.ARSIPKAN !== '') params.ARSIPKAN = filters.value.ARSIPKAN
+    if (filters.value.KATEGORI !== '') params.KATEGORI = filters.value.KATEGORI
     const res = await axios.get(`${configStore.apiApotikUrl}/index.php/api/inventory/barang_list`, { params })
     barangs.value = res.data?.response || res.data?.data || []
     const p = res.data?.metadata?.pagination
@@ -205,6 +217,17 @@ async function fetchBarang() {
   } catch (err) {
     toast.add({ severity: 'error', summary: 'Error', detail: 'Gagal memuat data', life: 3000 })
   } finally { loading.value = false }
+}
+
+async function fetchKategoriList() {
+  try {
+    const res = await axios.get(`${configStore.apiApotikUrl}/index.php/api/inventory/kategori_list`, {
+      params: { clientId: authStore.id_client, bucket: 'JASA' },
+    })
+    kategoriList.value = res.data?.response || res.data || []
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Gagal memuat daftar kategori', life: 3000 })
+  }
 }
 
 function arsipkanBarang(id, nama) {
@@ -262,7 +285,7 @@ function onPageChange(e) { filters.value.currentPage = e.page + 1; filters.value
 function onSortChange(e) { filters.value.sortField = e.sortField; filters.value.sortOrder = e.sortOrder === 1 ? 'ASC' : 'DESC'; filters.value.currentPage = 1; fetchBarang() }
 function resetFilter() {
   localSearch.value = ''
-  filters.value = { search: '', ARSIPKAN: '0', currentPage: 1, pageSize: 20, sortField: 'NAMA', sortOrder: 'ASC' }
+  filters.value = { search: '', ARSIPKAN: '0', KATEGORI: '', currentPage: 1, pageSize: 20, sortField: 'NAMA', sortOrder: 'ASC' }
   fetchBarang()
 }
 function openForm(id = null) { formModal.value = { visible: true, itemId: id || null } }
@@ -270,6 +293,7 @@ function viewBarang(data) { selectedBarang.value = data; detailDialog.value = tr
 
 onMounted(() => {
   fetchBarang()
+  fetchKategoriList()
   fetchIsGudang()
 })
 </script>
