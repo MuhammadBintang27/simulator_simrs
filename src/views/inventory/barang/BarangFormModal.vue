@@ -214,6 +214,32 @@
         <!-- HARGA JASA -->
         <div v-if="bucket === 'JASA'" class="fm-section mb-3">
           <div class="fm-section-title"><i class="pi pi-money-bill me-1"></i>HARGA JASA</div>
+          <div class="mb-2">
+            <label class="fm-label">Satuan <span class="text-danger">*</span></label>
+            <Select
+              v-model="form.SATUAN_KECIL"
+              :options="satuanList"
+              optionLabel="SATUAN"
+              optionValue="SATUAN"
+              placeholder="Ketik atau pilih satuan..."
+              editable
+              class="w-100"
+              :class="{ 'p-invalid': errors.SATUAN_KECIL }"
+              :disabled="loading"
+              @change="validateSatuan"
+            />
+            <small
+              v-if="form.SATUAN_KECIL && !satuanList.some((s) => s.SATUAN === form.SATUAN_KECIL)"
+              class="text-success"
+              style="font-size: 11px"
+            >
+              <i class="pi pi-plus-circle me-1" />Satuan baru — akan ditambahkan ke master saat
+              disimpan
+            </small>
+            <small v-if="errors.SATUAN_KECIL" class="text-danger d-block mt-1">{{
+              errors.SATUAN_KECIL
+            }}</small>
+          </div>
           <div class="row g-2">
             <div class="col-6">
               <label class="fm-label">Harga Beli / Modal</label>
@@ -391,7 +417,7 @@
             <div class="fw-semibold mb-1" style="font-size: 11px; color: #475569">WAJIB DIISI:</div>
             <div class="fm-hint-item">• Nama</div>
             <div class="fm-hint-item">• Kategori</div>
-            <div v-if="bucket !== 'JASA'" class="fm-hint-item">• Satuan Kecil</div>
+            <div class="fm-hint-item">• {{ bucket === 'JASA' ? 'Satuan' : 'Satuan Kecil' }}</div>
             <template v-if="bucket === 'OBAT_BMHP'">
               <hr class="my-2" style="border-color: #e2e8f0" />
               <div class="fw-semibold mb-1" style="font-size: 11px; color: #475569">FARMASI:</div>
@@ -543,6 +569,7 @@ const sediaanList = ref([])
 const ruteList = ref([])
 const groupingList = ref([])
 const klasifikasiList = ref([])
+const satuanList = ref([])
 
 const golonganOptions = [
   { label: 'Golongan I', value: 'I' },
@@ -633,8 +660,12 @@ function validateSatuan() {
   errors.value.SATUAN_KECIL = ''
   errors.value.ISI_SEDANG_KE_KECIL = ''
   errors.value.ISI_BESAR_KE_SEDANG = ''
+  // Satuan sekarang wajib buat semua bucket (termasuk JASA) — cuma konversi
+  // sedang/besar yang khusus OBAT_BMHP/ATK karena JASA nggak punya jenjang satuan.
+  if (!form.value.SATUAN_KECIL) {
+    errors.value.SATUAN_KECIL = props.bucket === 'JASA' ? 'Satuan wajib diisi' : 'Satuan kecil wajib diisi'
+  }
   if (props.bucket !== 'JASA') {
-    if (!form.value.SATUAN_KECIL) errors.value.SATUAN_KECIL = 'Satuan kecil wajib diisi'
     if (form.value.SATUAN_SEDANG && !form.value.ISI_SEDANG_KE_KECIL)
       errors.value.ISI_SEDANG_KE_KECIL = 'Wajib diisi jika satuan sedang diisi'
     if (form.value.SATUAN_BESAR && !form.value.ISI_BESAR_KE_SEDANG)
@@ -663,6 +694,21 @@ async function ensureGroupingExists(name) {
     await axios.post(
       `${configStore.apiApotikUrl}/index.php/api/inventory/master_grouping_create`,
       { NAMA_GROUP: name },
+      { params: { clientId: authStore.id_client } },
+    )
+  }
+}
+
+// ── SATUAN (JASA): auto-create saat submit jika belum ada di master ────────
+// BE find-or-create sendiri (lihat create_satuan di M_master_barang.php), jadi cek exists
+// di sini cuma buat skip network call kalau memang udah ada — bukan syarat mutlak.
+async function ensureSatuanExists(name) {
+  if (!name) return
+  const exists = satuanList.value.some((s) => s.SATUAN === name)
+  if (!exists) {
+    await axios.post(
+      `${configStore.apiApotikUrl}/index.php/api/inventory/master_satuan_create`,
+      { SATUAN: name },
       { params: { clientId: authStore.id_client } },
     )
   }
@@ -727,15 +773,34 @@ async function fetchMasterDropdowns() {
         }),
       )
     }
+    if (props.bucket === 'JASA') {
+      requests.push(
+        axios.get(`${configStore.apiApotikUrl}/index.php/api/inventory/master_satuan_list`, {
+          params: { clientId },
+        }),
+      )
+    }
 
-    const [kategoriRes, sediaanRes, ruteRes, groupingRes, klasifikasiRes] =
-      await Promise.all(requests)
-    kategoriList.value = kategoriRes.data?.response || kategoriRes.data || []
+    // Indeks di requests[] geser tergantung bucket (elemen 1..4 cuma ada buat OBAT_BMHP,
+    // elemen 1 lain lagi buat JASA) — ambil hasilnya berurutan pakai counter, bukan
+    // destructuring posisi tetap, biar nggak salah pasang antar bucket.
+    const results = await Promise.all(requests)
+    let i = 0
+    kategoriList.value = results[i]?.data?.response || results[i]?.data || []
+    i++
     if (props.bucket === 'OBAT_BMHP') {
-      sediaanList.value = sediaanRes.data?.response || sediaanRes.data || []
-      ruteList.value = ruteRes.data?.response || ruteRes.data || []
-      groupingList.value = groupingRes.data?.response || groupingRes.data || []
-      klasifikasiList.value = klasifikasiRes.data?.response || klasifikasiRes.data || []
+      sediaanList.value = results[i]?.data?.response || results[i]?.data || []
+      i++
+      ruteList.value = results[i]?.data?.response || results[i]?.data || []
+      i++
+      groupingList.value = results[i]?.data?.response || results[i]?.data || []
+      i++
+      klasifikasiList.value = results[i]?.data?.response || results[i]?.data || []
+      i++
+    }
+    if (props.bucket === 'JASA') {
+      satuanList.value = results[i]?.data?.response || results[i]?.data || []
+      i++
     }
   } catch (err) {
     console.error('Error fetching master dropdowns:', err)
@@ -816,6 +881,9 @@ async function submitForm() {
   loading.value = true
   try {
     if (form.value.GROUPING) await ensureGroupingExists(form.value.GROUPING)
+    if (props.bucket === 'JASA' && form.value.SATUAN_KECIL) {
+      await ensureSatuanExists(form.value.SATUAN_KECIL)
+    }
     const clientId = authStore.id_client
     const payload = {
       NAMA: form.value.NAMA,
@@ -836,8 +904,8 @@ async function submitForm() {
       STOCKMINIMUM: form.value.STOCKMINIMUM,
     }
 
+    payload.SATUAN_KECIL = form.value.SATUAN_KECIL
     if (props.bucket !== 'JASA') {
-      payload.SATUAN_KECIL = form.value.SATUAN_KECIL
       if (form.value.SATUAN_SEDANG) {
         payload.SATUAN_SEDANG = form.value.SATUAN_SEDANG
         payload.ISI_SEDANG_KE_KECIL = form.value.ISI_SEDANG_KE_KECIL

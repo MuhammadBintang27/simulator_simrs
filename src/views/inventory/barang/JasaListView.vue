@@ -96,6 +96,9 @@
         <Column field="KATEGORI" header="KATEGORI" style="min-width:130px" sortable>
           <template #body="{ data }"><span>{{ data.KATEGORI||'-' }}</span></template>
         </Column>
+        <Column field="SATUAN_KECIL" header="SATUAN" style="min-width:100px">
+          <template #body="{ data }"><span>{{ data.SATUAN_KECIL||'-' }}</span></template>
+        </Column>
         <Column header="HARGA JUAL" style="min-width:140px">
           <template #body="{ data }">
             <span class="mono fw-semibold" style="color:#b45309">{{ formatCurrency(data.HARGAJUAL) }}</span>
@@ -127,6 +130,7 @@
           <div class="detail-row"><span class="detail-label">ID Jasa</span><span class="detail-value mono text-amber">{{ selectedBarang.IDBARANG||'-' }}</span></div>
           <div class="detail-row"><span class="detail-label">Nama</span><span class="detail-value fw-semibold">{{ selectedBarang.NAMA||'-' }}</span></div>
           <div class="detail-row"><span class="detail-label">Kategori</span><span class="detail-value">{{ selectedBarang.KATEGORI||'-' }}</span></div>
+          <div class="detail-row"><span class="detail-label">Satuan</span><span class="detail-value">{{ selectedBarang.SATUAN_KECIL||'-' }}</span></div>
           <div class="detail-row"><span class="detail-label">Keterangan</span><span class="detail-value">{{ selectedBarang.KETERANGAN||'-' }}</span></div>
         </div>
         <div class="detail-section-title mt-3"><i class="pi pi-money-bill me-1"></i>Tarif</div>
