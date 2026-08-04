@@ -238,12 +238,15 @@
             :modelValue="totalBayar"
             @update:modelValue="$emit('update:totalBayar', $event)"
             mode="decimal"
+            locale="id-ID"
+            :minFractionDigits="0"
+            :maxFractionDigits="0"
             :min="0"
             inputmode="decimal"
             class="w-100 payment-input"
             placeholder="0"
             autofocus
-            :disabled="idPayment === 2"
+            :disabled="idPayment === 2 || idPayment === 3"
           />
 
           <div class="payment-quick" v-if="idPayment === 1">
@@ -261,15 +264,22 @@
             </button>
           </div>
 
-          <div class="payment-kembalian">
+          <div v-if="idPayment === 3" class="piutang-note">
+            <i class="pi pi-info-circle"></i>
+            <span>Piutang — belum ada uang diterima saat checkout, wajib terhubung ke pasien (kunjungan aktif atau No. RM).</span>
+          </div>
+          <div v-else class="payment-kembalian">
             <span>Kembalian</span>
             <span :class="{ 'text-danger': kembalian < 0 }">{{ formatRupiah(kembalian) }}</span>
           </div>
 
-          <!-- ── Pasien lama tanpa kunjungan aktif (opsional) ── -->
+          <!-- ── Pasien lama tanpa kunjungan aktif (opsional, wajib untuk Piutang) ── -->
           <!-- Kalau sudah dikaitkan ke pendaftaran klinik, pasien sudah pasti -> tidak perlu cari lagi -->
           <template v-if="!selectedRegister">
-            <label class="payment-label mt-2">Pasien <small>(opsional, cari kalau tidak ada kunjungan aktif)</small></label>
+            <label class="payment-label mt-2">
+              Pasien
+              <small>{{ idPayment === 3 ? '(wajib untuk Piutang)' : '(opsional, cari kalau tidak ada kunjungan aktif)' }}</small>
+            </label>
             <div v-if="!selectedPasien" class="member-search-block">
               <SelectButton
                 v-model="pasienSearchMode"
@@ -421,6 +431,7 @@ const props = defineProps({
   lastAddedKey: { type: String, default: null },
   izinkanDiskonItem: { type: Boolean, default: true },
   izinkanDiskonBill: { type: Boolean, default: true },
+  izinkanPiutang: { type: Boolean, default: true },
 })
 
 const emit = defineEmits([
@@ -506,10 +517,14 @@ watch(
   },
 )
 
-const paymentOptions = [
-  { label: 'Tunai', value: 1, icon: 'pi pi-wallet' },
-  { label: 'Non-Tunai', value: 2, icon: 'pi pi-credit-card' },
-]
+const paymentOptions = computed(() => {
+  const opts = [
+    { label: 'Tunai', value: 1, icon: 'pi pi-wallet' },
+    { label: 'Non-Tunai', value: 2, icon: 'pi pi-credit-card' },
+  ]
+  if (props.izinkanPiutang) opts.push({ label: 'Piutang', value: 3, icon: 'pi pi-clock' })
+  return opts
+})
 
 // Kunci unik per baris keranjang — racikan nggak punya BARCODE, jadi pakai RACIKAN_KEY-nya sendiri.
 const cartItemKey = (item) => (item.IS_RACIKAN ? item.RACIKAN_KEY : `${item.BARCODE}-${item.SUB_BARCODE}`)
@@ -1172,6 +1187,24 @@ const quickAmounts = computed(() => {
 
 .payment-kembalian .text-danger {
   color: var(--p-red-500, #ef4444);
+}
+
+.piutang-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: var(--p-amber-50, #fffbeb);
+  border: 1px solid var(--p-amber-200, #fde68a);
+  border-radius: 8px;
+  font-size: 11.5px;
+  color: var(--p-amber-700, #b45309);
+  line-height: 1.5;
+}
+
+.piutang-note .pi {
+  margin-top: 1px;
 }
 
 /* ── Member (opsional) ── */

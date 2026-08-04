@@ -42,86 +42,141 @@
     </div>
 
     <!-- ══ Stat cards ══ -->
-    <div class="stat-row stat-row-auto">
-      <div class="stat-tile">
-        <div class="stat-icon" style="background: #f1f2f4; color: #6b7280"><i class="pi pi-inbox"></i></div>
-        <div>
-          <div class="stat-value">{{ formatRupiah(totalKotor) }}</div>
-          <div class="stat-label">Total Penjualan</div>
-        </div>
-      </div>
-      <div class="stat-tile">
-        <div class="stat-icon" style="background: #fdeceb; color: #e05252"><i class="pi pi-exclamation-triangle"></i></div>
-        <div>
-          <div class="stat-value">{{ formatRupiah(totalDibatalkanNilai) }}</div>
-          <div class="stat-label">Nilai Refund</div>
-        </div>
-      </div>
-      <div class="stat-tile">
-        <div class="stat-icon" style="background: #e7f0fd; color: #2a78d6"><i class="pi pi-wallet"></i></div>
-        <div>
-          <div class="stat-value">{{ formatRupiah(totalOmzet) }}</div>
-          <div class="stat-label">Omset Penjualan</div>
-        </div>
-      </div>
-      <div class="stat-tile">
-        <div class="stat-icon" style="background: #e7f0fd; color: #2a78d6"><i class="pi pi-money-bill"></i></div>
-        <div>
-          <div class="stat-value">{{ formatRupiah(totalTunai) }}</div>
-          <div class="stat-label">Total Tunai</div>
-        </div>
-      </div>
-      <div class="stat-tile">
-        <div class="stat-icon" style="background: #e6f6ef; color: #1baf7a"><i class="pi pi-credit-card"></i></div>
-        <div>
-          <div class="stat-value">{{ formatRupiah(totalNonTunai) }}</div>
-          <div class="stat-label">Total Non-Tunai</div>
-        </div>
-      </div>
-    </div>
-    <div class="stat-row stat-row-auto">
-      <div class="stat-tile">
-        <div class="stat-icon" style="background: #e6f6ef; color: #1baf7a"><i class="pi pi-receipt"></i></div>
-        <div>
-          <div class="stat-value">{{ totalTransaksi }}</div>
-          <div class="stat-label">Jumlah Transaksi</div>
-        </div>
-      </div>
-      <div class="stat-tile">
-        <div class="stat-icon" style="background: #fdeceb; color: #e05252"><i class="pi pi-replay"></i></div>
-        <div>
-          <div class="stat-value">{{ totalDibatalkanJumlah }}</div>
-          <div class="stat-label">Jumlah Transaksi Refund</div>
-        </div>
-      </div>
-      <div class="stat-tile">
-        <div class="stat-icon" style="background: #e6f6ef; color: #1baf7a"><i class="pi pi-plus-circle"></i></div>
-        <div>
-          <div class="stat-value">{{ formatRupiah(totalPemasukanLain) }}</div>
-          <div class="stat-label">Pemasukan Lain</div>
-        </div>
-      </div>
-      <div class="stat-tile">
-        <div class="stat-icon" style="background: #fdeceb; color: #e05252"><i class="pi pi-minus-circle"></i></div>
-        <div>
-          <div class="stat-value">{{ formatRupiah(totalPengeluaranLain) }}</div>
-          <div class="stat-label">Pengeluaran Lain</div>
-        </div>
-      </div>
-      <div class="stat-tile">
-        <div class="stat-icon" style="background: #fdeceb; color: #e05252"><i class="pi pi-truck"></i></div>
-        <div>
-          <div class="stat-value">{{ formatRupiah(totalPembayaranSupplier) }}</div>
-          <div class="stat-label">Pembayaran Supplier</div>
-        </div>
-      </div>
-      <div class="stat-tile">
-        <div class="stat-icon" style="background: #e6f6ef; color: #1baf7a"><i class="pi pi-money-bill"></i></div>
-        <div>
-          <div class="stat-value">{{ formatRupiah(saldoKasBersih) }}</div>
-          <div class="stat-label">Saldo Kas Bersih</div>
-        </div>
-      </div>
+    <div class="stat-tabs-wrap">
+      <Tabs v-model:value="activeStatTab">
+        <TabList>
+          <Tab value="penjualan"><i class="pi pi-chart-bar me-1"></i> Penjualan</Tab>
+          <Tab value="kas"><i class="pi pi-wallet me-1"></i> Kas &amp; Metode Bayar</Tab>
+          <Tab value="piutang"><i class="pi pi-clock me-1"></i> Piutang</Tab>
+          <Tab value="saldo"><i class="pi pi-money-bill me-1"></i> Saldo Kas</Tab>
+        </TabList>
+        <TabPanels>
+          <TabPanel value="penjualan">
+            <div class="card elevation-0">
+              <div class="card-body">
+                <div class="stat-grid">
+                  <div class="stat-tile">
+                    <div class="stat-icon tone-neutral"><i class="pi pi-inbox"></i></div>
+                    <div class="stat-body">
+                      <div class="stat-value">{{ formatRupiah(totalKotor) }}</div>
+                      <div class="stat-label">Total Penjualan</div>
+                    </div>
+                  </div>
+                  <div class="stat-tile">
+                    <div class="stat-icon tone-info"><i class="pi pi-wallet"></i></div>
+                    <div class="stat-body">
+                      <div class="stat-value">{{ formatRupiah(totalOmzet) }}</div>
+                      <div class="stat-label">Omset Penjualan</div>
+                    </div>
+                  </div>
+                  <div class="stat-tile">
+                    <div class="stat-icon tone-danger"><i class="pi pi-exclamation-triangle"></i></div>
+                    <div class="stat-body">
+                      <div class="stat-value">{{ formatRupiah(totalDibatalkanNilai) }}</div>
+                      <div class="stat-label">Nilai Refund</div>
+                    </div>
+                  </div>
+                  <div class="stat-tile">
+                    <div class="stat-icon tone-success"><i class="pi pi-receipt"></i></div>
+                    <div class="stat-body">
+                      <div class="stat-value">{{ totalTransaksi }}</div>
+                      <div class="stat-label">Jumlah Transaksi</div>
+                    </div>
+                  </div>
+                  <div class="stat-tile">
+                    <div class="stat-icon tone-danger"><i class="pi pi-replay"></i></div>
+                    <div class="stat-body">
+                      <div class="stat-value">{{ totalDibatalkanJumlah }}</div>
+                      <div class="stat-label">Jumlah Transaksi Refund</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabPanel>
+
+          <TabPanel value="kas">
+            <div class="card elevation-0">
+              <div class="card-body">
+                <div class="stat-grid">
+                  <div class="stat-tile">
+                    <div class="stat-icon tone-info"><i class="pi pi-money-bill"></i></div>
+                    <div class="stat-body">
+                      <div class="stat-value">{{ formatRupiah(totalTunai) }}</div>
+                      <div class="stat-label">Total Tunai</div>
+                    </div>
+                  </div>
+                  <div class="stat-tile">
+                    <div class="stat-icon tone-success"><i class="pi pi-credit-card"></i></div>
+                    <div class="stat-body">
+                      <div class="stat-value">{{ formatRupiah(totalNonTunai) }}</div>
+                      <div class="stat-label">Total Non-Tunai</div>
+                    </div>
+                  </div>
+                  <div class="stat-tile">
+                    <div class="stat-icon tone-success"><i class="pi pi-plus-circle"></i></div>
+                    <div class="stat-body">
+                      <div class="stat-value">{{ formatRupiah(totalPemasukanLain) }}</div>
+                      <div class="stat-label">Pemasukan Lain</div>
+                    </div>
+                  </div>
+                  <div class="stat-tile">
+                    <div class="stat-icon tone-danger"><i class="pi pi-minus-circle"></i></div>
+                    <div class="stat-body">
+                      <div class="stat-value">{{ formatRupiah(totalPengeluaranLain) }}</div>
+                      <div class="stat-label">Pengeluaran Lain</div>
+                    </div>
+                  </div>
+                  <div class="stat-tile">
+                    <div class="stat-icon tone-danger"><i class="pi pi-truck"></i></div>
+                    <div class="stat-body">
+                      <div class="stat-value">{{ formatRupiah(totalPembayaranSupplier) }}</div>
+                      <div class="stat-label">Pembayaran Supplier</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabPanel>
+
+          <TabPanel value="piutang">
+            <div class="card elevation-0">
+              <div class="card-body">
+                <div class="stat-grid">
+                  <div class="stat-tile">
+                    <div class="stat-icon tone-warning"><i class="pi pi-clock"></i></div>
+                    <div class="stat-body">
+                      <div class="stat-value">{{ formatRupiah(totalPiutangBaru) }}</div>
+                      <div class="stat-label">Piutang Baru</div>
+                    </div>
+                  </div>
+                  <div class="stat-tile">
+                    <div class="stat-icon tone-info"><i class="pi pi-verified"></i></div>
+                    <div class="stat-body">
+                      <div class="stat-value">{{ formatRupiah(totalPembayaranPiutang) }}</div>
+                      <div class="stat-label">Pembayaran Piutang</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabPanel>
+
+          <TabPanel value="saldo">
+            <div class="card elevation-0">
+              <div class="card-body">
+                <div class="saldo-kas-hero">
+                  <div class="stat-icon tone-success saldo-kas-icon"><i class="pi pi-money-bill"></i></div>
+                  <div>
+                    <div class="saldo-kas-value">{{ formatRupiah(saldoKasBersih) }}</div>
+                    <div class="stat-label">Saldo Kas Bersih</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
     </div>
 
     <Tabs v-model:value="activeMainTab">
@@ -155,6 +210,9 @@
                 </Column>
                 <Column header="Total Non-Tunai" sortable :footer="formatRupiah(periodeNonTunai)">
                   <template #body="{ data }">{{ formatRupiah(data.TOTAL_NONTUNAI) }}</template>
+                </Column>
+                <Column header="Total Piutang" sortable :footer="formatRupiah(periodePiutang)">
+                  <template #body="{ data }">{{ formatRupiah(data.TOTAL_PIUTANG) }}</template>
                 </Column>
                 <Column header="Total Omzet" sortable>
                   <template #body="{ data }"><b>{{ formatRupiah(data.TOTAL_OMZET) }}</b></template>
@@ -248,6 +306,7 @@
                       <span>Selisih</span><b>{{ data.SELISIH == null ? '-' : formatAngka(data.SELISIH) }}</b>
                     </div>
                     <div><span>Total Non-Tunai</span><b>{{ formatAngka(data.TOTAL_NONTUNAI_LIVE) }}</b></div>
+                    <div><span>Total Piutang</span><b>{{ formatAngka(data.TOTAL_PIUTANG_LIVE) }}</b></div>
                     <div><span>Refund Penuh</span><b>{{ data.JUMLAH_DIBATALKAN_PENUH }}</b></div>
                     <div><span>Refund Sebagian</span><b>{{ data.JUMLAH_DIBATALKAN_SEBAGIAN }}</b></div>
                     <div><span>Nilai Refund</span><b class="text-danger">{{ formatAngka(data.TOTAL_DIBATALKAN) }}</b></div>
@@ -286,7 +345,7 @@
                 <Column field="KETERANGAN" header="Keterangan" style="min-width: 10rem" />
                 <Column header="Jumlah" field="JUMLAH">
                   <template #body="{ data }">
-                    <b :class="data.TIPE === 'DEBIT' ? 'text-success' : 'text-danger'">{{ data.TIPE === 'DEBIT' ? '+' : '-' }}{{ formatAngka(data.JUMLAH) }}</b>
+                    <b :class="data.TIPE === 'DEBIT' ? 'text-success' : 'text-danger'">{{ data.TIPE === 'DEBIT' ? '' : '-' }}{{ formatAngka(data.JUMLAH) }}</b>
                   </template>
                 </Column>
                 <Column header="Saldo" field="SALDO">
@@ -414,6 +473,9 @@ const router = useRouter()
 const route = useRoute()
 // Tab awal bisa dituju langsung dari halaman lain, mis. router.push('/sales/laporan?tab=bukukas')
 const activeMainTab = ref(typeof route.query.tab === 'string' ? route.query.tab : 'ringkasan')
+// Stat cards dikelompokkan per tab (Penjualan/Kas/Piutang/Saldo Kas) biar nggak numpuk
+// jadi satu wall of cards — semua tetap ikut filter periode yang sama seperti sebelumnya.
+const activeStatTab = ref('penjualan')
 const configStore = useConfigStore()
 const authStore = useAuthStore()
 const { id_client, id_lokasi } = storeToRefs(authStore)
@@ -458,8 +520,9 @@ const periodeLabelShort = (row) => {
 }
 
 /* ══════════ Filter tanggal ══════════ */
-// Default awal bulan ini → hari ini, sama seperti Kas Lain (mutasi rekening) —
-// ini juga default yang dipakai BE kalau dateStart/dateEnd nggak dikirim.
+// Nilai awal di sini cuma placeholder sebelum mount — onMounted langsung panggil
+// onGroupByChange() yang mengunci ulang dateStart/dateEnd sesuai ringkasanGroupBy
+// default ('day' → hari ini saja), supaya konsisten dengan tombol "Harian" yang aktif.
 const now = new Date()
 const dateStart = ref(new Date(now.getFullYear(), now.getMonth(), 1))
 const dateEnd = ref(now)
@@ -562,6 +625,7 @@ const periodeRefundNilai = computed(() => ringkasanHarian.value.reduce((s, d) =>
 const periodeOmzet = computed(() => ringkasanHarian.value.reduce((s, d) => s + (Number(d.TOTAL_OMZET) || 0), 0))
 const periodeTunai = computed(() => ringkasanHarian.value.reduce((s, d) => s + (Number(d.TOTAL_TUNAI) || 0), 0))
 const periodeNonTunai = computed(() => ringkasanHarian.value.reduce((s, d) => s + (Number(d.TOTAL_NONTUNAI) || 0), 0))
+const periodePiutang = computed(() => ringkasanHarian.value.reduce((s, d) => s + (Number(d.TOTAL_PIUTANG) || 0), 0))
 const periodeTransaksi = computed(() => ringkasanHarian.value.reduce((s, d) => s + (Number(d.JUMLAH_TRANSAKSI) || 0), 0))
 const periodeRefundPenuh = computed(() => ringkasanHarian.value.reduce((s, d) => s + (Number(d.JUMLAH_DIBATALKAN_PENUH) || 0), 0))
 const periodeRefundSebagian = computed(() => ringkasanHarian.value.reduce((s, d) => s + (Number(d.JUMLAH_DIBATALKAN_SEBAGIAN) || 0), 0))
@@ -582,6 +646,8 @@ const emptyRingkasanKas = () => ({
   TOTAL_NONTUNAI: 0,
   JUMLAH_TRANSAKSI: 0,
   JUMLAH_TRANSAKSI_REFUND: 0,
+  TOTAL_PIUTANG_BARU: 0,
+  PEMBAYARAN_PIUTANG: 0,
 })
 const ringkasanKas = ref(emptyRingkasanKas())
 
@@ -619,6 +685,8 @@ const totalTunai = computed(() => Number(ringkasanKas.value.TOTAL_TUNAI) || 0)
 const totalNonTunai = computed(() => Number(ringkasanKas.value.TOTAL_NONTUNAI) || 0)
 const totalTransaksi = computed(() => Number(ringkasanKas.value.JUMLAH_TRANSAKSI) || 0)
 const totalDibatalkanJumlah = computed(() => Number(ringkasanKas.value.JUMLAH_TRANSAKSI_REFUND) || 0)
+const totalPiutangBaru = computed(() => Number(ringkasanKas.value.TOTAL_PIUTANG_BARU) || 0)
+const totalPembayaranPiutang = computed(() => Number(ringkasanKas.value.PEMBAYARAN_PIUTANG) || 0)
 
 const toDateKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 const toMonthKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
@@ -827,12 +895,11 @@ const fetchRecentSales = async () => {
 
 onMounted(async () => {
   await fetchPosSetting()
-  fetchRingkasanKas()
-  fetchRingkasanHarian()
-  fetchTopSelling()
-  if (pakaiShift.value) fetchRiwayatShift()
+  // Kunci dateStart/dateEnd ke "hari ini saja" dulu (sesuai ringkasanGroupBy default 'day')
+  // sebelum fetch pertama — kalau nggak, tombol "Harian" kelihatan aktif tapi datanya masih
+  // pakai default awal-bulan-ke-hari-ini, jadi kelihatan salah nampilin sebulan.
+  onGroupByChange()
   fetchRecentSales()
-  fetchBukuKas()
 })
 </script>
 
@@ -1012,41 +1079,106 @@ onMounted(async () => {
   margin-bottom: 12px;
 }
 
-.stat-row {
-  display: grid;
-  gap: 12px;
-  margin-bottom: 12px;
+.stat-tabs-wrap {
+  margin-bottom: 16px;
 }
 
-.stat-row-auto {
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.saldo-kas-hero {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 8px 4px;
+}
+
+.saldo-kas-icon {
+  width: 56px;
+  height: 56px;
+  font-size: 22px;
+}
+
+.saldo-kas-value {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.25;
 }
 
 .stat-tile {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+  min-width: 0;
   background: var(--p-surface-0, #fff);
   border: 1px solid var(--p-content-border-color, #eee);
-  border-radius: 12px;
-  padding: 14px 16px;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.stat-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.stat-tile-highlight {
+  border-color: var(--p-green-200, #bbf7d0);
+  background: var(--p-green-50, #f0fdf4);
 }
 
 .stat-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 17px;
+  font-size: 18px;
   flex-shrink: 0;
 }
 
+.stat-icon.tone-neutral {
+  background: var(--p-surface-100, #f1f2f4);
+  color: var(--p-text-muted-color, #6b7280);
+}
+
+.stat-icon.tone-info {
+  background: var(--p-blue-50, #e7f0fd);
+  color: var(--p-blue-500, #2a78d6);
+}
+
+.stat-icon.tone-success {
+  background: var(--p-green-50, #e6f6ef);
+  color: var(--p-green-600, #1baf7a);
+}
+
+.stat-icon.tone-danger {
+  background: var(--p-red-50, #fdeceb);
+  color: var(--p-red-500, #e05252);
+}
+
+.stat-icon.tone-warning {
+  background: var(--p-yellow-50, #fefce8);
+  color: var(--p-yellow-700, #a16207);
+}
+
+.stat-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
 .stat-value {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 800;
-  line-height: 1.2;
+  line-height: 1.25;
+  word-break: break-word;
 }
 
 .stat-label {

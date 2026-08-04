@@ -76,7 +76,7 @@
                 </Column>
                 <Column header="Jumlah" sortable field="JUMLAH">
                   <template #body="{ data }">
-                    <b :class="data.JENIS === 'PEMASUKAN' ? 'text-success' : 'text-danger'">{{ data.JENIS === 'PEMASUKAN' ? '+' : '-' }}{{ formatRupiah(data.JUMLAH) }}</b>
+                    <b :class="data.JENIS === 'PEMASUKAN' ? 'text-success' : 'text-danger'">{{ data.JENIS === 'PEMASUKAN' ? '' : '-' }}{{ formatAngka(data.JUMLAH) }}</b>
                   </template>
                 </Column>
                 <Column field="KETERANGAN" header="Keterangan" style="min-width: 12rem" />
@@ -241,7 +241,7 @@ import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 import Toolbar from 'primevue/toolbar'
 import DatePicker from 'primevue/datepicker'
-import { formatRupiah } from './utils/format'
+import { formatRupiah, formatAngka } from './utils/format'
 import { formatTglFull, formatDateOnlyForAPI } from './utils/date'
 
 const router = useRouter()
