@@ -49,6 +49,15 @@
               @click="router.push('/sales/transaksi-lain')"
             />
             <Button
+              v-if="izinkanPiutang"
+              icon="pi pi-clock"
+              label="Piutang"
+              severity="secondary"
+              text
+              size="small"
+              @click="router.push('/sales/rekap-piutang')"
+            />
+            <Button
               icon="pi pi-cog"
               severity="secondary"
               text
@@ -281,6 +290,7 @@
             :last-added-key="lastAddedKey"
             :izinkan-diskon-item="izinkanDiskonItem"
             :izinkan-diskon-bill="izinkanDiskonBill"
+            :izinkan-piutang="izinkanPiutang"
             @inc-qty="incQty"
             @dec-qty="decQty"
             @set-qty="setQty"
@@ -431,6 +441,7 @@
           <div><span>Total Omzet</span><b>{{ formatRupiah(tutupShiftResult.TOTAL_OMZET) }}</b></div>
           <div><span>Total Tunai</span><b>{{ formatRupiah(tutupShiftResult.TOTAL_TUNAI) }}</b></div>
           <div><span>Total Non-Tunai</span><b>{{ formatRupiah(tutupShiftResult.TOTAL_NONTUNAI) }}</b></div>
+          <div v-if="tutupShiftResult.TOTAL_PIUTANG"><span>Total Piutang</span><b>{{ formatRupiah(tutupShiftResult.TOTAL_PIUTANG) }}</b></div>
           <div><span>Pemasukan Lain (Tunai)</span><b>{{ formatRupiah(tutupShiftResult.PEMASUKAN_LAIN_TUNAI) }}</b></div>
           <div><span>Pengeluaran Lain (Tunai)</span><b>{{ formatRupiah(tutupShiftResult.PENGELUARAN_LAIN_TUNAI) }}</b></div>
           <div><span>Modal Akhir</span><b>{{ formatRupiah(tutupShiftResult.MODAL_AKHIR) }}</b></div>
@@ -498,6 +509,14 @@
               v-tooltip.left="'Batalkan transaksi'"
               :loading="voidingReceipt === receipt.RECEIPT_NO"
               @click.stop="confirmVoid(receipt)"
+            />
+            <Tag
+              v-else-if="!receipt.voided && receipt.idPayement === 3 && receipt.totalBayar > 0"
+              icon="pi pi-lock"
+              value="Sudah Dicicil"
+              severity="secondary"
+              style="font-size: 10px"
+              v-tooltip.left="'Piutang ini sudah pernah dicicil, tidak bisa dibatalkan'"
             />
             <Tag
               v-else-if="!receipt.voided"
@@ -1214,7 +1233,7 @@ const faktorSatuan = (barang, satuan) => {
 }
 
 /* ══════════ Pengaturan POS (izin diskon, pakai shift) ══════════ */
-const { izinkanDiskonItem, izinkanDiskonBill, pakaiShift, loadingPosSetting, fetchPosSetting } = usePosSetting(apiUrl, { id_client })
+const { izinkanDiskonItem, izinkanDiskonBill, pakaiShift, izinkanPiutang, loadingPosSetting, fetchPosSetting } = usePosSetting(apiUrl, { id_client })
 
 /* ══════════ Keranjang ══════════ */
 const cart = ref([])
@@ -1590,12 +1609,15 @@ const clearCart = () => {
   clearPasien()
 }
 
+// lineTotal per baris sudah dibulatkan BE-style (round half up), jadi cartSubtotal & grandTotal
+// otomatis bulat juga — sama persis dengan GRANDTOTAL yang nanti dibalas BE saat checkout.
 const cartSubtotal = computed(() => cart.value.reduce((s, i) => s + lineTotal(i), 0))
 const grandTotal = computed(() => Math.max(cartSubtotal.value - (potongan.value || 0), 0))
 const kembalian = computed(() => (totalBayar.value || 0) - grandTotal.value)
 
 watch([idPayment, grandTotal], ([mode, gt]) => {
   if (mode === 2) totalBayar.value = gt
+  else if (mode === 3) totalBayar.value = 0
 })
 
 /* ══════════ Checkout ══════════ */
@@ -1609,13 +1631,20 @@ const openPrintStrukTab = (type, data) => {
   window.open(router.resolve({ name: 'PrintStruk' }).href, '_blank')
 }
 
-const canCheckout = computed(
-  () => siapTransaksi.value && cart.value.length > 0 && (totalBayar.value || 0) >= grandTotal.value,
-)
+const canCheckout = computed(() => {
+  if (!siapTransaksi.value || cart.value.length === 0) return false
+  // Piutang: belum ada uang diterima, syaratnya pasien wajib terhubung (bukan total bayar cukup)
+  if (idPayment.value === 3) return !!(selectedRegister.value || selectedPasien.value)
+  return (totalBayar.value || 0) >= grandTotal.value
+})
 
 const doCheckout = async () => {
   if (!canCheckout.value) {
-    toast.add({ severity: 'warn', summary: 'Belum Bisa Checkout', detail: 'Periksa kembali keranjang dan total bayar', life: 3000 })
+    const detail =
+      idPayment.value === 3
+        ? 'Piutang wajib terhubung ke pasien — pilih kunjungan aktif atau cari pasien dulu'
+        : 'Periksa kembali keranjang dan total bayar'
+    toast.add({ severity: 'warn', summary: 'Belum Bisa Checkout', detail, life: 3000 })
     return
   }
   checkingOut.value = true

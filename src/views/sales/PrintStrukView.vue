@@ -29,7 +29,7 @@
             <div class="struk-item-name">{{ it.NAMA }} ({{ it.BENTUK }})</div>
             <div class="struk-row">
               <span>{{ it.JML_BUNGKUS }} bungkus<template v-if="it.CARA_PAKAI"> — {{ it.CARA_PAKAI }}</template></span>
-              <span>{{ formatRupiah(lineTotal(it)) }}</span>
+              <span>{{ formatAngka(lineTotal(it)) }}</span>
             </div>
             <div v-for="(b, idx) in it.bahan" :key="idx" class="struk-racikan-bahan">
               - {{ b.NAMA }} ({{ b.QTY }})
@@ -39,25 +39,28 @@
             <div class="struk-item-name">{{ it.NAMA }}</div>
             <div class="struk-row">
               <span
-                >{{ it.QTY }} {{ it.SATUAN }} x {{ formatRupiah(it.HARGA) }}<template v-if="Number(it.DISCOUNT) > 0"
-                  >&nbsp;(-{{ it.DISCOUNT_TYPE === 'RUPIAH' ? formatRupiah(it.DISCOUNT) + '/u' : it.DISCOUNT + '%' }})</template
+                >{{ it.QTY }} {{ it.SATUAN }} x {{ formatAngka(it.HARGA) }}<template v-if="Number(it.DISCOUNT) > 0"
+                  >&nbsp;(-{{ it.DISCOUNT_TYPE === 'RUPIAH' ? formatAngka(it.DISCOUNT) + '/u' : it.DISCOUNT + '%' }})</template
                 ></span
               >
-              <span>{{ formatRupiah(lineTotal(it)) }}</span>
+              <span>{{ formatAngka(lineTotal(it)) }}</span>
             </div>
           </template>
         </div>
         <div class="struk-divider"></div>
-        <div class="struk-row"><span>Subtotal</span><span>{{ formatRupiah(receiptSubtotal) }}</span></div>
+        <div class="struk-row"><span>Subtotal</span><span>{{ formatAngka(receiptSubtotal) }}</span></div>
         <div class="struk-row" v-if="receipt.POTONGAN > 0">
-          <span>Potongan</span><span>-{{ formatRupiah(receipt.POTONGAN) }}</span>
+          <span>Potongan</span><span>-{{ formatAngka(receipt.POTONGAN) }}</span>
         </div>
-        <div class="struk-row struk-bold"><span>Grand Total</span><span>{{ formatRupiah(receipt.GRANDTOTAL) }}</span></div>
+        <div class="struk-row struk-bold"><span>Grand Total</span><span>{{ formatAngka(receipt.GRANDTOTAL) }}</span></div>
         <div class="struk-row">
-          <span>{{ receipt.IDPAYEMENT === 1 ? 'Tunai' : 'Non-Tunai' }}</span>
-          <span>{{ formatRupiah(receipt.TOTALBAYAR) }}</span>
+          <span>{{ paymentLabel }}</span>
+          <span>{{ formatAngka(receipt.TOTALBAYAR) }}</span>
         </div>
-        <div class="struk-row"><span>Kembalian</span><span>{{ formatRupiah(receipt.KEMBALIAN) }}</span></div>
+        <div class="struk-row">
+          <span>{{ receipt.IDPAYEMENT === 3 ? 'Sisa Piutang' : 'Kembalian' }}</span>
+          <span>{{ formatAngka(receipt.IDPAYEMENT === 3 ? receipt.GRANDTOTAL : receipt.KEMBALIAN) }}</span>
+        </div>
         <div class="struk-divider"></div>
         <div class="struk-center struk-thanks">Terima kasih atas kunjungan Anda</div>
       </div>
@@ -80,26 +83,27 @@
 
         <div class="struk-section-title">Laci uang</div>
 
-        <div class="struk-row"><span>Modal awal</span><span>{{ formatRupiah(receipt.MODAL_AWAL) }}</span></div>
-        <div class="struk-row"><span>Pembayaran tunai</span><span>{{ formatRupiah(receipt.TOTAL_TUNAI) }}</span></div>
-        <div class="struk-row"><span>Pemasukan lain (tunai)</span><span>{{ formatRupiah(receipt.PEMASUKAN_LAIN_TUNAI) }}</span></div>
-        <div class="struk-row"><span>Pengeluaran lain (tunai)</span><span>-{{ formatRupiah(receipt.PENGELUARAN_LAIN_TUNAI) }}</span></div>
-        <div class="struk-row struk-bold"><span>Jumlah uang tunai yang diharapkan</span><span>{{ formatRupiah(expectedCash) }}</span></div>
+        <div class="struk-row"><span>Modal awal</span><span>{{ formatAngka(receipt.MODAL_AWAL) }}</span></div>
+        <div class="struk-row"><span>Pembayaran tunai</span><span>{{ formatAngka(receipt.TOTAL_TUNAI) }}</span></div>
+        <div class="struk-row"><span>Pemasukan lain (tunai)</span><span>{{ formatAngka(receipt.PEMASUKAN_LAIN_TUNAI) }}</span></div>
+        <div class="struk-row"><span>Pengeluaran lain (tunai)</span><span>-{{ formatAngka(receipt.PENGELUARAN_LAIN_TUNAI) }}</span></div>
+        <div class="struk-row struk-bold"><span>Jumlah uang tunai yang diharapkan</span><span>{{ formatAngka(expectedCash) }}</span></div>
         <div class="struk-divider"></div>
-        <div class="struk-row"><span>Kas fisik (dihitung)</span><span>{{ formatRupiah(receipt.MODAL_AKHIR) }}</span></div>
+        <div class="struk-row"><span>Kas fisik (dihitung)</span><span>{{ formatAngka(receipt.MODAL_AKHIR) }}</span></div>
         <div class="struk-row struk-bold" :class="{ 'struk-danger': roundMoney(receipt.SELISIH) !== 0 }">
-          <span>Selisih</span><span>{{ formatRupiah(receipt.SELISIH) }}</span>
+          <span>Selisih</span><span>{{ formatAngka(receipt.SELISIH) }}</span>
         </div>
 
         <div class="struk-section-title">Ringkasan penjualan</div>
 
         <div class="struk-row"><span>Total transaksi</span><span>{{ receipt.JUMLAH_TRANSAKSI }}</span></div>
         <div class="struk-row"><span>Transaksi refund</span><span>{{ receipt.JUMLAH_TRANSAKSI_REFUND }}</span></div>
-        <div class="struk-row struk-bold"><span>Penjualan kotor</span><span>{{ formatRupiah(receipt.TOTAL_PENJUALAN_KOTOR) }}</span></div>
-        <div class="struk-row"><span>Refund</span><span>{{ formatRupiah(receipt.TOTAL_REFUND) }}</span></div>
-        <div class="struk-row struk-bold"><span>Penjualan bersih</span><span>{{ formatRupiah(receipt.TOTAL_OMZET) }}</span></div>
-        <div class="struk-row"><span>Tunai</span><span>{{ formatRupiah(receipt.TOTAL_TUNAI) }}</span></div>
-        <div class="struk-row"><span>Non-Tunai</span><span>{{ formatRupiah(receipt.TOTAL_NONTUNAI) }}</span></div>
+        <div class="struk-row struk-bold"><span>Penjualan kotor</span><span>{{ formatAngka(receipt.TOTAL_PENJUALAN_KOTOR) }}</span></div>
+        <div class="struk-row"><span>Refund</span><span>{{ formatAngka(receipt.TOTAL_REFUND) }}</span></div>
+        <div class="struk-row struk-bold"><span>Penjualan bersih</span><span>{{ formatAngka(receipt.TOTAL_OMZET) }}</span></div>
+        <div class="struk-row"><span>Tunai</span><span>{{ formatAngka(receipt.TOTAL_TUNAI) }}</span></div>
+        <div class="struk-row"><span>Non-Tunai</span><span>{{ formatAngka(receipt.TOTAL_NONTUNAI) }}</span></div>
+        <div class="struk-row" v-if="receipt.TOTAL_PIUTANG"><span>Piutang</span><span>{{ formatAngka(receipt.TOTAL_PIUTANG) }}</span></div>
 
         <template v-if="receipt.CATATAN">
           <div class="struk-divider"></div>
@@ -119,7 +123,7 @@ import { useAuthStore } from '@/stores/config'
 import { storeToRefs } from 'pinia'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
-import { formatRupiah, roundMoney } from './utils/format'
+import { formatAngka, roundMoney } from './utils/format'
 import { formatDateTime } from './utils/date'
 import { lineTotal } from './utils/salesCalc'
 
@@ -136,6 +140,14 @@ const downloading = ref(false)
 const strukRef = ref(null)
 
 const receiptSubtotal = computed(() => (receipt.value?.items || []).reduce((s, i) => s + lineTotal(i), 0))
+
+const paymentLabel = computed(() => {
+  if (receipt.value?.IDPAYEMENT === 2) return 'Non-Tunai'
+  // "Dibayar" (bukan "Piutang") karena nilainya selalu 0 di sini — biar nggak kebaca kontradiktif
+  // sama baris "Sisa Piutang" tepat di bawahnya yang menampilkan nilai sebenarnya.
+  if (receipt.value?.IDPAYEMENT === 3) return 'Dibayar'
+  return 'Tunai'
+})
 
 const expectedCash = computed(() => {
   if (!receipt.value) return 0

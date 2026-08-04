@@ -150,6 +150,14 @@
                   @click.stop="confirmVoid(receipt)"
                 />
                 <Tag
+                  v-else-if="!receipt.voided && receipt.idPayement === 3 && receipt.totalBayar > 0"
+                  icon="pi pi-lock"
+                  value="Sudah Dicicil"
+                  severity="secondary"
+                  style="font-size: 10px"
+                  v-tooltip.left="'Piutang ini sudah pernah dicicil, tidak bisa dibatalkan'"
+                />
+                <Tag
                   v-else-if="!receipt.voided"
                   icon="pi pi-lock"
                   value="Terkunci"
@@ -287,6 +295,7 @@ const namaPayment = (id) => paymentNameMap.value[id] || `Metode #${id}`
 const PAYMENT_METHODS = [
   { IDPAYEMENT: 1, NAMA_PAYMENT: 'Tunai' },
   { IDPAYEMENT: 2, NAMA_PAYMENT: 'Non-Tunai' },
+  { IDPAYEMENT: 3, NAMA_PAYMENT: 'Piutang' },
 ]
 const breakdownPayment = computed(() => {
   const byId = new Map(ringkasan.value.BREAKDOWN_PAYMENT.map((p) => [p.IDPAYEMENT, p]))

@@ -12,17 +12,21 @@ export const isSubItemRow = (row) => String(row?.IS_SUBITEM) === '1'
 
 // Diskon per-item: PERSEN = persen dari (QTY x HARGA), RUPIAH = potongan per satuan x QTY.
 // Rumus ini harus persis sama dengan yang dipakai backend saat checkout supaya preview di FE akurat.
-// Racikan: Σ(qty bahan x harga bahan) + jasa racik — preview doang, angka final tetap dari backend.
+// BE membulatkan TOTALAMOUNT per baris ke rupiah utuh (round half up) sebelum disimpan — bukan
+// di level GRANDTOTAL akhir — jadi lineTotal ikut bulatkan di sini juga per baris/per grup racikan,
+// bukan cuma di grandTotal, biar hasilnya identik sampai ke rupiah (beda pembulatan per-baris vs
+// di-akhir bisa selisih beberapa rupiah kalau item banyak). HARGA satuan sendiri tidak dibulatkan.
 export const lineTotal = (item) => {
   if (item.IS_RACIKAN) {
+    // Racikan: bulatkan Σ(bahan) + jasa racik per grup, bukan per bahan.
     const bahanTotal = (item.bahan || []).reduce((s, b) => s + (Number(b.QTY) || 0) * (Number(b.HARGA) || 0), 0)
-    return bahanTotal + (Number(item.JASA_RACIK) || 0)
+    return Math.round(bahanTotal + (Number(item.JASA_RACIK) || 0))
   }
   const gross = item.QTY * item.HARGA
   const disc = Number(item.DISCOUNT) || 0
-  if (disc <= 0) return gross
+  if (disc <= 0) return Math.round(gross)
   const cut = item.DISCOUNT_TYPE === 'RUPIAH' ? disc * item.QTY : gross * (disc / 100)
-  return Math.max(gross - cut, 0)
+  return Math.round(Math.max(gross - cut, 0))
 }
 
 // recent_sales ngasih DISCOUNT/DISKON_TYPE mentah per item (bukan diturunkan lagi).

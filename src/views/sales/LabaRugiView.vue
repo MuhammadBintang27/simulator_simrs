@@ -54,7 +54,7 @@
           </div>
 
           <div class="lr-row">
-            <span class="lr-label">Pendapatan Penjualan</span>
+            <span class="lr-label">Income Penjualan</span>
             <span class="lr-value">{{ formatAngka(displayedTotals.PENDAPATAN_PENJUALAN) }}</span>
           </div>
           <div class="lr-row lr-minus">
@@ -133,37 +133,37 @@
             </thead>
             <tbody>
               <tr>
-                <td class="monthly-table-rowhead">Pendapatan</td>
-                <td v-for="m in monthlyData" :key="m.label">{{ formatCompact(m.PENDAPATAN_PENJUALAN) }}</td>
+                <td class="monthly-table-rowhead">Income</td>
+                <td v-for="m in monthlyData" :key="m.label">{{ formatAngka(m.PENDAPATAN_PENJUALAN) }}</td>
                 <td class="monthly-table-total">{{ formatAngka(yearTotals.PENDAPATAN_PENJUALAN) }}</td>
               </tr>
               <tr>
                 <td class="monthly-table-rowhead">HPP</td>
-                <td v-for="m in monthlyData" :key="m.label">{{ formatCompact(m.HPP) }}</td>
+                <td v-for="m in monthlyData" :key="m.label">{{ formatAngka(m.HPP) }}</td>
                 <td class="monthly-table-total">{{ formatAngka(yearTotals.HPP) }}</td>
               </tr>
               <tr class="monthly-table-subtotal">
                 <td class="monthly-table-rowhead">Laba Kotor</td>
-                <td v-for="m in monthlyData" :key="m.label"><b>{{ formatCompact(m.LABA_KOTOR) }}</b></td>
+                <td v-for="m in monthlyData" :key="m.label"><b>{{ formatAngka(m.LABA_KOTOR) }}</b></td>
                 <td class="monthly-table-total"><b>{{ formatAngka(yearTotals.LABA_KOTOR) }}</b></td>
               </tr>
               <tr>
                 <td class="monthly-table-rowhead monthly-table-expand" @click="showMonthlyPemasukanDetail = !showMonthlyPemasukanDetail">
                   <i class="pi" :class="showMonthlyPemasukanDetail ? 'pi-chevron-down' : 'pi-chevron-right'"></i> Pemasukan Lain
                 </td>
-                <td v-for="m in monthlyData" :key="m.label">{{ formatCompact(sumGroupTotal(m.PEMASUKAN_LAIN)) }}</td>
+                <td v-for="m in monthlyData" :key="m.label">{{ formatAngka(sumGroupTotal(m.PEMASUKAN_LAIN)) }}</td>
                 <td class="monthly-table-total">{{ formatAngka(totalPemasukanLain) }}</td>
               </tr>
               <template v-if="showMonthlyPemasukanDetail">
                 <template v-for="grp in pemasukanLainMonthlyBreakdown" :key="'pemasukan-' + grp.TIPE">
                   <tr class="monthly-table-detail-induk-row">
                     <td class="monthly-table-rowhead monthly-table-detail-induk">{{ grp.TIPE }}</td>
-                    <td v-for="(v, idx) in grp.monthly" :key="idx">{{ formatCompact(v) }}</td>
+                    <td v-for="(v, idx) in grp.monthly" :key="idx">{{ formatAngka(v) }}</td>
                     <td class="monthly-table-total">{{ formatAngka(grp.total) }}</td>
                   </tr>
                   <tr v-for="cat in grp.categories" :key="cat.ID_KATEGORI" class="monthly-table-detail-row">
                     <td class="monthly-table-rowhead monthly-table-detail-child">{{ cat.NAMA }}</td>
-                    <td v-for="(v, idx) in cat.monthly" :key="idx">{{ formatCompact(v) }}</td>
+                    <td v-for="(v, idx) in cat.monthly" :key="idx">{{ formatAngka(v) }}</td>
                     <td class="monthly-table-total">{{ formatAngka(cat.total) }}</td>
                   </tr>
                 </template>
@@ -175,19 +175,19 @@
                 <td class="monthly-table-rowhead monthly-table-expand" @click="showMonthlyPengeluaranDetail = !showMonthlyPengeluaranDetail">
                   <i class="pi" :class="showMonthlyPengeluaranDetail ? 'pi-chevron-down' : 'pi-chevron-right'"></i> Pengeluaran Lain
                 </td>
-                <td v-for="m in monthlyData" :key="m.label">{{ formatCompactNeg(sumGroupTotal(m.PENGELUARAN_LAIN)) }}</td>
+                <td v-for="m in monthlyData" :key="m.label">{{ formatAngkaNeg(sumGroupTotal(m.PENGELUARAN_LAIN)) }}</td>
                 <td class="monthly-table-total">{{ formatAngkaNeg(totalPengeluaranLain) }}</td>
               </tr>
               <template v-if="showMonthlyPengeluaranDetail">
                 <template v-for="grp in pengeluaranLainMonthlyBreakdown" :key="'pengeluaran-' + grp.TIPE">
                   <tr class="monthly-table-detail-induk-row">
                     <td class="monthly-table-rowhead monthly-table-detail-induk">{{ grp.TIPE }}</td>
-                    <td v-for="(v, idx) in grp.monthly" :key="idx">{{ formatCompactNeg(v) }}</td>
+                    <td v-for="(v, idx) in grp.monthly" :key="idx">{{ formatAngkaNeg(v) }}</td>
                     <td class="monthly-table-total">{{ formatAngkaNeg(grp.total) }}</td>
                   </tr>
                   <tr v-for="cat in grp.categories" :key="cat.ID_KATEGORI" class="monthly-table-detail-row">
                     <td class="monthly-table-rowhead monthly-table-detail-child">{{ cat.NAMA }}</td>
-                    <td v-for="(v, idx) in cat.monthly" :key="idx">{{ formatCompactNeg(v) }}</td>
+                    <td v-for="(v, idx) in cat.monthly" :key="idx">{{ formatAngkaNeg(v) }}</td>
                     <td class="monthly-table-total">{{ formatAngkaNeg(cat.total) }}</td>
                   </tr>
                 </template>
@@ -198,7 +198,7 @@
               <tr class="monthly-table-final">
                 <td class="monthly-table-rowhead">Laba Bersih</td>
                 <td v-for="m in monthlyData" :key="m.label" :class="{ 'text-danger': m.LABA_BERSIH < 0 }">
-                  <b>{{ formatCompact(m.LABA_BERSIH) }}</b>
+                  <b>{{ formatAngka(m.LABA_BERSIH) }}</b>
                 </td>
                 <td class="monthly-table-total" :class="{ 'text-danger': yearTotals.LABA_BERSIH < 0 }">
                   <b>{{ formatAngka(yearTotals.LABA_BERSIH) }}</b>
@@ -225,7 +225,7 @@ import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { BarChart } from 'echarts/charts'
 import { TooltipComponent, LegendComponent, GridComponent } from 'echarts/components'
-import { formatAngka, formatAngkaNeg, formatCompact, formatCompactNeg } from './utils/format'
+import { formatAngka, formatAngkaNeg, formatCompact } from './utils/format'
 import { formatDateOnlyForAPI } from './utils/date'
 
 use([CanvasRenderer, BarChart, TooltipComponent, LegendComponent, GridComponent])
@@ -400,7 +400,7 @@ const chartOption = computed(() => {
   return {
     color: ['#2a78d6', '#f2994a', '#1baf7a'],
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, valueFormatter: (v) => formatAngka(v) },
-    legend: { data: ['Pendapatan', 'Laba Kotor', 'Laba Bersih'], bottom: 0, textStyle: { fontSize: 11 } },
+    legend: { data: ['Income', 'Laba Kotor', 'Laba Bersih'], bottom: 0, textStyle: { fontSize: 11 } },
     grid: { left: 55, right: 16, top: 20, bottom: 40, containLabel: false },
     xAxis: {
       type: 'category',
@@ -414,7 +414,7 @@ const chartOption = computed(() => {
       splitLine: { lineStyle: { color: '#e1e0d9' } },
     },
     series: [
-      { name: 'Pendapatan', type: 'bar', data: data.map((d) => Number(d.PENDAPATAN_PENJUALAN) || 0), barMaxWidth: 20 },
+      { name: 'Income', type: 'bar', data: data.map((d) => Number(d.PENDAPATAN_PENJUALAN) || 0), barMaxWidth: 20 },
       { name: 'Laba Kotor', type: 'bar', data: data.map((d) => Number(d.LABA_KOTOR) || 0), barMaxWidth: 20 },
       { name: 'Laba Bersih', type: 'bar', data: data.map((d) => Number(d.LABA_BERSIH) || 0), barMaxWidth: 20 },
     ],

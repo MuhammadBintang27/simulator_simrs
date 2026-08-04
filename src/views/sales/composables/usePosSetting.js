@@ -7,6 +7,7 @@ export function usePosSetting(apiUrl, { id_client }) {
   const izinkanDiskonItem = ref(true)
   const izinkanDiskonBill = ref(true)
   const pakaiShift = ref(true)
+  const izinkanPiutang = ref(true)
   const loadingPosSetting = ref(true)
 
   const fetchPosSetting = async () => {
@@ -17,6 +18,7 @@ export function usePosSetting(apiUrl, { id_client }) {
       izinkanDiskonItem.value = String(res.IZINKAN_DISKON_ITEM ?? 1) === '1'
       izinkanDiskonBill.value = String(res.IZINKAN_DISKON_BILL ?? 1) === '1'
       pakaiShift.value = String(res.PAKAI_SHIFT ?? 1) === '1'
+      izinkanPiutang.value = String(res.IZINKAN_PIUTANG ?? 1) === '1'
     } catch {
       // silent — default izinkan semua & pakai shift kalau gagal fetch, biar kasir nggak keblokir gara-gara jaringan
     } finally {
@@ -24,5 +26,5 @@ export function usePosSetting(apiUrl, { id_client }) {
     }
   }
 
-  return { izinkanDiskonItem, izinkanDiskonBill, pakaiShift, loadingPosSetting, fetchPosSetting }
+  return { izinkanDiskonItem, izinkanDiskonBill, pakaiShift, izinkanPiutang, loadingPosSetting, fetchPosSetting }
 }

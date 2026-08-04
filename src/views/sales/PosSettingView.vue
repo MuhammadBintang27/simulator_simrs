@@ -58,6 +58,20 @@
             <ToggleSwitch v-model="pakaiShift" :disabled="saving" />
           </div>
 
+          <div class="setting-section-title" style="margin-top: 24px">Piutang</div>
+
+          <div class="setting-row">
+            <div class="setting-row-text">
+              <div class="setting-row-label">Izinkan Piutang</div>
+              <div class="setting-row-desc">
+                Kasir boleh checkout dengan metode bayar Piutang (belum bayar tunai/non-tunai sama sekali),
+                wajib terhubung ke pasien (No. Register atau No. RM). Kalau dimatikan, opsi Piutang tidak
+                muncul di layar kasir.
+              </div>
+            </div>
+            <ToggleSwitch v-model="izinkanPiutang" :disabled="saving" />
+          </div>
+
           <div class="setting-actions">
             <Button label="Simpan" icon="pi pi-check" :loading="saving" @click="saveSetting" />
           </div>
@@ -90,6 +104,7 @@ const saving = ref(false)
 const izinkanDiskonItem = ref(true)
 const izinkanDiskonBill = ref(true)
 const pakaiShift = ref(true)
+const izinkanPiutang = ref(true)
 
 const fetchSetting = async () => {
   loading.value = true
@@ -101,6 +116,7 @@ const fetchSetting = async () => {
     izinkanDiskonItem.value = String(res.IZINKAN_DISKON_ITEM ?? 1) === '1'
     izinkanDiskonBill.value = String(res.IZINKAN_DISKON_BILL ?? 1) === '1'
     pakaiShift.value = String(res.PAKAI_SHIFT ?? 1) === '1'
+    izinkanPiutang.value = String(res.IZINKAN_PIUTANG ?? 1) === '1'
   } catch {
     toast.add({ severity: 'error', summary: 'Error', detail: 'Gagal memuat pengaturan', life: 4000 })
   } finally {
@@ -116,6 +132,7 @@ const saveSetting = async () => {
       IZINKAN_DISKON_ITEM: izinkanDiskonItem.value ? 1 : 0,
       IZINKAN_DISKON_BILL: izinkanDiskonBill.value ? 1 : 0,
       PAKAI_SHIFT: pakaiShift.value ? 1 : 0,
+      IZINKAN_PIUTANG: izinkanPiutang.value ? 1 : 0,
     })
     if (data?.metadata?.code === 200) {
       toast.add({ severity: 'success', summary: 'Berhasil', detail: 'Pengaturan disimpan', life: 3000 })

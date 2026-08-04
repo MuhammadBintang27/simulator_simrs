@@ -8,6 +8,10 @@ import { formatRupiah } from '../utils/format'
 // jadi proxy ini aman kalau meleset.
 export function useVoidTransaction(apiUrl, { id_client, pakaiShift, isShiftOpen, shift, toast, confirm, onVoided }) {
   const canVoid = (receipt) => {
+    // Piutang yang sudah pernah dicicil tidak boleh dibatalkan (BE tolak 400 juga) — TOTALBAYAR
+    // struk piutang mulai dari 0 saat checkout dan naik tiap ada cicilan (bayar_piutang), jadi
+    // >0 di sini berarti sudah ada minimal 1 cicilan masuk.
+    if (Number(receipt.idPayement) === 3 && Number(receipt.totalBayar) > 0) return false
     if (!pakaiShift.value) return true
     if (!isShiftOpen.value || !shift.value?.WAKTU_BUKA) return false
     const t = new Date(String(receipt.TANGGAL).replace(' ', 'T'))
