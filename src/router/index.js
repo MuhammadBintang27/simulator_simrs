@@ -39,7 +39,7 @@ const TransaksiResepView = () => import('@/views/Apol/TransaksiResepView.vue')
 const MonitoringApolView = () => import('@/views/Apol/MonitoringView.vue')
 
 // Pendaftaran & Laporan
-const PendaftaranPasienView = () => import('@/views/pendaftaran/PendaftaranPasienView.vue')
+const PendaftaranPasienView = () => import('@/views/Pendaftaran/PendaftaranPasienView.vue')
 const RevenueReportView = () => import('@/views/laporan/RevenueReportView.vue')
 const DatakunjunganView = () => import('@/views/Statistik/DatakunjunganView.vue')
 
@@ -124,7 +124,7 @@ const SesiDonorView = () => import('@/views/UTD/SesiDonorView.vue')
 const PrintOutsesiDonor = () => import('@/views/UTD/PrintOutsesiDonor.vue')
 
 // Rekam Medis Elektronik - Viewer & KCO
-const RMEViewer = () => import('@/views/RekamMedis/RMEViewer.vue')
+const RMEViewer = () => import('@/views/RekamMedis/RMEVIewer.vue')
 const KartuCatatanObatView = () => import('@/views/RekamMedis/KartuCatatanObatView.vue')
 
 // Persalinan
@@ -605,25 +605,25 @@ const router = createRouter({
           path: 'inventory/list-resep',
           name: 'ListResepSalesView',
           meta: { requiresAuth: true },
-          component: () => import('@/views/Inventory/Sales/LIstResepView.vue'),
+          component: () => import('@/views/inventory/Sales/LIstResepView.vue'),
         },
         {
           path: 'inventory/proses-resep/:trans',
           name: 'ProsesResepView',
           meta: { requiresAuth: true },
-          component: () => import('@/views/Inventory/Sales/ProsesResepView.vue'),
+          component: () => import('@/views/inventory/Sales/ProsesResepView.vue'),
         },
         {
           path: 'inventory/cetak-resep/:trans',
           name: 'CetakResepView',
           meta: { requiresAuth: true },
-          component: () => import('@/views/Inventory/Sales/CetakResepView.vue'),
+          component: () => import('@/views/inventory/Sales/CetakResepView.vue'),
         },
         {
           path: 'inventory/cetak-etiket/:trans',
           name: 'CetakEtiketView',
           meta: { requiresAuth: true },
-          component: () => import('@/views/Inventory/Sales/CetakEtiketView.vue'),
+          component: () => import('@/views/inventory/Sales/CetakEtiketView.vue'),
         },
 
         // UTD
