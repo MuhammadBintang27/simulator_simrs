@@ -4,7 +4,7 @@ import { ref } from 'vue'
 
 export const useConfigStore = defineStore('config', {
   state: () => {
-    const isProd = true // 'production' // import.meta.env.MODE === 'development'
+    const isProd = false // 'production' // import.meta.env.MODE === 'development'
 
     return {
       mode: isProd ? 'production' : 'development',
