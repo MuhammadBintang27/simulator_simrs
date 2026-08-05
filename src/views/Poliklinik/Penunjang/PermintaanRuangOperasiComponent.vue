@@ -117,6 +117,7 @@
             </template>
           </Column>
 
+          <Column field="noregister" header="No. REG" :sortable="true" />
           <Column field="nomorrm" header="No. RM" :sortable="true" />
 
           <Column field="nama" header="Nama Pasien" :sortable="true">

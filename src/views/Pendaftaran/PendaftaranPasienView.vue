@@ -290,7 +290,7 @@
                   severity="warn"
                   :loading="isLoading"
                   icon="pi pi-search"
-                  class="p-button-sm flex-fill round-button2 mr-1"
+                  class="p-button-sm flex-fill"
                 />
                 <Button
                   label="Lanjutkan"
@@ -298,7 +298,7 @@
                   icon="pi pi-arrow-right"
                   iconPos="right"
                   @click="showDialogPendaftaran = false"
-                  class="p-button-sm flex-fill round-button2 mr-1"
+                  class="p-button-sm flex-fill"
                 />
                 <Button
                   label="Riwayat BPJS"
@@ -306,7 +306,17 @@
                   icon="pi pi-history"
                   iconPos="right"
                   @click="riwayatBPJSRef.open()"
-                  class="p-button-sm flex-fill round-button2"
+                  class="p-button-sm flex-fill"
+                />
+                <Button
+                  v-if="isPoliklinikMode"
+                  label="Surat Kontrol Ulang"
+                  text
+                  icon="pi pi-file-export"
+                  iconPos="right"
+                  severity="warn"
+                  @click="riwayatSKURef.open()"
+                  class="p-button-sm flex-fill"
                 />
               </div>
             </div>
@@ -576,6 +586,11 @@
     <ListPasienComponent ref="showPatientDialog" />
 
     <RiwayatBPJSComponent :noKartu="peserta.noKartu" :view-only="true" ref="riwayatBPJSRef" />
+    <RiwayatSuratKontrolComponent
+      :noKartu="peserta.noKartu"
+      :nomr="peserta.mr?.noMR"
+      ref="riwayatSKURef"
+    />
   </div>
   <Toast />
 </template>
@@ -583,11 +598,8 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import DatePicker from 'primevue/datepicker'
-import TabView from 'primevue/tabview'
-import TabPanel from 'primevue/tabpanel'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
-import RadioButton from 'primevue/radiobutton'
 import Select from 'primevue/select'
 import Dialog from 'primevue/dialog'
 import { useConfigStore, useAuthStore } from '@/stores/config'
@@ -600,6 +612,7 @@ import FormPendaftaranComponent from '@/views/Pendaftaran/FormPendaftaranCompone
 import FormInputPasienComponent from '@/views/Pendaftaran/FormInputPasienComponent.vue'
 import ListPasienComponent from '@/views/Pendaftaran/ListPasienComponent.vue'
 import RiwayatBPJSComponent from '@/views/Pendaftaran/RiwayatBPJSComponent.vue'
+import RiwayatSuratKontrolComponent from '@/views/Pendaftaran/RiwayatSuratKontrolComponent.vue'
 
 const route = useRoute()
 const configStore = useConfigStore()
@@ -639,6 +652,7 @@ const function_GetCaraBayarChild = async () => {
 }
 const showPatientDialog = ref(null)
 const riwayatBPJSRef = ref(null)
+const riwayatSKURef = ref(null)
 const openPatientDialog = () => {
   showPatientDialog.value.showDialogInputPasien()
 }
@@ -713,9 +727,21 @@ const cariByRM = async () => {
 
   await GetDataPasienLocal(3, norm.value)
 
+  // simpan norm yang sudah di-set oleh GetDataPasienLocal sebelum BPJS call menimpanya
+  const savedNorm = norm.value
+
   // try to load online details if nomorSepOrNik is filled after local fetch
   if (nomorSepOrNik.value) {
     await get_data_pesertaOnline(nomorSepOrNik.value)
+
+    // get_data_pesertaOnline menimpa peserta.value dengan data BPJS sehingga mr.noMR hilang,
+    // patch kembali agar FormPendaftaranComponent bisa membaca norm dengan benar
+    if (savedNorm && peserta.value) {
+      peserta.value = {
+        ...peserta.value,
+        mr: { ...(peserta.value.mr || {}), noMR: savedNorm },
+      }
+    }
   }
 }
 

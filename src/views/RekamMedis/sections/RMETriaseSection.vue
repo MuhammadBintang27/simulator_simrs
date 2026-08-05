@@ -128,9 +128,15 @@
         <div class="triase-field-lbl">Keluhan Utama</div>
         <div class="rme-textarea-box">{{ header.keluhan_utama || '-' }}</div>
       </div>
-      <div class="rme-info-col">
+      <div v-if="header.riwayat_penyakit_sekarang" class="rme-info-col">
+        <div class="triase-field-lbl">Riwayat Penyakit Sekarang</div>
+        <div class="rme-textarea-box">{{ header.riwayat_penyakit_sekarang }}</div>
+      </div>
+    </div>
+    <div v-if="header.riwayat_penyakit_dahulu" class="rme-info-grid" style="margin-top: 6px">
+      <div class="rme-info-col" style="flex: 1">
         <div class="triase-field-lbl">Riwayat Penyakit Dahulu</div>
-        <div class="rme-textarea-box">{{ header.riwayat_penyakit_dahulu || '-' }}</div>
+        <div class="rme-textarea-box">{{ header.riwayat_penyakit_dahulu }}</div>
       </div>
     </div>
 
@@ -220,6 +226,124 @@
           <span><span class="nyeri-dot nyeri-sedang-dot"></span> 4–6: Sedang</span>
           <span><span class="nyeri-dot nyeri-berat-dot"></span> 7–9: Berat</span>
           <span><span class="nyeri-dot nyeri-parah-dot"></span> 10: Tak tertahankan</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Status Obstetri (tampil jika status_hamil = 1) ───────────────── -->
+    <div v-if="header.status_hamil == 1">
+      <div class="rme-subsection-title">Status Obstetri</div>
+      <div class="rme-info-grid">
+        <div class="rme-info-col">
+          <table class="rme-tbl-info">
+            <tbody>
+              <tr>
+                <td class="rme-td-lbl">G / P / A</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">
+                  G{{ header.gravida ?? '-' }} P{{ header.para ?? '-' }} A{{
+                    header.abortus ?? '-'
+                  }}
+                </td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">Usia Kehamilan</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">
+                  {{ header.usia_kehamilan_minggu ?? '-' }}
+                  <span v-if="header.usia_kehamilan_minggu != null"> minggu</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">HPL</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ header.hpl ?? '-' }}</td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">TFU</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">
+                  {{ header.leopold_tfu ?? '-' }}
+                  <span v-if="header.leopold_tfu != null"> cm</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">DJJ</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">
+                  {{ header.djj ?? '-' }}
+                  <span v-if="header.djj != null"> x/mnt</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">DJJ Reguler</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">
+                  {{
+                    header.djj_reguler == null
+                      ? '-'
+                      : header.djj_reguler
+                        ? 'Reguler'
+                        : 'Tidak Reguler'
+                  }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="rme-info-col">
+          <table class="rme-tbl-info">
+            <tbody>
+              <tr>
+                <td class="rme-td-lbl">Leopold I</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ header.leopold_i ?? '-' }}</td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">Leopold II Punggung</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ header.leopold_ii_punggung ?? '-' }}</td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">Leopold II Posisi</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ header.leopold_ii_posisi ?? '-' }}</td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">Leopold III</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ header.leopold_iii ?? '-' }}</td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">Leopold III Masuk PAP</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">
+                  {{
+                    header.leopold_iii_masuk == 1
+                      ? 'Ya'
+                      : header.leopold_iii_masuk == 0
+                        ? 'Tidak'
+                        : '-'
+                  }}
+                </td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">Leopold IV Metode</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ header.leopold_iv_metode ?? '-' }}</td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">Leopold IV Konvergensi</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ header.leopold_iv_konvergensi ?? '-' }}</td>
+              </tr>
+              <tr>
+                <td class="rme-td-lbl">Leopold IV Perlimaan</td>
+                <td class="rme-td-sep">:</td>
+                <td class="rme-td-val">{{ header.leopold_iv_perlimaan ?? '-' }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

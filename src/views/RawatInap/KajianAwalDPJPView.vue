@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <loading_overlay :is-loading="loadingSpinner" message="Silahkan menunggu...." />
   <ProgressBar v-if="loading" mode="indeterminate" style="height: 3px" />
 
@@ -217,66 +217,116 @@
                     </div>
                   </Panel>
 
-                  <!-- Pemeriksaan Fisik Ranap -->
-                  <Panel class="mb-3">
-                    <template #header>
-                      <h6 style="color: darkcyan">
-                        <strong><i class="fas fa-stethoscope mr-2"></i>PEMERIKSAAN FISIK</strong>
+                  <!-- ===== PEMERIKSAAN FISIK — SECONDARY SURVEY ===== -->
+                  <div class="card card-outline card-primary shadow-sm mb-3">
+                    <div
+                      class="card-header d-flex align-items-center justify-content-between"
+                      style="cursor: pointer; user-select: none"
+                      @click="secondarySurveyExpanded = !secondarySurveyExpanded"
+                    >
+                      <h6 class="card-title font-weight-bold mb-0" style="color: darkcyan">
+                        <i class="fas fa-stethoscope mr-2"></i>PEMERIKSAAN FISIK
                       </h6>
-                    </template>
-                    <table class="survey-table w-100">
-                      <thead>
-                        <tr>
-                          <th style="width: 28%">Sistem / Organ</th>
-                          <th style="width: 100px; text-align: center">Normal</th>
-                          <th>Jika Tidak Normal — Deskripsikan</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr
-                          v-for="item in dataSurveyFisik"
-                          :key="item.survey"
-                          :class="{ 'survey-row-abnormal': item.hasil !== 'NORMAL' }"
-                        >
-                          <td class="survey-label">
-                            <i
-                              class="fas fa-circle survey-dot mr-2"
-                              :class="item.hasil === 'NORMAL' ? 'dot-normal' : 'dot-abnormal'"
-                            ></i>
-                            {{ item.survey }}
-                          </td>
-                          <td class="text-center">
-                            <RadioButton
-                              :inputId="'sv-' + item.survey"
-                              :name="'sv-' + item.survey"
-                              value="NORMAL"
-                              v-model="item.hasil"
-                            />
-                          </td>
-                          <td>
-                            <InputText
-                              v-model="item.hasil"
-                              :class="[
-                                'w-100',
-                                item.hasil === 'NORMAL' ? 'input-normal' : 'input-abnormal',
-                              ]"
-                              placeholder="Deskripsikan temuan..."
-                              autocomplete="off"
-                            />
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                    <div class="survey-legend mt-2">
-                      <span class="legend-item"
-                        ><i class="fas fa-circle dot-normal mr-1"></i>Normal</span
-                      >
-                      <span class="legend-item ml-3"
-                        ><i class="fas fa-circle dot-abnormal mr-1"></i>Tidak Normal /
-                        Kelainan</span
-                      >
+                      <i
+                        :class="secondarySurveyExpanded ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
+                        class="text-muted"
+                      ></i>
                     </div>
-                  </Panel>
+                    <div class="card-body" v-show="secondarySurveyExpanded">
+                      <Accordion class="ss-accordion">
+                        <AccordionPanel
+                          v-for="item in secondary_surver_list"
+                          :key="item.id"
+                          :value="String(item.id)"
+                        >
+                          <AccordionHeader>
+                            <template #toggleicon="{ active }">
+                              <i
+                                :class="active ? 'pi pi-minus' : 'pi pi-plus'"
+                                class="ss-acc-icon"
+                              ></i>
+                            </template>
+                            <span class="ss-acc-label">{{ item.label || item.organ }}</span>
+                            <span v-if="getBadgeText(item)" class="ss-acc-badge">{{
+                              getBadgeText(item)
+                            }}</span>
+                          </AccordionHeader>
+                          <AccordionContent>
+                            <div class="ss-organ-body">
+                              <div v-for="sf in item.schemaFields" :key="sf.key" class="ss-field">
+                                <span class="ss-field-label">{{ sf.label }}</span>
+                                <!-- CHECKBOX -->
+                                <div v-if="sf.type === 'checkbox'" class="ss-field-opts">
+                                  <label
+                                    v-for="opt in sf.options"
+                                    :key="opt.value"
+                                    class="ss-opt-label"
+                                  >
+                                    <Checkbox
+                                      v-model="item.fields[sf.key]"
+                                      :value="opt.value"
+                                      :inputId="'cb-' + item.id + '-' + sf.key + '-' + opt.value"
+                                    />
+                                    <span>{{ opt.label }}</span>
+                                  </label>
+                                </div>
+                                <!-- RADIO → toggle buttons -->
+                                <div v-else-if="sf.type === 'radio'" class="ss-btn-group">
+                                  <button
+                                    v-for="opt in sf.options"
+                                    :key="opt.value"
+                                    type="button"
+                                    :class="[
+                                      'ss-btn-opt',
+                                      { 'ss-btn-active': item.fields[sf.key] === opt.value },
+                                    ]"
+                                    @click="item.fields[sf.key] = opt.value"
+                                  >
+                                    {{ opt.label }}
+                                  </button>
+                                </div>
+                                <!-- TEXT -->
+                                <InputText
+                                  v-else-if="sf.type === 'text'"
+                                  v-model="item.fields[sf.key]"
+                                  class="ss-text-input"
+                                  :placeholder="sf.label"
+                                  size="small"
+                                />
+                              </div>
+                            </div>
+                          </AccordionContent>
+                        </AccordionPanel>
+                      </Accordion>
+                      <Divider />
+
+                      <!-- Ringkasan -->
+                      <div class="ss-ringkasan-header">
+                        <span class="ss-ringkasan-title">
+                          <i class="pi pi-clipboard"></i> Ringkasan Pemeriksaan Fisik
+                        </span>
+                        <Button
+                          :label="ringkasanCopied ? 'Tersalin!' : 'Salin'"
+                          :icon="ringkasanCopied ? 'pi pi-check' : 'pi pi-copy'"
+                          :severity="ringkasanCopied ? 'success' : 'secondary'"
+                          size="small"
+                          outlined
+                          @click="copyRingkasan"
+                        />
+                      </div>
+                      <Textarea
+                        :value="ringkasanFisik"
+                        :rows="10"
+                        readonly
+                        style="
+                          width: 100%;
+                          resize: vertical;
+                          font-family: monospace;
+                          font-size: 0.82rem;
+                        "
+                      />
+                    </div>
+                  </div>
 
                   <!-- Pemeriksaan Penunjang -->
                   <Panel class="mb-3">
@@ -446,14 +496,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { useConfigStore, useAuthStore } from '@/stores/config'
 import { storeToRefs } from 'pinia'
 import { useToast } from 'primevue/usetoast'
 import ProgressBar from 'primevue/progressbar'
+import Accordion from 'primevue/accordion'
+import AccordionPanel from 'primevue/accordionpanel'
+import AccordionHeader from 'primevue/accordionheader'
+import AccordionContent from 'primevue/accordioncontent'
+import Divider from 'primevue/divider'
 import ttdUser from '@/components/TtdDigitalComponent.vue'
+import { createSecondarySurveyList } from '@/composables/useSecondarySurveyList'
 
 const props = defineProps({
   datapasienProp: { type: Object, default: null },
@@ -474,9 +530,10 @@ const saving = ref(false)
 const showOtorisasi = ref(false)
 const sttsVerif = ref('')
 const hasilLabAbnormal = ref([])
-const dataSurveyFisik = ref([])
 const datapasien = ref(props.datapasienProp || null)
 const activeTab = ref('0')
+const secondarySurveyExpanded = ref(true)
+const ringkasanCopied = ref(false)
 
 const noregister = props.noregisterProp || route.params?.noregister || ''
 
@@ -515,6 +572,62 @@ const form = ref({
   last_update: '',
 })
 
+// ── Secondary Survey List (Pemeriksaan Fisik) ─────────────────────────────────
+const secondary_surver_list = ref(createSecondarySurveyList())
+
+// ── Computed ──────────────────────────────────────────────────────────────────
+const ringkasanFisik = computed(() => {
+  const lines = secondary_surver_list.value.map((item) => {
+    const organ = (item.label || item.organ).padEnd(12, ' ')
+    let parts = []
+    if (item.fields && item.schemaFields) {
+      item.schemaFields.forEach((sf) => {
+        const val = item.fields[sf.key]
+        if (!val || (Array.isArray(val) && val.length === 0) || val === '') return
+        const disp = Array.isArray(val)
+          ? val.map((v) => sf.options?.find((x) => x.value === v)?.label || v).join(', ')
+          : sf.options
+            ? sf.options.find((x) => x.value === val)?.label || val
+            : val
+        parts.push(`${sf.label}: ${disp}`)
+      })
+    }
+    const kondisi = parts.length > 0 ? parts.join(' | ') : item.kondisi || 'NORMAL'
+    return `- ${organ}: ${kondisi}`
+  })
+  return 'Pemeriksaan Fisik:\n' + lines.join('\n')
+})
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function getBadgeText(item) {
+  if (!item.fields || !item.schemaFields) return item.kondisi || ''
+  const parts = []
+  for (const sf of item.schemaFields) {
+    const val = item.fields[sf.key]
+    if (val === null || val === undefined || val === '') continue
+    if (Array.isArray(val) && val.length === 0) continue
+    let display
+    if (Array.isArray(val)) {
+      display = val.map((v) => sf.options?.find((o) => o.value === v)?.label || v).join(', ')
+    } else if (sf.options) {
+      display = sf.options.find((o) => o.value === val)?.label || val
+    } else {
+      display = val
+    }
+    parts.push(`${sf.label}: ${display}`)
+  }
+  return parts.join(' | ')
+}
+
+const copyRingkasan = () => {
+  navigator.clipboard.writeText(ringkasanFisik.value).then(() => {
+    ringkasanCopied.value = true
+    setTimeout(() => {
+      ringkasanCopied.value = false
+    }, 2000)
+  })
+}
+
 const baseUrl = () => configStore.apiBaseUrl
 
 const fetchDataPasien = async () => {
@@ -533,42 +646,15 @@ const fetchDataPasien = async () => {
   }
 }
 
-const mergeSurveyHasil = (baseList, savedList) => {
-  if (!savedList?.length) return baseList
-  return baseList.map((item) => {
-    const saved = savedList.find(
-      (s) => String(s.id) === String(item.id) || s.survey === item.survey,
-    )
-    return saved ? { ...item, hasil: saved.hasil || 'NORMAL' } : { ...item }
-  })
-}
-
-const fetchSurveyFisik = async (savedData = []) => {
-  try {
-    const res = await axios.post(`${baseUrl()}/index.php/api/data_referensi/survey_fisik_ranap`, {
-      id_client: id_client.value,
-      noregister,
-    })
-    const apiData = res.data.response || []
-    dataSurveyFisik.value = mergeSurveyHasil(apiData, savedData)
-  } catch (e) {
-    console.error('survey_fisik_ranap:', e)
-  }
-}
-
 const fetchKajianAwal = async () => {
   if (!noregister) return
   loading.value = true
   loadingSpinner.value = true
   try {
-    const payload = {
+    const res = await axios.post(`${baseUrl()}/index.php/api/Triaseigd/get_kajian_awal_dokter_v2`, {
       id_client: id_client.value,
-      noregister: noregister,
-    }
-    const res = await axios.post(
-      `${baseUrl()}/index.php/api/Triaseigd/get_kajian_awal_dokter_v2`,
-      payload,
-    )
+      noregister,
+    })
     const r = res.data.response
     if (r) {
       form.value.keluhan_utama = r.keluhan_utama || ''
@@ -588,10 +674,17 @@ const fetchKajianAwal = async () => {
       sttsVerif.value = r.telah_verif || ''
       hasilLabAbnormal.value = res.data.hasil_lab_positif || []
 
+      // Merge survey fisik dari kajian_awal_sistemik
       if (Array.isArray(r.data_survey_fisik) && r.data_survey_fisik.length) {
-        await fetchSurveyFisik(r.data_survey_fisik)
-      } else {
-        await fetchSurveyFisik()
+        secondary_surver_list.value = secondary_surver_list.value.map((defaultItem) => {
+          const found = r.data_survey_fisik.find((s) => s.organ === defaultItem.organ)
+          if (!found) return defaultItem
+          return {
+            ...defaultItem,
+            kondisi: found.kondisi ?? defaultItem.kondisi,
+            fields: found.fields ?? defaultItem.fields,
+          }
+        })
       }
     }
   } catch (e) {
@@ -632,13 +725,15 @@ const simpanKajianAwal = async () => {
       dx_awal: form.value.diagnosautama,
       dx_sekunder: form.value.diagnosasekunder,
       prosedur: form.value.prosedur,
-      data_survey_fisik: dataSurveyFisik.value,
+      survey: secondary_surver_list.value,
     }
 
     const res = await axios.post(
       `${baseUrl()}/index.php/api/Triaseigd/kajian_awal_dokter_v2`,
       payload,
     )
+
+    console.log(res.data)
 
     if (res.data.metadata?.code == 200) {
       toast.add({
@@ -770,79 +865,6 @@ label {
   font-size: 13px;
 }
 
-/* ===== SURVEY TABLE ===== */
-.survey-table {
-  border-collapse: collapse;
-}
-.survey-table thead th {
-  background: #f0fafa;
-  color: darkcyan;
-  border: 1px solid #b2e0e0;
-  padding: 5px 8px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.survey-table tbody tr:hover {
-  background: #f0fafa;
-}
-.survey-table tbody td {
-  padding: 3px 8px;
-  border: 1px solid #e9ecef;
-  font-size: 12px;
-}
-.survey-label {
-  font-weight: 600;
-  color: #334155;
-  vertical-align: middle;
-  font-size: 12px;
-}
-.survey-table :deep(.p-inputtext) {
-  font-size: 12px !important;
-  padding: 3px 6px !important;
-  height: 28px;
-}
-.survey-legend {
-  font-size: 11px;
-}
-.survey-row-abnormal {
-  background: #fff8f0 !important;
-}
-.survey-row-abnormal .survey-label {
-  color: #c2410c;
-}
-.survey-dot {
-  font-size: 7px;
-  vertical-align: middle;
-}
-.dot-normal {
-  color: #22c55e;
-}
-.dot-abnormal {
-  color: #ef4444;
-}
-.input-normal {
-  background: #f0fdf4 !important;
-  color: #15803d !important;
-}
-.input-abnormal {
-  background: #fff7ed !important;
-  border-color: #f97316 !important;
-  color: #9a3412 !important;
-  font-weight: 600 !important;
-}
-.survey-legend {
-  font-size: 11px;
-  color: #64748b;
-  padding: 4px 8px;
-  border-top: 1px solid #e9ecef;
-}
-.legend-item {
-  display: inline-flex;
-  align-items: center;
-}
-
 .empty-info {
   padding: 20px;
   text-align: center;
@@ -894,6 +916,109 @@ label {
   color: #c53030;
   font-size: 0.72rem;
   font-weight: 700;
+}
+
+/* ===== SECONDARY SURVEY ===== */
+:deep(.ss-accordion .p-accordionpanel) {
+  margin-bottom: 6px;
+}
+:deep(.ss-accordion .p-accordionheader) {
+  gap: 8px;
+}
+:deep(.ss-accordion .p-accordioncontent-content) {
+  padding: 10px 14px;
+}
+.ss-acc-icon {
+  font-size: 0.78rem;
+  flex-shrink: 0;
+}
+.ss-acc-label {
+  flex: 1;
+}
+.ss-acc-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: #e8f5e9;
+  color: #00897b;
+  border: 1px solid #a5d6a7;
+  border-radius: 4px;
+  padding: 1px 7px;
+}
+.ss-organ-body {
+  padding: 10px 14px;
+}
+.ss-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+  flex-wrap: wrap;
+}
+.ss-field-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+  min-width: 100px;
+  flex-shrink: 0;
+}
+.ss-field-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+}
+.ss-opt-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.88rem;
+  cursor: pointer;
+  margin: 0;
+}
+.ss-text-input {
+  flex: 1;
+  min-width: 60px;
+  font-size: 0.88rem;
+  height: 32px;
+}
+.ss-btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  flex: 1;
+}
+.ss-btn-opt {
+  padding: 3px 12px;
+  border-radius: 20px;
+  border: 1.5px solid darkcyan;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+  line-height: 1.7;
+  font-size: 0.85rem;
+}
+.ss-btn-opt:hover {
+  background: #e0f7f7;
+}
+.ss-btn-active {
+  background: darkcyan !important;
+  color: #fff !important;
+}
+.ss-ringkasan-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.ss-ringkasan-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* ===== STICKY ACTION BAR ===== */

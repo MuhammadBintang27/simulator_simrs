@@ -117,8 +117,9 @@
               <div class="rad-attachment-grid">
                 <div v-for="att in item.attachment" :key="att.id" class="rad-attachment-item">
                   <Image
-                    :src="att.link_img"
+                    :src="proxyUrl(att.link_img)"
                     :alt="att.caption_file"
+                    :pt="{ image: { 'data-original-src': att.link_img } }"
                     preview
                     class="rad-attachment-img"
                   />
@@ -152,6 +153,11 @@ const props = defineProps({
 const configStore = useConfigStore()
 const authStore = useAuthStore()
 const { id_client } = storeToRefs(authStore)
+
+const proxyUrl = (url) => {
+  if (!url) return ''
+  return `${configStore.laravel}/proxy-image?url=${encodeURIComponent(url)}`
+}
 
 const reportSectionData = inject('reportSectionData', () => {})
 

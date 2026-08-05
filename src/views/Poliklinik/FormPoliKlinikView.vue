@@ -157,11 +157,16 @@
                 <Tab v-if="fact?.KODEPOLI == 'PAR' || fact?.KODEPOLI == '097'" value="10"
                   >ASMA PPOK</Tab
                 >
+                <Tab v-if="fact?.KODEPOLI == 'JAN'" value="13">ECHO JANTUNG</Tab>
+                <Tab v-if="fact?.KODEPOLI == 'ANA'" value="12">ANTROPOMETRI ANAK</Tab>
+                <Tab v-if="fact?.KODEPOLI == 'JIW'" value="14">GENOGRAM</Tab>
+                <Tab value="11">RISIKO JATUH</Tab>
                 <Tab value="1">TINDAKAN</Tab>
                 <Tab value="2">TERAPHY</Tab>
                 <Tab value="3">LAMPIRAN FILE</Tab>
                 <Tab value="4">PENUNJANG</Tab>
                 <Tab value="5">TINDAK LANJUT</Tab>
+                <!-- <Tab value="15">SURAT KETERANGAN</Tab> -->
               </TabList>
               <TabPanels>
                 <TabPanel value="0">
@@ -432,6 +437,7 @@
                                 </MultiSelect>
 
                                 <Button
+                                  v-tooltip.top="'Simpan Data Alergi'"
                                   icon="pi pi-save"
                                   :loading="loading"
                                   @click="simpan_data_alergi"
@@ -622,6 +628,12 @@
                       <TabPanel value="0">
                         <LaboratoriumComponent v-if="fact" :datapasien="fact">
                         </LaboratoriumComponent>
+                        <div class="mt-3">
+                          <SubHistoryLaboratoriumComponent
+                            v-if="fact"
+                            :datapasien="fact"
+                          ></SubHistoryLaboratoriumComponent>
+                        </div>
                       </TabPanel>
                       <TabPanel value="1">
                         <PermintaanRadiologiComponent
@@ -652,9 +664,11 @@
                   <TindakLanjutPasienComponent v-if="fact" :datapasien="fact">
                   </TindakLanjutPasienComponent>
                 </TabPanel>
+                <TabPanel value="15">
+                  <SuratKeteranganComponent v-if="fact" :datapasien="fact" />
+                </TabPanel>
                 <TabPanel value="6">
                   <HemodiComponent v-if="fact" :datapasien="fact"> </HemodiComponent>
-                  <!-- <ResikoJatuhComponent v-if="fact" :datapasien="fact"></ResikoJatuhComponent> -->
                 </TabPanel>
                 <TabPanel value="7">
                   <PemeriksaanVisusPoliMata
@@ -676,6 +690,27 @@
                 </TabPanel>
                 <TabPanel value="10">
                   <PoliParuView v-if="fact" :datapasien="fact" />
+                </TabPanel>
+                <TabPanel value="13">
+                  <PoliJantungView v-if="fact" :datapasien="fact" />
+                </TabPanel>
+                <TabPanel value="12">
+                  <AntropometriPoliAnakComponent
+                    v-if="fact"
+                    :datapasien="fact"
+                    :berat-badan="soap.berat_badan"
+                    :tinggi-badan="soap.tinggi_badan"
+                  />
+                </TabPanel>
+                <TabPanel value="11">
+                  <ResikoJatuhComponent
+                    v-if="fact"
+                    :noregisterProp="route.query.noreg"
+                    :datasetProp="fact"
+                  />
+                </TabPanel>
+                <TabPanel value="14">
+                  <PoliJiwaView v-if="fact" :datapasien="fact" />
                 </TabPanel>
               </TabPanels>
             </Tabs>
@@ -733,9 +768,22 @@
 
                 <!-- Medical Examination -->
                 <div class="section examination-section">
-                  <div class="section-header">
-                    <i class="fas fa-stethoscope text-red-500"></i>
-                    <h3>Pemeriksaan</h3>
+                  <div
+                    class="section-header"
+                    style="display: flex; align-items: center; justify-content: space-between"
+                  >
+                    <div style="display: flex; align-items: center; gap: 6px">
+                      <i class="fas fa-stethoscope text-red-500"></i>
+                      <h3>Pemeriksaan</h3>
+                    </div>
+                    <Button
+                      icon="pi pi-copy"
+                      text
+                      rounded
+                      size="small"
+                      v-tooltip.top="'Salin ke Pemeriksaan'"
+                      @click="salinSoap(record)"
+                    />
                   </div>
 
                   <!-- Vital Signs -->
@@ -887,6 +935,7 @@ import TindakanForm from '@/components/PoliklinikComponent/TindakanCompnent.vue'
 import TeraphyComponent from '@/components/PoliklinikComponent/TeraphyComponent.vue'
 
 import LaboratoriumComponent from '@/views/Poliklinik/Penunjang/LaboratoriumComponent.vue'
+import SubHistoryLaboratoriumComponent from '@/views/Poliklinik/Penunjang/SubHistoryLaboratoriumComponent.vue'
 
 import PermintaanRadiologiComponent from '@/views/Poliklinik/Penunjang/PermintaanRadiologiComponent.vue'
 import SubHistoryRadiologComponent from '@/views/Poliklinik/Penunjang/SubHistoryRadiologComponent.vue'
@@ -894,6 +943,7 @@ import SubHistoryRadiologComponent from '@/views/Poliklinik/Penunjang/SubHistory
 import PermintaanFisioteraphyComponent from '@/views/Poliklinik/Penunjang/PermintaanFisioteraphyComponent.vue'
 
 import TindakLanjutPasienComponent from '@/views/Poliklinik/TindakLanjutPasienComponent.vue'
+import SuratKeteranganComponent from '@/views/Poliklinik/SuratKeteranganComponent.vue'
 
 import SoapTemplateComponent from '@/components/umum/SoapTemplateComponent.vue'
 
@@ -904,6 +954,9 @@ import PemeriksaanVisusPoliMata from '@/components/PoliklinikComponent/Pemeriksa
 import OdontogramComponent from '@/views/Poliklinik/Gigi/OdontogramComponent.vue'
 import ObgynComponent from '@/views/Poliklinik/Obgyn/ObgynComponent.vue'
 import PoliParuView from '@/views/Poliklinik/Paru/PoliParuView.vue'
+import PoliJantungView from '@/views/Poliklinik/Jantung/PoliJantungView.vue'
+import AntropometriPoliAnakComponent from '@/views/Poliklinik/Anak/AntropometriPoliAnakComponent.vue'
+import PoliJiwaView from '@/views/Poliklinik/Jiwa/PoliJiwaView.vue'
 
 import ResikoJatuhComponent from '@/components/KajianAwal/ResikoJatuhComponent.vue'
 
@@ -1632,6 +1685,14 @@ const onTemplateSelected = (data) => {
   soap.subjek = data.subject
   soap.asesmen = data.assesment
   soap.plan = data.plan
+}
+
+const salinSoap = (record) => {
+  soap.subjek = record.SUBJEK || ''
+  soap.objek = record.OBJEK || ''
+  soap.asesmen = record.ASSESMEN || ''
+  soap.plan = record.PLAN || ''
+  showRiwayat.value = false
 }
 
 const planOptions = [

@@ -295,6 +295,13 @@
             outlined
             @click="obat_kronisBPJS"
           />
+          <Button
+            icon="pi pi-bookmark"
+            label="Template Obat"
+            size="small"
+            severity="secondary"
+            @click="openTemplateDialog"
+          />
         </div>
       </div>
 
@@ -605,6 +612,237 @@
     </DataTable>
   </Dialog>
 
+  <!-- ══════════════════════ Dialog: Template Obat ══════════════════════ -->
+  <Dialog
+    v-model:visible="showTemplateDialog"
+    modal
+    header="Template Obat"
+    :style="{ width: '720px', maxWidth: '96vw' }"
+    :closable="true"
+  >
+    <!-- Toolbar -->
+    <div class="tmpl-toolbar">
+      <Button icon="pi pi-plus" label="Buat Template Baru" size="small" @click="openAddTemplate" />
+      <div class="tmpl-filter-wrap">
+        <InputText
+          v-model="tmplFilterText"
+          placeholder="Cari nama template..."
+          class="tmpl-filter-input"
+        />
+        <i
+          v-if="tmplFilterText"
+          class="pi pi-times tmpl-filter-clear"
+          @click="tmplFilterText = ''"
+        />
+      </div>
+    </div>
+
+    <!-- Daftar Template -->
+    <div class="tmpl-list-title">
+      <i class="pi pi-list"></i>
+      Template Tersimpan
+      <Tag :value="String(filteredTemplates.length)" severity="secondary" class="ml-2" />
+    </div>
+
+    <div v-if="loadingTemplate && templates.length === 0" class="tmpl-empty">
+      <i class="pi pi-spin pi-spinner"></i>
+      <span>Memuat template…</span>
+    </div>
+
+    <div v-else-if="templates.length === 0" class="tmpl-empty">
+      <i class="pi pi-inbox"></i>
+      <span>Belum ada template tersimpan</span>
+    </div>
+
+    <div v-else-if="filteredTemplates.length === 0" class="tmpl-empty">
+      <i class="pi pi-search"></i>
+      <span>Template tidak ditemukan</span>
+    </div>
+
+    <div v-else class="tmpl-card-list">
+      <div v-for="tmpl in filteredTemplates" :key="tmpl.no_template" class="tmpl-card">
+        <div class="tmpl-card-header">
+          <div class="tmpl-card-info">
+            <span class="tmpl-card-name">{{ tmpl.caption }}</span>
+            <span class="tmpl-card-date">
+              <i class="pi pi-calendar"></i>
+              {{ formatTmplDate(tmpl.create_dated) }}
+            </span>
+          </div>
+          <div class="tmpl-card-actions">
+            <Button
+              icon="pi pi-check-circle"
+              label="Pakai"
+              size="small"
+              severity="success"
+              @click="pakaiTemplate(tmpl)"
+            />
+            <Button
+              icon="pi pi-trash"
+              size="small"
+              severity="danger"
+              text
+              rounded
+              v-tooltip.top="'Hapus template'"
+              @click="doHapusTemplate(tmpl)"
+            />
+          </div>
+        </div>
+        <div class="tmpl-card-items">
+          <span v-for="(det, i) in tmpl.detils" :key="i" class="tmpl-item-chip">{{
+            det.nama
+          }}</span>
+          <span v-if="tmpl.detils.length === 0" class="tmpl-no-items">Tidak ada item</span>
+        </div>
+      </div>
+    </div>
+
+    <template #footer>
+      <Button
+        label="Tutup"
+        icon="pi pi-times"
+        severity="secondary"
+        outlined
+        @click="showTemplateDialog = false"
+      />
+    </template>
+  </Dialog>
+
+  <!-- ══════════════════════ Dialog: Pilih Obat untuk Template ══════════════════════ -->
+  <Dialog
+    v-model:visible="showAddTemplate"
+    modal
+    header="Tambah Template Obat"
+    :style="{ width: '760px', maxWidth: '96vw' }"
+    @hide="resetTmplForm"
+  >
+    <div class="tmpl-add-panels">
+      <!-- Kiri: Daftar Obat -->
+      <div class="tmpl-add-panel">
+        <div class="tmpl-panel-title"><i class="pi pi-list"></i> Daftar Obat</div>
+        <div class="tmpl-panel-search">
+          <InputText
+            v-model="tmplSearchQuery"
+            placeholder="Cari nama atau barcode..."
+            @input="searchTmplObat"
+            class="w-full"
+          />
+        </div>
+        <div class="tmpl-obat-list">
+          <div v-if="tmplAvailableObat.length === 0" class="tmpl-obat-empty">
+            <i class="pi pi-search"></i>
+            <small>Masukkan minimal 3 karakter untuk mencari</small>
+          </div>
+          <div
+            v-for="(row, k) in tmplAvailableObat"
+            :key="k"
+            class="tmpl-obat-row"
+            :class="{ 'tmpl-obat-row-active': isTmplObatSelected(row.BARCODE) }"
+          >
+            <div class="tmpl-obat-info">
+              <div class="tmpl-obat-name">{{ row.NAMA || row.CAPTION }}</div>
+              <small class="tmpl-obat-sub">{{ row.BARCODE }} &bull; Stok: {{ row.QUNATITY }}</small>
+            </div>
+            <Button
+              :icon="isTmplObatSelected(row.BARCODE) ? 'pi pi-check' : 'pi pi-plus'"
+              rounded
+              size="small"
+              :severity="isTmplObatSelected(row.BARCODE) ? 'success' : 'primary'"
+              :disabled="isTmplObatSelected(row.BARCODE)"
+              @click="addTmplObat(row)"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Kanan: Obat Dipilih -->
+      <div class="tmpl-add-panel">
+        <div class="tmpl-panel-title">
+          <i class="pi pi-check-circle"></i> Obat Dipilih
+          <Tag :value="String(tmplSelectedObat.length)" severity="success" class="ml-2" />
+        </div>
+        <div class="tmpl-obat-list tmpl-obat-list-right">
+          <div v-if="tmplSelectedObat.length === 0" class="tmpl-obat-empty">
+            <i class="pi pi-hand-pointer"></i>
+            <small>Pilih obat dari daftar kiri</small>
+          </div>
+          <div v-for="(row, k) in tmplSelectedObat" :key="k" class="tmpl-obat-row">
+            <div class="tmpl-obat-info">
+              <div class="tmpl-obat-name">{{ row.NAMA }}</div>
+              <small class="tmpl-obat-sub">{{ row.BARCODE }} &bull; {{ row.SATUAN }}</small>
+            </div>
+            <Button
+              icon="pi pi-times"
+              rounded
+              size="small"
+              severity="danger"
+              text
+              @click="removeTmplObat(k)"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <template #footer>
+      <Button
+        label="Batal"
+        icon="pi pi-times"
+        severity="secondary"
+        outlined
+        @click="showAddTemplate = false"
+      />
+      <Button
+        label="Lanjutkan"
+        icon="pi pi-arrow-right"
+        iconPos="right"
+        :disabled="tmplSelectedObat.length === 0"
+        @click="handleLanjutkanTemplate"
+      />
+    </template>
+  </Dialog>
+
+  <!-- ══════════════════════ Dialog: Nama Template ══════════════════════ -->
+  <Dialog
+    v-model:visible="showCaptionTemplate"
+    modal
+    header="Simpan Template"
+    :style="{ width: '420px', maxWidth: '96vw' }"
+  >
+    <div class="tmpl-caption-info">
+      <i class="pi pi-pills"></i>
+      {{ tmplSelectedObat.length }} obat akan disimpan dalam template ini
+    </div>
+    <div class="field mt-3">
+      <label class="field-label">Nama Template</label>
+      <InputText
+        v-model="tmplCaption"
+        placeholder="Contoh: Hipertensi, Diabetes, Flu..."
+        class="w-full mt-1"
+        @keyup.enter="simpanTemplate"
+        autofocus
+      />
+      <small class="text-color-secondary">Nama template harus unik dan mudah dikenali</small>
+    </div>
+
+    <template #footer>
+      <Button
+        label="Batal"
+        icon="pi pi-times"
+        severity="secondary"
+        outlined
+        @click="showCaptionTemplate = false"
+      />
+      <Button
+        label="Simpan Template"
+        icon="pi pi-save"
+        :disabled="!tmplCaption.trim()"
+        :loading="loadingTemplate"
+        @click="simpanTemplate"
+      />
+    </template>
+  </Dialog>
+
   <!-- History Therapy Component -->
   <HIstoryTeraphy v-model:showHistoryTeraphy="showHistoryTeraphy" @sendData="getDataHistori" />
 
@@ -687,6 +925,8 @@
       <Button label="Simpan Racikan" icon="pi pi-save" @click="ResepRacikan()" />
     </template>
   </Dialog>
+
+  <ConfirmDialog group="teraphy" />
 </template>
 
 <script setup>
@@ -699,6 +939,7 @@ import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Checkbox from 'primevue/checkbox'
 import Dialog from 'primevue/dialog'
+import ConfirmDialog from 'primevue/confirmdialog'
 import Tag from 'primevue/tag'
 import Toast from 'primevue/toast'
 
@@ -934,6 +1175,7 @@ const confirmRemoveItemObat = (index) => {
     : `Anda ingin menghapus item "${namaObat}"?`
 
   confirm.require({
+    group: 'teraphy',
     message,
     header: 'Konfirmasi Hapus',
     icon: 'pi pi-exclamation-triangle',
@@ -947,6 +1189,7 @@ const confirmRemoveItemObat = (index) => {
 
 const ConfirmVoidResep = (RECEIPT_NO, index) => {
   confirm.require({
+    group: 'teraphy',
     message: `Anda ingin membatalkan resep "${RECEIPT_NO}"?`,
     header: 'Konfirmasi Batal Resep',
     icon: 'pi pi-exclamation-triangle',
@@ -1363,7 +1606,7 @@ const findObatan = async (mode, barcode) => {
       barcode: barcode || '',
       mode: mode || 19,
       id_client: id_client.value,
-      breakdown: 0,
+      breakdown: 1,
       nama: searchQuery.value || '',
       lokasi: id_lokasi.value,
     }
@@ -1465,6 +1708,206 @@ watch(listObat, (val) => {
     getRecentObat()
   }
 })
+
+/* ── Template Obat ────────────────────────────────── */
+const showTemplateDialog = ref(false)
+const templates = ref([])
+const loadingTemplate = ref(false)
+const showAddTemplate = ref(false)
+const showCaptionTemplate = ref(false)
+const tmplFilterText = ref('')
+const tmplSearchQuery = ref('')
+const tmplAvailableObat = ref([])
+const tmplSelectedObat = ref([])
+const tmplCaption = ref('')
+
+const filteredTemplates = computed(() => {
+  if (!tmplFilterText.value.trim()) return templates.value
+  const q = tmplFilterText.value.toLowerCase()
+  return templates.value.filter((t) => t.caption.toLowerCase().includes(q))
+})
+
+const openTemplateDialog = async () => {
+  showTemplateDialog.value = true
+  await fetchTemplates()
+}
+
+const fetchTemplates = async () => {
+  try {
+    loadingTemplate.value = true
+    const url = configStore.apiApotikUrl
+    const response = await axios.post(`${url}/index.php/api/data_referensi/get_template`, {
+      user_id: user_id.value,
+      id_client: id_client.value,
+    })
+    if (response.data?.metadata?.code == 200) {
+      templates.value = response.data.response || []
+    } else {
+      templates.value = []
+    }
+  } catch (error) {
+    console.error(error)
+    showError('Gagal memuat template obat')
+  } finally {
+    loadingTemplate.value = false
+  }
+}
+
+const openAddTemplate = () => {
+  tmplSelectedObat.value = []
+  tmplSearchQuery.value = ''
+  tmplAvailableObat.value = []
+  showAddTemplate.value = true
+}
+
+const searchTmplObat = async () => {
+  if (tmplSearchQuery.value.length < 3) {
+    tmplAvailableObat.value = []
+    return
+  }
+  try {
+    const url = configStore.apiApotikUrl
+    const response = await axios.post(`${url}/index.php/api/barang/getdatabarang_v31`, {
+      barcode: '',
+      mode: 19,
+      id_client: id_client.value,
+      breakdown: 0,
+      nama: tmplSearchQuery.value,
+      lokasi: id_lokasi.value,
+    })
+    if (response.data?.metadata?.code == 200) {
+      tmplAvailableObat.value = response.data.response || []
+    } else {
+      tmplAvailableObat.value = []
+    }
+  } catch (error) {
+    console.error(error)
+    tmplAvailableObat.value = []
+  }
+}
+
+const isTmplObatSelected = (barcode) => {
+  return tmplSelectedObat.value.some((item) => item.BARCODE === barcode)
+}
+
+const addTmplObat = (row) => {
+  if (!isTmplObatSelected(row.BARCODE)) {
+    tmplSelectedObat.value.push({
+      BARCODE: row.BARCODE,
+      NAMA: row.NAMA || row.CAPTION,
+      SATUAN: row.SATUAN || '',
+    })
+  }
+}
+
+const removeTmplObat = (index) => {
+  tmplSelectedObat.value.splice(index, 1)
+}
+
+const handleLanjutkanTemplate = () => {
+  if (tmplSelectedObat.value.length === 0) {
+    showWarning('Pilih minimal 1 obat')
+    return
+  }
+  tmplCaption.value = ''
+  showCaptionTemplate.value = true
+}
+
+const simpanTemplate = async () => {
+  if (!tmplCaption.value.trim() || tmplSelectedObat.value.length === 0) return
+  try {
+    loadingTemplate.value = true
+    const url = configStore.apiApotikUrl
+    const payload = {
+      caption_template: tmplCaption.value.trim(),
+      user_id: user_id.value,
+      id_client: id_client.value,
+      item: tmplSelectedObat.value.map((o) => ({
+        BARCODE: o.BARCODE,
+        NAMA: o.NAMA,
+        SATUAN: o.SATUAN,
+      })),
+    }
+    const response = await axios.post(`${url}/index.php/api/data_referensi/saveTemplate`, payload)
+    if (response.data?.metadata?.code == 200) {
+      showSuccess('Template berhasil disimpan')
+      showCaptionTemplate.value = false
+      showAddTemplate.value = false
+      await fetchTemplates()
+    } else {
+      showError(response.data?.metadata?.message || 'Gagal menyimpan template')
+    }
+  } catch (error) {
+    console.error(error)
+    showError('Gagal menyimpan template')
+  } finally {
+    loadingTemplate.value = false
+  }
+}
+
+const resetTmplForm = () => {
+  tmplSelectedObat.value = []
+  tmplSearchQuery.value = ''
+  tmplAvailableObat.value = []
+  tmplCaption.value = ''
+}
+
+const doHapusTemplate = (tmpl) => {
+  confirm.require({
+    group: 'teraphy',
+    message: `Hapus template "${tmpl.caption}"?`,
+    header: 'Konfirmasi Hapus',
+    icon: 'pi pi-exclamation-triangle',
+    rejectLabel: 'Batal',
+    acceptLabel: 'Hapus',
+    rejectClass: 'p-button-secondary p-button-outlined',
+    acceptClass: 'p-button-danger',
+    accept: async () => {
+      try {
+        const url = configStore.apiApotikUrl
+        await axios.post(`${url}/index.php/api/data_referensi/hapusTemplate`, {
+          no_template: tmpl.no_template,
+          user_id: user_id.value,
+        })
+        showSuccess('Template berhasil dihapus')
+        await fetchTemplates()
+      } catch (error) {
+        console.error(error)
+        showError('Gagal menghapus template')
+      }
+    },
+  })
+}
+
+const pakaiTemplate = (tmpl) => {
+  if (!tmpl.detils || tmpl.detils.length === 0) {
+    showWarning('Template ini tidak memiliki item obat')
+    return
+  }
+  tmpl.detils.forEach((det) => {
+    addItem(
+      {
+        BARCODE: det.barcode || '00000',
+        NAMA: det.nama || '',
+        SATUAN: det.satuan || '',
+        JENIS_R: 'R/',
+        HARGA: 0,
+        QTY: 0,
+      },
+      1,
+    )
+  })
+  showSuccess(`Template "${tmpl.caption}" berhasil diterapkan`)
+  showTemplateDialog.value = false
+}
+
+const formatTmplDate = (dateStr) => {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  if (isNaN(d)) return dateStr
+  const BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des']
+  return `${d.getDate()} ${BULAN[d.getMonth()]} ${d.getFullYear()}`
+}
 
 onMounted(() => {
   get_riwayat()
@@ -2203,5 +2646,210 @@ onMounted(() => {
   .racikan-header-fields {
     flex-direction: column;
   }
+}
+
+/* ── Dialog: Template Obat ─────────────────────────── */
+.tmpl-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.tmpl-filter-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tmpl-filter-input {
+  font-size: 13px;
+  width: 220px;
+}
+.tmpl-filter-clear {
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 12px;
+}
+.tmpl-filter-clear:hover {
+  color: #ef4444;
+}
+.tmpl-list-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tmpl-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 0;
+  color: #94a3b8;
+  font-size: 13px;
+}
+.tmpl-empty .pi {
+  font-size: 1.6rem;
+}
+.tmpl-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.tmpl-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #fff;
+  transition: box-shadow 0.15s;
+}
+.tmpl-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.tmpl-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.tmpl-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tmpl-card-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1e293b;
+}
+.tmpl-card-date {
+  font-size: 11.5px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tmpl-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.tmpl-card-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tmpl-item-chip {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 11.5px;
+  color: #475569;
+}
+.tmpl-no-items {
+  font-size: 11.5px;
+  color: #cbd5e1;
+  font-style: italic;
+}
+/* ── Dialog: Pilih Obat Template ─────────────────── */
+.tmpl-add-panels {
+  display: flex;
+  gap: 16px;
+}
+.tmpl-add-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.tmpl-panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.tmpl-panel-search {
+  font-size: 13px;
+}
+.tmpl-obat-list {
+  max-height: 360px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+.tmpl-obat-list-right {
+  margin-top: 0;
+}
+.tmpl-obat-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 24px 12px;
+  color: #94a3b8;
+  text-align: center;
+}
+.tmpl-obat-empty .pi {
+  font-size: 1.4rem;
+}
+.tmpl-obat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.1s;
+}
+.tmpl-obat-row:last-child {
+  border-bottom: none;
+}
+.tmpl-obat-row:hover {
+  background: #f8fafc;
+}
+.tmpl-obat-row-active {
+  background: #f0fdf4;
+}
+.tmpl-obat-info {
+  flex: 1;
+  min-width: 0;
+}
+.tmpl-obat-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tmpl-obat-sub {
+  font-size: 11px;
+  color: #94a3b8;
+}
+/* ── Dialog: Nama Template ────────────────────────── */
+.tmpl-caption-info {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #166534;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 </style>

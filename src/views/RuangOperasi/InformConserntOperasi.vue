@@ -67,12 +67,31 @@
               <div class="col-md-6">
                 <div class="field-group mb-0">
                   <label class="field-label">Nama Dokter Anestesi</label>
-                  <InputText
-                    v-model="form.dokterAnestesi"
+                  <Select
+                    v-model="selectedDokterAnestesi"
+                    :options="dokterAnestesiOptions"
+                    optionLabel="NAMADOKTER"
+                    dataKey="KDDOKTER"
+                    filter
+                    showClear
+                    :loading="loadingDokterAnestesi"
+                    placeholder="Cari nama dokter anestesi..."
                     class="w-100"
-                    placeholder="Nama dokter anestesi..."
+                    style="width: 100%"
                     :disabled="isSaved"
-                  />
+                    @filter="onFilterDokterAnestesi"
+                    @change="onSelectDokterAnestesi"
+                    appendTo="body"
+                  >
+                    <template #option="{ option }">
+                      <div>
+                        <div style="font-size: 13px; font-weight: 500">{{ option.NAMADOKTER }}</div>
+                        <div style="font-size: 11px; color: #6c757d">
+                          {{ option.SPESIALISASI || option.JABATAN }}
+                        </div>
+                      </div>
+                    </template>
+                  </Select>
                 </div>
               </div>
             </div>
@@ -482,10 +501,9 @@ const form = ref({
 const conf = ref({ mengerti: false, bertanya: false, setuju: false })
 
 // ===== DYNAMIC SIGNERS =====
-let signerIdCounter = 3
+let signerIdCounter = 2
 const signers = ref([
-  { id: 1, label: 'Keluarga / Wali Pasien', nama: '', signatureData: '' },
-  { id: 2, label: 'Saksi', nama: '', signatureData: '' },
+  { id: 1, label: 'Keluarga / Wali Pasien', nama: '', signatureData: '', photoData: '' },
 ])
 
 const addSigner = () => {
@@ -826,6 +844,11 @@ const loadData = async () => {
       form.value.hubungan = h.hubungan || 'Orang Tua'
       form.value.noKtp = h.no_ktp || ''
       form.value.dokterAnestesi = h.dokter_anestesi || ''
+      if (h.dokter_anestesi) {
+        await fetchDokterAnestesi(h.dokter_anestesi)
+        selectedDokterAnestesi.value =
+          dokterAnestesiOptions.value.find((d) => d.NAMADOKTER === h.dokter_anestesi) ?? null
+      }
       form.value.tempat = h.tempat || ''
       form.value.tanggalConsent = h.tanggal_consent ? new Date(h.tanggal_consent) : new Date()
       form.value.kodeboking = h.kodeboking || form.value.kodeboking
@@ -866,13 +889,13 @@ const hapusData = async () => {
     form.value.hubungan = 'Orang Tua'
     form.value.noKtp = ''
     form.value.dokterAnestesi = ''
+    selectedDokterAnestesi.value = null
     form.value.tempat = ''
     form.value.tanggalConsent = new Date()
     conf.value = { mengerti: false, bertanya: false, setuju: false }
-    signerIdCounter = 3
+    signerIdCounter = 2
     signers.value = [
       { id: 1, label: 'Keluarga / Wali Pasien', nama: '', signatureData: '', photoData: '' },
-      { id: 2, label: 'Saksi', nama: '', signatureData: '', photoData: '' },
     ]
     isSaved.value = false
     toast.add({
@@ -889,8 +912,62 @@ const hapusData = async () => {
   }
 }
 
-onMounted(() => {
-  loadData()
+// ===== DOKTER ANESTESI SELECT =====
+const dokterAnestesiOptions = ref([])
+const loadingDokterAnestesi = ref(false)
+const selectedDokterAnestesi = ref(null)
+
+const fetchDokterAnestesi = async (nama = '') => {
+  loadingDokterAnestesi.value = true
+  try {
+    const res = await axios.post(
+      `${configStore.apiBaseUrl}/index.php/api/data_referensi/datadokterv3`,
+      { id_client: id_client.value, mode: 2, nama },
+    )
+    dokterAnestesiOptions.value = res.data?.response ?? []
+  } catch {
+    dokterAnestesiOptions.value = []
+  } finally {
+    loadingDokterAnestesi.value = false
+  }
+}
+
+const onFilterDokterAnestesi = (event) => {
+  const q = event.value
+  if (q && q.length >= 2) fetchDokterAnestesi(q)
+}
+
+const onSelectDokterAnestesi = (event) => {
+  form.value.dokterAnestesi = event.value?.NAMADOKTER ?? ''
+}
+
+// ===== FETCH DPJP UNTUK DEFAULT NAMA =====
+const fetchDpjp = async () => {
+  try {
+    const url = configStore.apiBaseUrl
+    const response = await axios.post(`${url}/index.php/api/transaksi_pasien/history_versi4`, {
+      mod: 1,
+      noregister: form.value.noregister,
+      id_client: id_client.value,
+    })
+    if (response.data.response && response.data.response.length > 0) {
+      const namaDpjp = response.data.response[0].NAMADOKTER || ''
+      if (namaDpjp) {
+        form.value.namaPenandatangan = namaDpjp
+        form.value.dokterAnestesi = namaDpjp
+        await fetchDokterAnestesi(namaDpjp)
+        selectedDokterAnestesi.value =
+          dokterAnestesiOptions.value.find((d) => d.NAMADOKTER === namaDpjp) ?? null
+      }
+    }
+  } catch (error) {
+    console.error('Gagal mengambil data DPJP:', error)
+  }
+}
+
+onMounted(async () => {
+  await fetchDpjp()
+  await loadData()
 })
 
 const printForm = () => window.print()

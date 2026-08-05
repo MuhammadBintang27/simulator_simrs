@@ -680,6 +680,13 @@
                   <td class="text-center align-middle">
                     <div class="aksi-group">
                       <button
+                        class="btn-aksi btn-aksi-danger btn-sm"
+                        @click="bukaTriase(row)"
+                        title="Form Triase IGD"
+                      >
+                        <i class="pi pi-heart"></i> Triase
+                      </button>
+                      <button
                         class="btn-aksi btn-aksi-info btn-sm"
                         @click="bukaRekamMedis(row)"
                         title="Rekam Medis"
@@ -929,6 +936,11 @@ const onLaporanDateSelect = (date) => {
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   laporan.value.tanggal = `${y}-${m}-${day}`
+}
+
+const bukaTriase = (row) => {
+  const noregister = row.NOREFF_IGD || row.NOPENDAFTARAN
+  router.push({ name: 'FormIGDView', params: { noregister } })
 }
 
 const bukaRekamMedis = (row) => {
@@ -1255,6 +1267,10 @@ body.sidebar-mini.sidebar-collapse .p-dialog {
 }
 .btn-aksi:hover {
   opacity: 0.82;
+}
+.btn-aksi-danger {
+  background: #c62828;
+  color: #fff;
 }
 .btn-aksi-info {
   background: #1976d2;

@@ -1,7 +1,6 @@
 <template>
-  <!-- ===== DOCUMENT VIEWER ===== -->
   <div class="doc-viewer">
-    <!-- Toolbar -->
+    <!-- ===== TOOLBAR ===== -->
     <div class="doc-toolbar">
       <div class="toolbar-brand">
         <i class="pi pi-file-edit me-2"></i>
@@ -19,9 +18,68 @@
       </div>
     </div>
 
-    <!-- A4 Paper -->
+    <!-- ===== PROGRESS STEPPER ===== -->
+    <div v-if="!isAllSigned" class="consent-stepper">
+      <!-- Step 1 -->
+      <div class="cs-step" :class="{ 'cs-done': step1Complete, 'cs-active': !step1Complete }">
+        <div class="cs-bubble">
+          <i v-if="step1Complete" class="pi pi-check" />
+          <span v-else>1</span>
+        </div>
+        <div class="cs-info">
+          <div class="cs-title">Tanda Tangan &amp; Foto</div>
+          <div class="cs-sub">{{ step1Complete ? 'Selesai' : 'Menunggu' }}</div>
+        </div>
+      </div>
+      <div class="cs-line" :class="{ 'cs-line--done': step1Complete }"></div>
+      <!-- Step 2 -->
+      <div
+        class="cs-step"
+        :class="{
+          'cs-done': step2Complete,
+          'cs-active': step1Complete && !step2Complete,
+          'cs-locked': !step1Complete,
+        }"
+      >
+        <div class="cs-bubble">
+          <i v-if="step2Complete" class="pi pi-check" />
+          <i v-else-if="!step1Complete" class="pi pi-lock" />
+          <span v-else>2</span>
+        </div>
+        <div class="cs-info">
+          <div class="cs-title">Konfirmasi Persetujuan</div>
+          <div class="cs-sub">
+            {{ step2Complete ? 'Selesai' : !step1Complete ? 'Terkunci' : 'Belum diisi' }}
+          </div>
+        </div>
+      </div>
+      <div class="cs-line" :class="{ 'cs-line--done': step2Complete }"></div>
+      <!-- Step 3 -->
+      <div
+        class="cs-step"
+        :class="{
+          'cs-done': isVerified,
+          'cs-active': canSave && !isVerified,
+          'cs-locked': !canSave,
+        }"
+      >
+        <div class="cs-bubble">
+          <i v-if="isVerified" class="pi pi-check" />
+          <i v-else-if="!canSave" class="pi pi-lock" />
+          <span v-else>3</span>
+        </div>
+        <div class="cs-info">
+          <div class="cs-title">Verifikasi TTE</div>
+          <div class="cs-sub">
+            {{ isVerified ? 'Terverifikasi' : !canSave ? 'Terkunci' : 'Siap diverifikasi' }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== A4 PAPER ===== -->
     <div class="a4-paper">
-      <!-- ── KOP SURAT ── -->
+      <!-- KOP SURAT -->
       <div class="doc-kop">
         <div class="doc-kop-logo">
           <img :src="LINK_LOGO" alt="Logo Rumah Sakit" style="max-width: 60px; max-height: 60px" />
@@ -33,13 +91,13 @@
       </div>
       <div class="doc-kop-line"></div>
 
-      <!-- ── JUDUL ── -->
+      <!-- JUDUL -->
       <div class="doc-title-block">
         <h2 class="doc-title">FORMULIR PERSETUJUAN RAWAT INAP</h2>
         <h3 class="doc-subtitle">GENERAL CONSENT</h3>
       </div>
 
-      <!-- ── IDENTITAS PASIEN ── -->
+      <!-- IDENTITAS PASIEN -->
       <div class="doc-patient-box" v-if="patientData">
         <div class="doc-patient-row">
           <div class="doc-patient-field">
@@ -105,7 +163,7 @@
 
       <div class="doc-section-line"></div>
 
-      <!-- ── TEKS PERSETUJUAN ── -->
+      <!-- TEKS PERSETUJUAN -->
       <div class="doc-body">
         <p class="doc-body-intro">
           Yang bertanda tangan di bawah ini, menyatakan dengan sesungguhnya bahwa telah mendapatkan
@@ -115,11 +173,7 @@
           <strong>{{ extraForm.diagnosa || '...' }}</strong
           >.
         </p>
-
-        <!-- HTML dari database -->
         <div v-if="consentHtml" class="doc-consent-html" v-html="consentHtml"></div>
-
-        <!-- Fallback statis -->
         <template v-else>
           <p class="doc-body-sub">Penjelasan yang telah diterima meliputi:</p>
           <ol class="doc-list">
@@ -132,8 +186,6 @@
             <li>Prosedur pengaduan apabila ada ketidakpuasan terhadap pelayanan</li>
           </ol>
         </template>
-
-        <!-- Pernyataan setuju -->
         <div class="doc-statement">
           <p>
             Pernyataan ini dibuat dengan sadar, tanpa paksaan dari pihak manapun, sebagai bukti
@@ -144,7 +196,7 @@
 
       <div class="doc-section-line"></div>
 
-      <!-- ── TEMPAT & TANGGAL ── -->
+      <!-- TEMPAT & TANGGAL -->
       <div class="doc-date-row">
         <div class="doc-place-field">
           <span>Dibuat di, </span>
@@ -157,20 +209,18 @@
         </div>
       </div>
 
-      <!-- ── TANDA TANGAN DI A4 ── -->
+      <!-- TANDA TANGAN DI A4 (preview) -->
       <div class="a4-sig-section">
         <div class="a4-sig-inner">
           <div class="a4-sig-cards">
             <div class="a4-sig-row">
               <div v-for="signer in viewSignersWithAuth" :key="signer.id" class="a4-sig-box">
-                <!-- Foto -->
                 <div class="a4-sig-photo">
                   <img v-if="signer.photoData" :src="signer.photoData" class="a4-sig-photo-img" />
                   <div v-else class="a4-sig-photo-empty">
                     <i class="pi pi-user" style="font-size: 1.5rem; opacity: 0.3"></i>
                   </div>
                 </div>
-                <!-- Tanda tangan -->
                 <div class="a4-sig-canvas-wrap" :class="{ 'has-signature': signer.signatureData }">
                   <img
                     v-if="signer.signatureData"
@@ -179,7 +229,6 @@
                   />
                   <div v-else class="a4-sig-canvas-empty"></div>
                 </div>
-                <!-- Nama & Peran -->
                 <div class="a4-sig-line-name"></div>
                 <div class="a4-sig-name">{{ signer.nama || '( ' + signer.hubungan + ' )' }}</div>
                 <div class="a4-sig-role">{{ signer.hubungan }}</div>
@@ -189,8 +238,6 @@
 
           <div class="a4-qr-block">
             <div class="a4-qr-title">Verifikasi TTE</div>
-
-            <!-- QR code: tampil jika sudah diverifikasi (server atau sesi ini) -->
             <div v-if="isVerified" class="a4-qr-code">
               <QrcodeVue :value="qrCodeData" :size="120" level="H" render-as="svg" />
             </div>
@@ -201,17 +248,6 @@
               <div class="a4-qr-user">{{ verifName }}</div>
               <div class="a4-qr-time">{{ verifTime }}</div>
             </div>
-
-            <!-- Tombol TTE hanya tampil jika belum diverifikasi -->
-            <div v-if="!isVerified" class="a4-qr-actions">
-              <Button
-                label="TTE Petugas"
-                icon="pi pi-sign-in"
-                severity="info"
-                size="small"
-                @click="showTteDialog = true"
-              />
-            </div>
             <div v-if="!isVerified" class="a4-qr-pending">
               <i class="pi pi-clock me-1"></i>Menunggu verifikasi
             </div>
@@ -221,11 +257,9 @@
     </div>
     <!-- /A4 Paper -->
 
-    <!-- ── BANNER CONSENT SELESAI ── -->
+    <!-- ===== CONSENT DONE BANNER ===== -->
     <div v-if="isAllSigned" class="consent-done-banner">
-      <div class="consent-done-icon">
-        <i class="pi pi-verified"></i>
-      </div>
+      <div class="consent-done-icon"><i class="pi pi-verified"></i></div>
       <div class="consent-done-text">
         <p class="consent-done-title">General Consent Telah Selesai</p>
         <p class="consent-done-sub">
@@ -234,64 +268,11 @@
       </div>
     </div>
 
-    <!-- ── KONFIRMASI PERSETUJUAN ── -->
-    <div v-if="!isAllSigned" ref="confirmSectionRef" class="confirm-section">
-      <div class="confirm-title"><i class="pi pi-check-square me-2"></i>Konfirmasi Persetujuan</div>
-      <div class="confirm-body">
-        <div
-          class="confirm-item"
-          :class="{ 'confirm-item--checked': conf.mengerti }"
-          @click="conf.mengerti = !conf.mengerti"
-        >
-          <Checkbox v-model="conf.mengerti" :binary="true" inputId="cf1" @click.stop />
-          <label for="cf1">
-            Saya telah <strong>mengerti dan memahami</strong> seluruh penjelasan yang diberikan
-            mengenai rencana perawatan rawat inap
-          </label>
-        </div>
-        <div
-          class="confirm-item"
-          :class="{ 'confirm-item--checked': conf.bertanya }"
-          @click="conf.bertanya = !conf.bertanya"
-        >
-          <Checkbox v-model="conf.bertanya" :binary="true" inputId="cf2" @click.stop />
-          <label for="cf2">
-            Saya telah diberikan <strong>kesempatan untuk bertanya</strong> dan seluruh pertanyaan
-            saya telah dijawab dengan memuaskan
-          </label>
-        </div>
-        <div
-          class="confirm-item"
-          :class="{ 'confirm-item--checked': conf.setuju }"
-          @click="conf.setuju = !conf.setuju"
-        >
-          <Checkbox v-model="conf.setuju" :binary="true" inputId="cf3" @click.stop />
-          <label for="cf3">
-            Saya <strong>menyetujui</strong> untuk menjalani perawatan rawat inap di rumah sakit ini
-            dengan segala prosedur yang telah dijelaskan
-          </label>
-        </div>
-
-        <div class="confirm-status" :class="allConfirmed ? 'status-ok' : 'status-pending'">
-          <i :class="allConfirmed ? 'pi pi-verified' : 'pi pi-info-circle'" class="me-1"></i>
-          {{
-            allConfirmed
-              ? 'Semua konfirmasi telah disetujui'
-              : 'Harap centang semua pernyataan di atas sebelum menandatangani'
-          }}
-        </div>
-      </div>
-    </div>
-
-    <!-- ── BAGIAN TANDA TANGAN (selalu tampil; view-only jika isAllSigned) ── -->
-    <div class="signature-section-wrapper">
-      <div class="sig-section-label" :class="{ 'sig-section-label--done': isAllSigned }">
-        <i :class="isAllSigned ? 'pi pi-verified me-2' : 'pi pi-pen-to-square me-2'"></i>
-        FOTO &amp; TANDA TANGAN PENANDATANGAN
-        <span v-if="!isAllSigned" class="sig-section-hint">
-          Klik area tanda tangan → layar penuh · Klik kamera → ambil foto
-        </span>
-        <span v-else class="sig-section-hint">Dokumen telah ditandatangani — hanya tampilan</span>
+    <!-- ===== VIEW-ONLY SIGNATURE (jika sudah selesai) ===== -->
+    <div v-if="isAllSigned" class="signature-section-wrapper">
+      <div class="sig-section-label sig-section-label--done">
+        <i class="pi pi-verified me-2"></i>FOTO &amp; TANDA TANGAN PENANDATANGAN
+        <span class="sig-section-hint">Dokumen telah ditandatangani — hanya tampilan</span>
       </div>
       <InformedConsentBase
         ref="baseRef"
@@ -306,21 +287,295 @@
       />
     </div>
 
-    <!-- ── TOMBOL SIMPAN DI BAWAH ── -->
-    <div v-if="!isAllSigned" class="bottom-action-bar">
-      <span v-if="!allConfirmed" class="save-block-hint">
-        <i class="pi pi-lock me-1"></i>Centang semua konfirmasi untuk mengaktifkan simpan
-      </span>
-      <Button
-        label="Simpan Consent"
-        icon="pi pi-save"
-        severity="success"
-        :loading="saving"
-        :disabled="!allConfirmed"
-        @click="baseRef?.simpanData()"
-      />
-    </div>
+    <!-- ════════════════════════════════════════════════════════
+         STEP PANELS (hanya tampil jika belum selesai)
+    ════════════════════════════════════════════════════════ -->
+    <template v-if="!isAllSigned">
+      <!-- ══════ STEP 1: FOTO & TANDA TANGAN ══════ -->
+      <div class="step-panel">
+        <div class="step-panel-hdr" :class="{ 'hdr-done': step1Complete }">
+          <div class="step-num-badge" :class="{ 'badge-done': step1Complete }">
+            <i v-if="step1Complete" class="pi pi-check" /><span v-else>1</span>
+          </div>
+          <div class="step-hdr-text">
+            <span class="step-hdr-title">FOTO &amp; TANDA TANGAN PENANDATANGAN</span>
+            <span class="step-hdr-hint">
+              {{
+                step1Complete
+                  ? 'Semua penandatangan telah selesai'
+                  : 'Klik area tanda tangan → layar penuh · Klik kamera → ambil foto'
+              }}
+            </span>
+          </div>
+        </div>
 
+        <!-- Mini tracker kelengkapan per penandatangan -->
+        <div v-if="viewSigners.length > 0" class="signer-tracker">
+          <div class="signer-tracker-title">Kelengkapan Penandatangan:</div>
+          <div class="signer-tracker-list">
+            <div
+              v-for="s in viewSigners"
+              :key="s.id || s.hubungan"
+              class="signer-track-item"
+              :class="{ 'track-item-done': s.photoData && s.signatureData }"
+            >
+              <div class="signer-track-head">
+                <i
+                  :class="
+                    s.photoData && s.signatureData
+                      ? 'pi pi-check-circle track-icon-done'
+                      : 'pi pi-circle track-icon-pending'
+                  "
+                ></i>
+                <span class="signer-track-name">{{ s.nama || s.hubungan }}</span>
+              </div>
+              <div class="signer-track-checks">
+                <span class="track-check" :class="s.photoData ? 'track-done' : 'track-pending'">
+                  <i :class="s.photoData ? 'pi pi-check-circle' : 'pi pi-camera'"></i> Foto
+                </span>
+                <span class="track-check" :class="s.signatureData ? 'track-done' : 'track-pending'">
+                  <i :class="s.signatureData ? 'pi pi-check-circle' : 'pi pi-pencil'"></i> TTD
+                </span>
+              </div>
+            </div>
+          </div>
+          <div v-if="step1Complete" class="signer-tracker-complete">
+            <i class="pi pi-verified me-1"></i>Semua penandatangan telah melengkapi foto &amp; tanda
+            tangan
+          </div>
+        </div>
+
+        <InformedConsentBase
+          ref="baseRef"
+          :signer-only="true"
+          apiEndpoint="/index.php/api/triaseigd/upload_consent_assets"
+          :extraForm="extraForm"
+          :confirmations="conf"
+          :defaultSigners="defaultSigners"
+          :initialAssets="consentAssets"
+          @patient-loaded="handlePatientLoaded"
+          @saved="onConsentSaved"
+        />
+      </div>
+
+      <!-- ══════ STEP 2: KONFIRMASI PERSETUJUAN ══════ -->
+      <div class="step-panel" :class="{ 'step-panel--locked': !step1Complete }">
+        <div
+          class="step-panel-hdr"
+          :class="{ 'hdr-done': step2Complete, 'hdr-locked': !step1Complete }"
+        >
+          <div
+            class="step-num-badge"
+            :class="{ 'badge-done': step2Complete, 'badge-locked': !step1Complete }"
+          >
+            <i v-if="step2Complete" class="pi pi-check" />
+            <i v-else-if="!step1Complete" class="pi pi-lock" />
+            <span v-else>2</span>
+          </div>
+          <div class="step-hdr-text">
+            <span class="step-hdr-title">KONFIRMASI PERSETUJUAN</span>
+            <span class="step-hdr-hint" v-if="!step1Complete"
+              >Selesaikan Langkah 1 terlebih dahulu</span
+            >
+            <span class="step-hdr-hint" v-else-if="!step2Complete"
+              >Centang semua pernyataan di bawah ini untuk melanjutkan</span
+            >
+            <span class="step-hdr-hint" v-else>Semua pernyataan telah disetujui</span>
+          </div>
+        </div>
+
+        <!-- GATE: step 1 belum selesai -->
+        <div v-if="!step1Complete" class="step-gate">
+          <div class="gate-icon-wrap"><i class="pi pi-lock gate-lock-icon"></i></div>
+          <div class="gate-content">
+            <div class="gate-title">Langkah 1 Belum Selesai</div>
+            <div class="gate-msg">
+              Pastikan semua penandatangan telah membubuhkan <strong>foto</strong> dan
+              <strong>tanda tangan</strong> sebelum dapat melanjutkan ke konfirmasi persetujuan.
+            </div>
+            <div class="gate-progress" v-if="viewSigners.length > 0">
+              <div v-for="s in viewSigners" :key="s.id || s.hubungan" class="gate-signer-row">
+                <span class="gate-signer-name">{{ s.nama || s.hubungan }}</span>
+                <span class="gate-check-pill" :class="{ 'pill-ok': s.photoData }">
+                  <i :class="s.photoData ? 'pi pi-check-circle' : 'pi pi-circle'"></i> Foto
+                </span>
+                <span class="gate-check-pill" :class="{ 'pill-ok': s.signatureData }">
+                  <i :class="s.signatureData ? 'pi pi-check-circle' : 'pi pi-circle'"></i> TTD
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CHECKLIST -->
+        <div v-else ref="confirmSectionRef" class="confirm-body">
+          <div
+            class="confirm-item"
+            :class="{ 'confirm-item--checked': conf.mengerti }"
+            @click="conf.mengerti = !conf.mengerti"
+          >
+            <Checkbox v-model="conf.mengerti" :binary="true" inputId="cf1" @click.stop />
+            <label for="cf1">
+              Saya telah <strong>mengerti dan memahami</strong> seluruh penjelasan yang diberikan
+              mengenai rencana perawatan rawat inap
+            </label>
+          </div>
+          <div
+            class="confirm-item"
+            :class="{ 'confirm-item--checked': conf.bertanya }"
+            @click="conf.bertanya = !conf.bertanya"
+          >
+            <Checkbox v-model="conf.bertanya" :binary="true" inputId="cf2" @click.stop />
+            <label for="cf2">
+              Saya telah diberikan <strong>kesempatan untuk bertanya</strong> dan seluruh pertanyaan
+              saya telah dijawab dengan memuaskan
+            </label>
+          </div>
+          <div
+            class="confirm-item"
+            :class="{ 'confirm-item--checked': conf.setuju }"
+            @click="conf.setuju = !conf.setuju"
+          >
+            <Checkbox v-model="conf.setuju" :binary="true" inputId="cf3" @click.stop />
+            <label for="cf3">
+              Saya <strong>menyetujui</strong> untuk menjalani perawatan rawat inap di rumah sakit
+              ini dengan segala prosedur yang telah dijelaskan
+            </label>
+          </div>
+          <div class="confirm-status" :class="allConfirmed ? 'status-ok' : 'status-pending'">
+            <i :class="allConfirmed ? 'pi pi-verified' : 'pi pi-info-circle'" class="me-1"></i>
+            {{
+              allConfirmed
+                ? 'Semua konfirmasi telah disetujui — lanjutkan ke Langkah 3'
+                : `Harap centang semua pernyataan di atas (${Object.values(conf).filter(Boolean).length}/3 disetujui)`
+            }}
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ STEP 3: SIMPAN & VERIFIKASI TTE ══════ -->
+      <div class="step-panel" :class="{ 'step-panel--locked': !canSave }">
+        <div class="step-panel-hdr" :class="{ 'hdr-done': isVerified, 'hdr-locked': !canSave }">
+          <div
+            class="step-num-badge"
+            :class="{ 'badge-done': isVerified, 'badge-locked': !canSave }"
+          >
+            <i v-if="isVerified" class="pi pi-check" />
+            <i v-else-if="!canSave" class="pi pi-lock" />
+            <span v-else>3</span>
+          </div>
+          <div class="step-hdr-text">
+            <span class="step-hdr-title">SIMPAN &amp; VERIFIKASI TTE PETUGAS</span>
+            <span class="step-hdr-hint" v-if="!canSave"
+              >Selesaikan Langkah 1 dan 2 terlebih dahulu</span
+            >
+            <span class="step-hdr-hint" v-else-if="isVerified" style="color: #16a34a"
+              >Consent telah tersimpan dan diverifikasi petugas</span
+            >
+            <span class="step-hdr-hint" v-else>Simpan consent lalu lakukan verifikasi TTE</span>
+          </div>
+        </div>
+
+        <!-- GATE: langkah sebelumnya belum selesai -->
+        <div v-if="!canSave" class="step-gate">
+          <div class="gate-icon-wrap"><i class="pi pi-lock gate-lock-icon"></i></div>
+          <div class="gate-content">
+            <div class="gate-title">Langkah 1 &amp; 2 Belum Selesai</div>
+            <div class="gate-msg">
+              Lengkapi semua langkah sebelumnya untuk dapat menyimpan dan memverifikasi informed
+              consent.
+            </div>
+            <ul class="gate-checklist">
+              <li :class="step1Complete ? 'gc-done' : 'gc-pending'">
+                <i :class="step1Complete ? 'pi pi-check-circle' : 'pi pi-circle'"></i>
+                Langkah 1 — Tanda tangan &amp; foto semua penandatangan
+              </li>
+              <li :class="step2Complete ? 'gc-done' : 'gc-pending'">
+                <i :class="step2Complete ? 'pi pi-check-circle' : 'pi pi-circle'"></i>
+                Langkah 2 — Konfirmasi persetujuan ({{
+                  Object.values(conf).filter(Boolean).length
+                }}/3 disetujui)
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- AKTIF: langkah 1 & 2 selesai -->
+        <div v-else class="step3-body">
+          <!-- Sub-step A: Simpan -->
+          <div class="step3-sub">
+            <div class="step3-sub-num" :class="{ 'sub-done': savedThisSession }">
+              <i v-if="savedThisSession" class="pi pi-check" /><span v-else>A</span>
+            </div>
+            <div class="step3-sub-content">
+              <div class="step3-sub-title">Simpan Formulir Persetujuan</div>
+              <div v-if="!savedThisSession" class="step3-sub-hint">
+                Tekan tombol di bawah untuk menyimpan data tanda tangan dan foto ke server.
+              </div>
+              <div v-if="!savedThisSession" class="step3-save-row">
+                <Button
+                  label="Simpan Informed Consent"
+                  icon="pi pi-save"
+                  severity="success"
+                  :loading="saving"
+                  @click="baseRef?.simpanData()"
+                />
+              </div>
+              <div v-else class="step3-saved-badge">
+                <i class="pi pi-check-circle me-2"></i>Formulir berhasil disimpan
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub-step B: TTE -->
+          <div class="step3-sub" :class="{ 'step3-sub--locked': !savedThisSession }">
+            <div
+              class="step3-sub-num"
+              :class="{ 'sub-done': isVerified, 'sub-locked': !savedThisSession }"
+            >
+              <i v-if="isVerified" class="pi pi-check" />
+              <i v-else-if="!savedThisSession" class="pi pi-lock" />
+              <span v-else>B</span>
+            </div>
+            <div class="step3-sub-content">
+              <div class="step3-sub-title">Verifikasi TTE oleh Petugas</div>
+              <div v-if="!savedThisSession" class="step3-sub-hint" style="color: #94a3b8">
+                Simpan formulir terlebih dahulu untuk mengaktifkan verifikasi TTE.
+              </div>
+              <template v-else>
+                <div v-if="!isVerified" class="tte-awaiting">
+                  <i class="pi pi-shield tte-shield-icon"></i>
+                  <div>
+                    <p class="tte-awaiting-title">Menunggu Verifikasi TTE Petugas</p>
+                    <p class="tte-awaiting-hint">
+                      Petugas rumah sakit perlu melakukan tanda tangan elektronik untuk
+                      menyelesaikan proses persetujuan.
+                    </p>
+                    <Button
+                      label="TTE Petugas"
+                      icon="pi pi-sign-in"
+                      severity="info"
+                      @click="showTteDialog = true"
+                    />
+                  </div>
+                </div>
+                <div v-else class="tte-verified">
+                  <div class="tte-verified-icon"><i class="pi pi-verified"></i></div>
+                  <div>
+                    <p class="tte-verified-label">Terverifikasi oleh Petugas</p>
+                    <p class="tte-verified-name">{{ verifName }}</p>
+                    <p class="tte-verified-time">{{ verifTime }}</p>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+    <!-- /STEP PANELS -->
+
+    <!-- TTE Dialog -->
     <ttdUser
       v-model:showFormOtorisasi="showTteDialog"
       :noregister="route.params.noreg || route.query.noreg"
@@ -363,23 +618,22 @@ const allConfirmed = computed(() => conf.mengerti && conf.bertanya && conf.setuj
 const showTteDialog = ref(false)
 const tte = reactive({ signed: false, username: '', nama: '', timestamp: '' })
 const tteMode = ref(8)
+const savedThisSession = ref(false)
 
-// Ambil data auth dari consentAssets (signer pertama yang is_auth=1)
+// ─── Auth dari server ─────────────────────────────────────────────────────────
+
 const serverAuth = computed(() => {
   const s = (consentAssets.value?.signers || []).find((a) => a.is_auth === '1' || a.is_auth === 1)
   return s ?? null
 })
 
-// Gabungan: sudah diverifikasi jika dari server ATAU dari TTE sesi ini
 const isVerified = computed(() => tte.signed || !!serverAuth.value)
 
-// Semua penandatangan sudah punya is_auth = 1 → mode preview-only
 const isAllSigned = computed(() => {
   const list = consentAssets.value?.signers || []
   return list.length > 0 && list.every((s) => s.is_auth === '1' || s.is_auth === 1)
 })
 
-// Nama & waktu verifikasi: prioritaskan TTE sesi ini, fallback ke server
 const verifName = computed(() => tte.nama || serverAuth.value?.verif_name || '')
 const verifTime = computed(() => tte.timestamp || serverAuth.value?.verif_times || '')
 
@@ -396,28 +650,22 @@ const qrCodeData = computed(() =>
   }),
 )
 
-const handleTTEVerified = ({ username, verified }) => {
-  console.log('[RanapConsent] TTE verification result:', { username, verified })
-  if (!verified) return
-  tte.signed = true
-  tte.username = username
-  tte.nama = username
-  tte.timestamp = new Date().toLocaleString('id-ID', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  })
-}
+// ─── Step gates ───────────────────────────────────────────────────────────────
 
-// ─── Computed ─────────────────────────────────────────────────────────────────
-
-// Baca signers dari base component (exposed via defineExpose)
 const viewSigners = computed(() => baseRef.value?.signers || [])
 
-// Gabungkan viewSigners dengan data auth dari consentAssets
+const step1Complete = computed(() => {
+  if (isAllSigned.value) return true
+  const signers = viewSigners.value
+  if (signers.length === 0) return false
+  return signers.every((s) => s.signatureData && s.photoData)
+})
+
+const step2Complete = computed(() => allConfirmed.value)
+const canSave = computed(() => step1Complete.value && step2Complete.value)
+
+// ─── Signers dengan data auth ─────────────────────────────────────────────────
+
 const viewSignersWithAuth = computed(() => {
   const assets = consentAssets.value?.signers || []
   return viewSigners.value.map((s) => {
@@ -431,7 +679,8 @@ const viewSignersWithAuth = computed(() => {
   })
 })
 
-// Format tanggal persetujuan
+// ─── Tanggal display ─────────────────────────────────────────────────────────
+
 const tanggalDisplay = computed(() => {
   const d = extraForm.tanggalMasuk
   if (!d) return '________________________________'
@@ -454,35 +703,41 @@ const extraForm = reactive({
   tempat: '',
 })
 
-// ─── Default Signers ──────────────────────────────────────────────────────────
+const defaultSigners = [{ hubungan: 'Pasien Sendiri', nama: '' }]
 
-const defaultSigners = [
-  { hubungan: 'Pasien Sendiri', nama: '' },
-  { hubungan: 'Keluarga / Wali', nama: '' },
-  { hubungan: 'Perawat', nama: '' },
-]
-
-// ─── Setelah consent berhasil disimpan: scroll ke konfirmasi & tanda tangan ────
+// ─── Event Handlers ───────────────────────────────────────────────────────────
 
 const onConsentSaved = () => {
-  confirmSectionRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  savedThisSession.value = true
 }
-
-// ─── Handle Patient Loaded (emit dari base) ────────────────────────────────────
 
 const handlePatientLoaded = (d) => {
   patientData.value = d
   const diagnosaTeks = d.DX_CAPTION
     ? String(d.DIAGNOSA_AWAL || '') + ' - ' + d.DX_CAPTION
     : d.DIAGNOSA_AWAL || ''
-
   extraForm.dpjp = d.NAMADOKTER || ''
   extraForm.diagnosa = diagnosaTeks
   extraForm.caraBayar = d.CARABAYAR || ''
   extraForm.tanggalMasuk = d.MASUKPOLY ? new Date(d.MASUKPOLY) : new Date()
 }
 
-// ─── Fetch Teks General Consent dari Database ──────────────────────────────────
+const handleTTEVerified = ({ username, verified }) => {
+  if (!verified) return
+  tte.signed = true
+  tte.username = username
+  tte.nama = username
+  tte.timestamp = new Date().toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
+}
+
+// ─── Fetch Data ───────────────────────────────────────────────────────────────
 
 const fetchConsentText = async () => {
   try {
@@ -490,7 +745,6 @@ const fetchConsentText = async () => {
       configStore.apiBaseUrl + '/index.php/api/resumepulang/get_consent_pasien/',
       { id_client: id_client.value },
     )
-
     if (data.metadata?.code === '200' && data.response?.length > 0) {
       const found =
         data.response.find(
@@ -508,16 +762,12 @@ const fetchConsentText = async () => {
 const fetchConsentAssets = async () => {
   try {
     const noregister = route.params.noreg
-
     const { data } = await axios.post(
       configStore.apiBaseUrl + '/index.php/api/triaseigd/get_consent_assets/',
       { id_client: id_client.value, noregister: noregister },
     )
-
     if (data.metadata?.code === '200') {
       consentAssets.value = data.response
-    } else {
-      console.warn('[RanapConsent] fetchConsentAssets warning:', data)
     }
   } catch (err) {
     console.error('[RanapConsent] fetchConsentAssets error:', err)
@@ -565,6 +815,91 @@ onMounted(() => {
 .toolbar-actions {
   display: flex;
   gap: 0.5rem;
+}
+
+/* ====== Progress Stepper ====== */
+.consent-stepper {
+  width: 210mm;
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 0 0 10px 10px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  gap: 0;
+}
+.cs-step {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+}
+.cs-bubble {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  transition: all 0.3s;
+  background: #e2e8f0;
+  color: #94a3b8;
+}
+.cs-step.cs-active .cs-bubble {
+  background: #2563eb;
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+}
+.cs-step.cs-done .cs-bubble {
+  background: #16a34a;
+  color: #fff;
+}
+.cs-step.cs-locked .cs-bubble {
+  background: #f1f5f9;
+  color: #cbd5e1;
+}
+.cs-info {
+  flex: 1;
+}
+.cs-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #374151;
+  line-height: 1.2;
+}
+.cs-step.cs-active .cs-title {
+  color: #1d4ed8;
+}
+.cs-step.cs-done .cs-title {
+  color: #15803d;
+}
+.cs-step.cs-locked .cs-title {
+  color: #94a3b8;
+}
+.cs-sub {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  margin-top: 1px;
+}
+.cs-step.cs-active .cs-sub {
+  color: #3b82f6;
+}
+.cs-step.cs-done .cs-sub {
+  color: #22c55e;
+}
+.cs-line {
+  height: 3px;
+  flex: 0 0 32px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  transition: background 0.3s;
+}
+.cs-line--done {
+  background: #16a34a;
 }
 
 /* ====== A4 Paper ====== */
@@ -711,8 +1046,6 @@ onMounted(() => {
   font-style: italic;
   font-size: 10pt;
 }
-
-/* HTML dari database */
 .doc-consent-html {
   font-size: 10.5pt;
   line-height: 1.65;
@@ -731,201 +1064,6 @@ onMounted(() => {
 .doc-date-row {
   display: flex;
   justify-content: space-between;
-  font-size: 10pt;
-  margin: 0.5rem 0 1.5rem;
-}
-
-/* ====== Signature Section ====== */
-.signature-section-wrapper {
-  width: 210mm;
-  background: #fff;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
-  margin: 1rem auto 2rem;
-  border-radius: 4px;
-  overflow: hidden;
-}
-.sig-section-label {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  padding: 0.6rem 1rem;
-  background: #1e293b;
-  color: #f1f5f9;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-.sig-section-hint {
-  font-size: 0.72rem;
-  font-weight: 400;
-  opacity: 0.7;
-}
-.sig-section-label--done {
-  background: linear-gradient(135deg, #14532d 0%, #16a34a 100%);
-}
-
-.tte-sign-area {
-  width: 210mm;
-  margin: 0 auto 1rem;
-  padding: 1rem 1.2rem;
-  background: #fff;
-  border-radius: 4px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
-}
-.tte-sign-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-.tte-sign-hint {
-  margin: 0.25rem 0 0;
-  font-size: 0.8rem;
-  color: #475569;
-}
-.tte-not-signed {
-  padding: 0.85rem 1rem;
-  border: 1px dashed #fbbf24;
-  color: #92400e;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.tte-signed-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem;
-  background: #f8fafc;
-  border-radius: 10px;
-  border: 1px solid #c7d2fe;
-}
-.tte-signed-summary {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(120px, 1fr));
-  gap: 1rem;
-}
-.tte-signed-label {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  color: #475569;
-  letter-spacing: 0.04em;
-}
-.tte-signed-value {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #111827;
-}
-.qr-code-preview {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.45rem;
-}
-.qr-code-caption {
-  font-size: 0.78rem;
-  color: #475569;
-  text-align: center;
-}
-
-/* signer-only prop menangani visibilitas — tidak perlu override CSS */
-
-/* ====== Print ====== */
-@media print {
-  @page {
-    size: A4 portrait;
-    margin: 15mm 15mm 15mm 15mm;
-  }
-
-  /* Reset body & layout AdminLTE */
-  html,
-  body {
-    width: 100% !important;
-    height: auto !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: white !important;
-    overflow: visible !important;
-  }
-
-  /* Sembunyikan sidebar, navbar, dan semua elemen non-dokumen */
-  .main-sidebar,
-  .main-header,
-  .content-header,
-  .main-footer,
-  .doc-toolbar,
-  .confirm-section,
-  .signature-section-wrapper,
-  .bottom-action-bar,
-  .tte-sign-area,
-  .p-dialog,
-  .p-dialog-mask,
-  .p-toast,
-  .p-overlay {
-    display: none !important;
-  }
-
-  /* Hilangkan margin sidebar pada content-wrapper */
-  .content-wrapper,
-  .wrapper,
-  #app {
-    margin: 0 !important;
-    padding: 0 !important;
-    background: white !important;
-    width: 100% !important;
-    float: none !important;
-  }
-
-  /* Wrapper doc-viewer */
-  .doc-viewer {
-    background: white !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    width: 100% !important;
-  }
-
-  /* A4 paper: full width, tanpa dekorasi, padding sesuai @page margin */
-  .a4-paper {
-    box-shadow: none !important;
-    border: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-    min-height: auto !important;
-    font-size: 10pt !important;
-    page-break-inside: avoid;
-  }
-
-  /* Paksa warna & gambar tercetak */
-  * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  /* Tanda tangan & foto */
-  .a4-sig-canvas-img,
-  .a4-sig-photo-img {
-    display: block !important;
-  }
-
-  /* Input inline (kota) tampil sebagai teks biasa */
-  .doc-input-inline {
-    border: none !important;
-    border-bottom: 1px solid #444 !important;
-    outline: none !important;
-    background: transparent !important;
-  }
-}
-
-/* ====== Tempat & Tanggal di A4 ====== */
-.doc-date-row {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
   font-size: 10pt;
   margin: 0.5rem 0 1rem;
@@ -935,19 +1073,6 @@ onMounted(() => {
 .doc-place-field {
   display: flex;
   align-items: center;
-}
-.doc-input-inline {
-  border: none;
-  border-bottom: 1px solid #444;
-  outline: none;
-  font-family: 'Times New Roman', serif;
-  font-size: 10pt;
-  width: 160px;
-  padding: 1px 4px;
-  background: transparent;
-}
-.doc-input-inline:focus {
-  border-bottom-color: #1d4ed8;
 }
 
 /* ====== Signature Boxes di A4 ====== */
@@ -1001,12 +1126,6 @@ onMounted(() => {
   white-space: nowrap;
   width: 100%;
 }
-.a4-qr-actions {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  margin-bottom: 0.6rem;
-}
 .a4-qr-pending {
   font-size: 0.7rem;
   color: #94a3b8;
@@ -1025,7 +1144,6 @@ onMounted(() => {
   align-items: center;
   max-width: 120px;
 }
-
 .a4-sig-photo {
   width: 80px;
   height: 80px;
@@ -1051,7 +1169,6 @@ onMounted(() => {
   height: 100%;
   color: #ccc;
 }
-
 .a4-sig-canvas-wrap {
   width: 100%;
   height: 50px;
@@ -1074,7 +1191,6 @@ onMounted(() => {
   background: #444;
   align-self: flex-end;
 }
-
 .a4-sig-line-name {
   width: 100%;
   border-top: 2px solid #444;
@@ -1090,34 +1206,6 @@ onMounted(() => {
   font-size: 10pt;
   text-align: center;
   color: #555;
-}
-.a4-sig-auth {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-  margin-top: 4px;
-  padding: 3px 6px;
-  background: #dcfce7;
-  border: 1px solid #86efac;
-  border-radius: 4px;
-  width: 100%;
-}
-.a4-sig-auth .pi-verified {
-  color: #16a34a;
-  font-size: 9pt;
-}
-.a4-sig-auth-name {
-  font-size: 7.5pt;
-  font-weight: 700;
-  color: #15803d;
-  text-align: center;
-  word-break: break-word;
-}
-.a4-sig-auth-time {
-  font-size: 6.5pt;
-  color: #166534;
-  text-align: center;
 }
 
 /* ====== Consent Done Banner ====== */
@@ -1159,45 +1247,287 @@ onMounted(() => {
   line-height: 1.4;
 }
 
-/* ====== Bottom Action Bar ====== */
-.save-block-hint {
-  font-size: 0.78rem;
-  color: #92400e;
-  background: #fef3c7;
-  border: 1px solid #fde68a;
-  border-radius: 6px;
-  padding: 0.3rem 0.75rem;
-}
-
-.bottom-action-bar {
-  width: 210mm;
-  display: flex;
-  justify-content: flex-end;
-  padding: 0.75rem 1rem;
-  background: #fff;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
-  margin: 0 auto;
-  border-radius: 0 0 4px 4px;
-}
-
-/* ====== Konfirmasi Section ====== */
-.confirm-section {
+/* ====== View-only Signature Wrapper ====== */
+.signature-section-wrapper {
   width: 210mm;
   background: #fff;
-  border-left: 4px solid #2563a8;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  margin: 1rem auto 0;
-  border-radius: 0 6px 6px 0;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  margin: 1rem auto 2rem;
+  border-radius: 4px;
   overflow: hidden;
 }
-.confirm-title {
+.sig-section-label {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   padding: 0.6rem 1rem;
-  background: #2563a8;
-  color: #fff;
-  font-size: 0.85rem;
+  background: #1e293b;
+  color: #f1f5f9;
+  font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.04em;
 }
+.sig-section-hint {
+  font-size: 0.72rem;
+  font-weight: 400;
+  opacity: 0.7;
+}
+.sig-section-label--done {
+  background: linear-gradient(135deg, #14532d 0%, #16a34a 100%);
+}
+
+/* ====== Step Panels ====== */
+.step-panel {
+  width: 210mm;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  margin: 1rem auto 0;
+  overflow: hidden;
+  transition: opacity 0.2s;
+}
+.step-panel--locked {
+  opacity: 0.85;
+}
+
+/* Panel Header */
+.step-panel-hdr {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  background: #1e293b;
+  color: #f1f5f9;
+}
+.step-panel-hdr.hdr-done {
+  background: linear-gradient(135deg, #14532d 0%, #16a34a 100%);
+}
+.step-panel-hdr.hdr-locked {
+  background: #64748b;
+}
+
+.step-num-badge {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.step-num-badge.badge-done {
+  background: #fff;
+  color: #16a34a;
+}
+.step-num-badge.badge-locked {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.step-hdr-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.step-hdr-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.step-hdr-hint {
+  font-size: 0.7rem;
+  opacity: 0.75;
+  font-weight: 400;
+}
+
+/* ====== Signer Tracker (Step 1) ====== */
+.signer-tracker {
+  padding: 0.75rem 1rem 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+.signer-tracker-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748b;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+}
+.signer-tracker-list {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+.signer-track-item {
+  flex: 1;
+  min-width: 160px;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  transition: all 0.2s;
+}
+.signer-track-item.track-item-done {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+.signer-track-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.35rem;
+}
+.track-icon-done {
+  color: #16a34a;
+  font-size: 0.9rem;
+}
+.track-icon-pending {
+  color: #cbd5e1;
+  font-size: 0.9rem;
+}
+.signer-track-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #374151;
+}
+.signer-track-checks {
+  display: flex;
+  gap: 0.4rem;
+}
+.track-check {
+  font-size: 0.68rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-weight: 600;
+}
+.track-done {
+  background: #dcfce7;
+  color: #15803d;
+}
+.track-pending {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+.signer-tracker-complete {
+  display: flex;
+  align-items: center;
+  padding: 0.4rem 0.6rem;
+  background: #f0fdf4;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #16a34a;
+  margin-bottom: 0.5rem;
+}
+
+/* ====== Gate Overlay ====== */
+.step-gate {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem 1rem;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+.gate-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.gate-lock-icon {
+  font-size: 1.2rem;
+  color: #94a3b8;
+}
+.gate-content {
+  flex: 1;
+}
+.gate-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 0.3rem;
+}
+.gate-msg {
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+}
+
+/* Gate progress (signers) */
+.gate-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.gate-signer-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+}
+.gate-signer-name {
+  flex: 1;
+  font-weight: 600;
+  color: #374151;
+}
+.gate-check-pill {
+  padding: 0.15rem 0.5rem;
+  border-radius: 99px;
+  background: #f1f5f9;
+  color: #94a3b8;
+  font-size: 0.68rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+.gate-check-pill.pill-ok {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+/* Gate checklist (step 3) */
+.gate-checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.gate-checklist li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+}
+.gc-done {
+  background: #f0fdf4;
+  color: #15803d;
+}
+.gc-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* ====== Confirm Body (Step 2 aktif) ====== */
 .confirm-body {
   padding: 0.75rem 1rem;
   display: flex;
@@ -1230,7 +1560,6 @@ onMounted(() => {
   flex: 1;
   line-height: 1.4;
 }
-
 .confirm-status {
   display: flex;
   align-items: center;
@@ -1247,6 +1576,215 @@ onMounted(() => {
 .status-pending {
   background: #fef3c7;
   color: #92400e;
+}
+
+/* ====== Step 3 Body ====== */
+.step3-body {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.step3-sub {
+  display: flex;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px dashed #e2e8f0;
+  align-items: flex-start;
+}
+.step3-sub:last-child {
+  border-bottom: none;
+}
+.step3-sub--locked {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.step3-sub-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.step3-sub-num.sub-done {
+  background: #16a34a;
+}
+.step3-sub-num.sub-locked {
+  background: #cbd5e1;
+}
+
+.step3-sub-content {
+  flex: 1;
+}
+.step3-sub-title {
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.3rem;
+}
+.step3-sub-hint {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 0.6rem;
+}
+
+.step3-save-row {
+  margin-top: 0.5rem;
+}
+
+.step3-saved-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.85rem;
+  background: #dcfce7;
+  color: #15803d;
+  border-radius: 99px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-top: 0.25rem;
+}
+
+/* ====== TTE Section ====== */
+.tte-awaiting {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.85rem;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  margin-top: 0.25rem;
+}
+.tte-shield-icon {
+  font-size: 1.6rem;
+  color: #f59e0b;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.tte-awaiting-title {
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: #92400e;
+  margin: 0 0 0.2rem;
+}
+.tte-awaiting-hint {
+  font-size: 0.75rem;
+  color: #78350f;
+  margin: 0 0 0.6rem;
+  line-height: 1.4;
+}
+
+.tte-verified {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 8px;
+  margin-top: 0.25rem;
+}
+.tte-verified-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #16a34a;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+.tte-verified-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  color: #64748b;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+.tte-verified-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #14532d;
+  margin: 0.1rem 0;
+}
+.tte-verified-time {
+  font-size: 0.72rem;
+  color: #166534;
+  margin: 0;
+}
+
+/* ====== Print ====== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 15mm;
+  }
+  html,
+  body {
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    overflow: visible !important;
+  }
+  .main-sidebar,
+  .main-header,
+  .content-header,
+  .main-footer,
+  .doc-toolbar,
+  .consent-stepper,
+  .step-panel,
+  .signature-section-wrapper,
+  .p-dialog,
+  .p-dialog-mask,
+  .p-toast,
+  .p-overlay {
+    display: none !important;
+  }
+  .content-wrapper,
+  .wrapper,
+  #app {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    width: 100% !important;
+    float: none !important;
+  }
+  .doc-viewer {
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+  .a4-paper {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    min-height: auto !important;
+    font-size: 10pt !important;
+    page-break-inside: avoid;
+  }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .a4-sig-canvas-img,
+  .a4-sig-photo-img {
+    display: block !important;
+  }
 }
 
 @page {

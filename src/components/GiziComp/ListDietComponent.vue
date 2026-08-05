@@ -4,12 +4,73 @@
     v-model:visible="showHistoryTeraphy"
     modal
     header="Pilih diet"
-    :style="{ width: '1200px' }"
+    :style="{ width: '1300px' }"
     class="patient-detail-dialog"
   >
     <div class="row">
-      <!-- Kolom Kiri: Daftar Item -->
+      <!-- Kolom Kiri: Kajian Gizi & Pilih Diet -->
       <div class="col-md-6">
+        <Card class="assessment-card">
+          <template #title>
+            <div class="card-title-wrapper">
+              <span>KAJIAN GIZI (MST / STRONGKIDS)</span>
+            </div>
+          </template>
+
+          <template #content>
+            <div v-if="assessmentLoading" class="empty-state">
+              <i class="pi pi-spin pi-spinner empty-icon"></i>
+              <p>Memuat kajian gizi...</p>
+            </div>
+            <div v-else-if="!assessmentData" class="empty-state">
+              <i class="pi pi-info-circle empty-icon"></i>
+              <p>Belum ada data kajian gizi</p>
+            </div>
+            <div v-else class="assessment-body">
+              <div class="assessment-scores-row">
+                <div
+                  v-if="skorGizi !== null"
+                  class="assessment-score"
+                  :class="`score-${statusGizi.severity}`"
+                >
+                  <div class="score-label">SKOR {{ jenisSkoring }}</div>
+                  <div class="score-value">{{ skorGizi }}</div>
+                  <Tag :severity="statusGizi.severity" :value="statusGizi.label" />
+                </div>
+
+                <div v-if="bmiInfo" class="assessment-score" :class="`score-${bmiInfo.severity}`">
+                  <div class="score-label">IMT (BMI)</div>
+                  <div class="score-value">{{ bmiInfo.value }}</div>
+                  <Tag :severity="bmiInfo.severity" :value="bmiInfo.kategori" />
+                </div>
+              </div>
+
+              <div class="assessment-questions" v-if="assessmentRows.length > 0">
+                <div class="assessment-row" v-for="(row, idx) in assessmentRows" :key="idx">
+                  <span class="assessment-question">{{ row.label }}</span>
+                  <span class="assessment-answer">
+                    {{ row.jawaban }}
+                    <Badge
+                      v-if="row.nilai !== undefined && row.nilai !== null"
+                      :value="row.nilai"
+                    />
+                  </span>
+                </div>
+              </div>
+
+              <div class="assessment-vitals" v-if="vitalRows.length > 0">
+                <div class="vitals-title">Tanda Vital</div>
+                <div class="vitals-grid">
+                  <div class="vital-item" v-for="(v, idx) in vitalRows" :key="idx">
+                    <span class="vital-label">{{ v.label }}</span>
+                    <span class="vital-value">{{ v.value }} {{ v.unit }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+        </Card>
+
         <Card class="items-card">
           <template #title>
             <div class="card-title-wrapper">
@@ -23,77 +84,27 @@
           </template>
 
           <template #content>
-            <DataTable
-              :value="itemAvailable"
-              :paginator="true"
-              :rows="10"
-              :rowsPerPageOptions="[5, 10, 15, 25]"
-              paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-              currentPageReportTemplate="Menampilkan {first} - {last} dari {totalRecords} data"
-              stripedRows
-              showGridlines
-              :globalFilter="globalFilter"
-              :emptyMessage="emptyMessage"
-              class="medicine-table"
-            >
-              <template #header>
-                <div class="table-header">
-                  <div class="header-right">
-                    <IconField>
-                      <InputIcon class="pi pi-search" />
-                      <InputText
-                        v-model="globalFilter"
-                        placeholder="Filter tabel..."
-                        size="small"
-                      />
-                    </IconField>
-                  </div>
-                </div>
-              </template>
-
-              <template #empty>
-                <div class="empty-state">
-                  <i class="pi pi-inbox empty-icon"></i>
-                  <p>
-                    {{
-                      globalFilter
-                        ? 'Tidak ada hasil yang cocok dengan pencarian'
-                        : 'Tidak ada data diet ditemukan'
-                    }}
-                  </p>
-                  <Button
-                    v-if="globalFilter"
-                    label="Reset Filter"
-                    icon="pi pi-refresh"
-                    size="small"
-                    outlined
-                    @click="clearAllFilters"
-                  />
-                </div>
-              </template>
-
-              <Column field="NAMA" header="JENIS DIET" sortable>
-                <template #body="slotProps">
-                  <div class="medicine-name-cell">
-                    <strong>{{ slotProps.data.NAMA }}</strong>
-                  </div>
-                </template>
-              </Column>
-
-              <Column header="Aksi" style="width: 120px">
-                <template #body="slotProps">
-                  <div class="action-buttons">
-                    <Button
-                      icon="pi pi-plus"
-                      size="small"
-                      severity="success"
-                      @click="selectMedicine(slotProps.data, slotProps.index)"
-                      v-tooltip="'Pilih Diet'"
-                    />
-                  </div>
-                </template>
-              </Column>
-            </DataTable>
+            <div class="diet-select-wrapper">
+              <Select
+                v-model="selectedDietOption"
+                :options="itemAvailable"
+                optionLabel="NAMA"
+                filter
+                filterPlaceholder="Cari jenis diet..."
+                placeholder="Pilih jenis diet"
+                :loading="loading"
+                :emptyMessage="emptyMessage"
+                showClear
+                class="diet-select"
+              />
+              <Button
+                label="Tambah"
+                icon="pi pi-plus"
+                severity="success"
+                :disabled="!selectedDietOption"
+                @click="addSelectedDiet"
+              />
+            </div>
           </template>
         </Card>
       </div>
@@ -269,8 +280,6 @@ const toast = useToast()
 
 // Reactive variables
 const loading = ref(false)
-const searchQuery = ref('')
-const globalFilter = ref('')
 const itemAvailable = ref([])
 
 const RewayatDiet = ref([])
@@ -421,6 +430,7 @@ const CloseButton = async () => {
 }
 // Tambahan: daftar item terpilih
 const selectedItems = ref([])
+const selectedDietOption = ref(null)
 
 // Jadwal options
 const jadwalOptions = ref([
@@ -434,22 +444,140 @@ const emptyMessage = computed(() => {
   return loading.value ? 'Memuat data...' : 'Tidak ada data diet ditemukan'
 })
 
+// Kajian gizi (MST / Strongkids)
+const assessmentLoading = ref(false)
+const assessmentData = ref(null)
+
+const getAssessmentGizi = async () => {
+  try {
+    console.log('Fetching kajian gizi for noregister:', props.datapasien)
+    assessmentLoading.value = true
+    const url = configStore.apiBaseUrl
+    const response = await axios.post(`${url}/index.php/api/Gizi/get_assesment_gizi`, {
+      noregister: props.datapasien?.NOREFF_IGD,
+      id_client: id_client.value,
+    })
+    assessmentData.value = response.data?.response ?? response.data?.data ?? response.data ?? null
+  } catch (error) {
+    console.error('Error fetching kajian gizi:', error)
+    assessmentData.value = null
+  } finally {
+    assessmentLoading.value = false
+  }
+}
+
+const assessmentQuestionDefs = [
+  { key: 'tampak_kurus', label: 'Tampak Kurus' },
+  { key: 'penurunanBB_1bulan', label: 'Penurunan BB 1 Bulan Terakhir' },
+  { key: 'gejala_asupan', label: 'Gejala Gangguan Asupan Makan' },
+  { key: 'penyakit_beresiko', label: 'Penyakit/Kondisi Berisiko' },
+  { key: 'penurunanBB', label: 'Penurunan Berat Badan' },
+  { key: 'turunnafsu_makan', label: 'Penurunan Nafsu Makan' },
+]
+
+const assessmentRows = computed(() => {
+  const data = assessmentData.value
+  if (!data) return []
+
+  return assessmentQuestionDefs
+    .filter((def) => data[def.key] !== undefined && data[def.key] !== null && data[def.key] !== '')
+    .map((def) => {
+      const raw = data[def.key]
+      if (raw !== null && typeof raw === 'object') {
+        return { label: def.label, jawaban: raw.caption, nilai: raw.value }
+      }
+      return { label: def.label, jawaban: raw, nilai: data[`${def.key}_value`] }
+    })
+})
+
+const vitalFieldDefs = [
+  { key: 'bb', label: 'Berat Badan', unit: 'kg' },
+  { key: 'tb', label: 'Tinggi Badan', unit: 'cm' },
+  { key: 'tensi_sistol', label: 'Tensi Sistol', unit: 'mmHg' },
+  { key: 'tensi_distol', label: 'Tensi Distol', unit: 'mmHg' },
+  { key: 'nadipermenit', label: 'Nadi', unit: 'x/menit' },
+  { key: 'respirasi', label: 'Respirasi', unit: 'x/menit' },
+  { key: 'saturasi', label: 'Saturasi O2', unit: '%' },
+  { key: 'nyeri', label: 'Skala Nyeri', unit: '' },
+]
+
+const vitalRows = computed(() => {
+  const data = assessmentData.value
+  if (!data) return []
+
+  return vitalFieldDefs
+    .filter((def) => data[def.key] !== undefined && data[def.key] !== null)
+    .map((def) => ({ label: def.label, value: data[def.key], unit: def.unit }))
+})
+
+// IMT / BMI = BB(kg) / TB(m)^2, kategori mengikuti standar Kemenkes RI
+const bmiInfo = computed(() => {
+  const data = assessmentData.value
+  const bb = Number(data?.bb)
+  const tb = Number(data?.tb)
+  if (!data || !bb || !tb) return null
+
+  const tbMeter = tb / 100
+  const bmi = bb / (tbMeter * tbMeter)
+  const value = Math.round(bmi * 10) / 10
+
+  let kategori = ''
+  let severity = 'success'
+  if (bmi < 17) {
+    kategori = 'Sangat Kurus'
+    severity = 'danger'
+  } else if (bmi < 18.5) {
+    kategori = 'Kurus'
+    severity = 'warn'
+  } else if (bmi <= 25) {
+    kategori = 'Normal'
+    severity = 'success'
+  } else if (bmi <= 27) {
+    kategori = 'Gemuk'
+    severity = 'warn'
+  } else {
+    kategori = 'Sangat Gemuk (Obesitas)'
+    severity = 'danger'
+  }
+
+  return { value, kategori, severity }
+})
+
+const skorGizi = computed(() => {
+  const data = assessmentData.value
+  if (!data) return null
+  if (data.nilai_strongkids !== undefined && data.nilai_strongkids !== null) {
+    return data.nilai_strongkids
+  }
+  if (data.nilai_mst !== undefined && data.nilai_mst !== null) {
+    return data.nilai_mst
+  }
+  return null
+})
+
+const jenisSkoring = computed(() => {
+  const data = assessmentData.value
+  return data?.nilai_strongkids !== undefined && data?.nilai_strongkids !== null
+    ? 'STRONGKIDS'
+    : 'MST'
+})
+
+const statusGizi = computed(() => {
+  const total = skorGizi.value
+  if (total === null || total === undefined) return { label: '', severity: 'success' }
+
+  if (jenisSkoring.value === 'STRONGKIDS') {
+    if (total <= 1) return { label: 'RISIKO RENDAH', severity: 'success' }
+    if (total <= 3) return { label: 'RISIKO SEDANG', severity: 'warn' }
+    return { label: 'RISIKO TINGGI', severity: 'danger' }
+  }
+
+  if (total <= 1) return { label: 'RISIKO RENDAH', severity: 'success' }
+  if (total === 2) return { label: 'RISIKO SEDANG', severity: 'warn' }
+  return { label: 'RISIKO TINGGI', severity: 'danger' }
+})
+
 // Methods
-const handleSearch = () => {
-  // Set global filter untuk mencari di dalam table
-  globalFilter.value = searchQuery.value.trim()
-}
-
-const resetSearch = () => {
-  searchQuery.value = ''
-  globalFilter.value = ''
-}
-
-const clearAllFilters = () => {
-  searchQuery.value = ''
-  globalFilter.value = ''
-}
-
 const formatDateTime = (dateTimeString) => {
   if (!dateTimeString) return '-'
 
@@ -629,6 +757,14 @@ const selectMedicine = (item, index) => {
   selectedItems.value.push(medicineWithSchedule)
 }
 
+const addSelectedDiet = () => {
+  if (!selectedDietOption.value) return
+
+  const index = itemAvailable.value.indexOf(selectedDietOption.value)
+  selectMedicine(selectedDietOption.value, index)
+  selectedDietOption.value = null
+}
+
 const removeItem = (index) => {
   selectedItems.value.splice(index, 1)
 }
@@ -723,6 +859,7 @@ watch(
     if (newVal) {
       // Dialog dibuka
       get_riwayat()
+      getAssessmentGizi()
     }
   },
 )
@@ -820,6 +957,140 @@ onMounted(() => {
   width: 100%;
 }
 
+.assessment-card {
+  margin-bottom: 1rem;
+}
+
+.diet-select-wrapper {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.diet-select {
+  flex: 1;
+}
+
+.assessment-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.assessment-scores-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.assessment-score {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1rem;
+  border-radius: 8px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+}
+
+.assessment-score .score-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6c757d;
+  letter-spacing: 0.03em;
+}
+
+.assessment-score .score-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.assessment-score.score-success {
+  background: #e6f7ec;
+  border-color: #b7e4c7;
+}
+
+.assessment-score.score-warn {
+  background: #fff6e5;
+  border-color: #ffe1a8;
+}
+
+.assessment-score.score-danger {
+  background: #fdecec;
+  border-color: #f5b8b8;
+}
+
+.assessment-questions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.assessment-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.assessment-row:last-child {
+  border-bottom: none;
+}
+
+.assessment-question {
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.assessment-answer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #2c3e50;
+  white-space: nowrap;
+}
+
+.assessment-vitals {
+  border-top: 1px solid #e9ecef;
+  padding-top: 0.75rem;
+}
+
+.vitals-title {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.vitals-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+.vital-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.4rem 0.6rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.vital-label {
+  color: #6c757d;
+}
+
+.vital-value {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
 .empty-state {
   text-align: center;
   padding: 2rem;
@@ -898,6 +1169,19 @@ onMounted(() => {
 
   .selected-items-actions {
     text-align: center;
+  }
+
+  .diet-select-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .assessment-scores-row {
+    flex-direction: column;
+  }
+
+  .vitals-grid {
+    grid-template-columns: 1fr;
   }
 }
 

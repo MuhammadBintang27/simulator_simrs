@@ -257,7 +257,13 @@
                 <!-- Pekerjaan -->
                 <div class="form-group">
                   <div class="d-flex gap-2">
-                    <div :style="['TNI', 'POLRI'].includes(form.pekerjaan?.label) ? 'width: 50%' : 'width: 100%'">
+                    <div
+                      :style="
+                        ['TNI', 'POLRI'].includes(form.pekerjaan?.label)
+                          ? 'width: 50%'
+                          : 'width: 100%'
+                      "
+                    >
                       <label class="font-bold">Pekerjaan</label>
                       <Select
                         v-model="form.pekerjaan"
@@ -270,11 +276,7 @@
                     </div>
                     <div v-if="['TNI', 'POLRI'].includes(form.pekerjaan?.label)" style="width: 50%">
                       <label class="font-bold">NRP</label>
-                      <InputText
-                        v-model="form.no_nrp"
-                        placeholder="No NRP"
-                        style="width: 100%"
-                      />
+                      <InputText v-model="form.no_nrp" placeholder="No NRP" style="width: 100%" />
                     </div>
                   </div>
                   <div v-if="['TNI', 'POLRI'].includes(form.pekerjaan?.label)" class="mt-2">
@@ -528,7 +530,7 @@ const validateForm = () => {
   if (!form.value.nik || form.value.nik.trim() === '') {
     errors.value.nik = 'NIK harus diisi'
     isValid = false
-  } else if (form.value.nik.length !== 16) {
+  } else if (form.value.nik.trim() !== '-' && form.value.nik.length !== 16) {
     errors.value.nik = 'NIK harus 16 digit'
     isValid = false
   }
@@ -664,7 +666,10 @@ const setDataFromOnline = async () => {
     alamat: localOs.value?.provUmum?.nmProvider || '',
     desaselected: form.value.desaselected,
     pendidikan: '',
-    pekerjaan: localOs.value?.jenisPeserta?.keterangan || '',
+    pekerjaan:
+      pekerjaanOptions.value.find(
+        (x) => x.label?.toLowerCase() === localOs.value?.jenisPeserta?.keterangan?.toLowerCase(),
+      ) || '',
     agama: '',
     suku: '',
     hakKelas: localOs.value.noKartu
@@ -714,12 +719,11 @@ const get_data_pesertaOnline = async () => {
     } else {
       showWarning('Peserta tidak ditemukan di layanan BPJS')
     }
-
-    loadingCheckData.value = false
   } catch (error) {
     console.error('Error get_data_pesertaOnline:', error)
     showError('Gagal mengambil data peserta online')
   } finally {
+    loadingCheckData.value = false
     loading.value = false
   }
 }
@@ -912,7 +916,7 @@ const handleSave = async () => {
     const url = configStore.apiBaseUrl
 
     const response = await axios.post(
-      `${url}/index.php/api/data_referensi/inputPasienMode4`,
+      `${url}/index.php/api/data_referensi/inputPasienMode5`,
       form.value,
     )
     loading.value = false

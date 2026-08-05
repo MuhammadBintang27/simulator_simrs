@@ -372,8 +372,6 @@ const selesaiBerobat = async () => {
       payload,
     )
 
-    console.log(response.data)
-
     if (response.data.code == 200) {
       showSuccess('Telah berhasil di update')
     } else {
@@ -629,8 +627,6 @@ const do_terbitkan_kontrol_ulang = async () => {
         },
       },
     )
-
-    console.log(response.data)
 
     if (response.data.code == 200) {
       showSuccess(response.data.message)

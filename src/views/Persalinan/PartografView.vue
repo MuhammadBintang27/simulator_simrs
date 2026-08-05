@@ -207,7 +207,13 @@
           </div>
           <div class="col-md-2 col-sm-6">
             <label class="oif-label"><span class="sym-x">✕</span> Pembukaan (cm)</label>
-            <InputNumber v-model="modalForm.pembukaan" :min="0" :max="10" :step="0.5" class="w-100 oif-input" />
+            <InputNumber
+              v-model="modalForm.pembukaan"
+              :min="0"
+              :max="10"
+              :step="0.5"
+              class="w-100 oif-input"
+            />
           </div>
           <div class="col-md-2 col-sm-6">
             <label class="oif-label"><span class="sym-o">○</span> Penurunan (/5)</label>
@@ -215,7 +221,13 @@
           </div>
           <div class="col-md-2 col-sm-6">
             <label class="oif-label">DJJ (bpm)</label>
-            <InputNumber v-model="modalForm.djj" :min="60" :max="200" class="w-100 oif-input" placeholder="100–180" />
+            <InputNumber
+              v-model="modalForm.djj"
+              :min="60"
+              :max="200"
+              class="w-100 oif-input"
+              placeholder="100–180"
+            />
           </div>
           <div class="col-md-1 col-sm-6">
             <label class="oif-label">Kontraksi</label>
@@ -227,7 +239,14 @@
           </div>
           <div class="col-md-1 col-sm-6">
             <label class="oif-label">Suhu (°C)</label>
-            <InputNumber v-model="modalForm.suhu" :min="35" :max="42" :step="0.1" :minFractionDigits="1" class="w-100 oif-input" />
+            <InputNumber
+              v-model="modalForm.suhu"
+              :min="35"
+              :max="42"
+              :step="0.1"
+              :minFractionDigits="1"
+              class="w-100 oif-input"
+            />
           </div>
         </div>
 
@@ -237,13 +256,23 @@
             <label class="oif-label tensi-sub-label">
               <span class="tensi-badge tensi-badge--s">S</span> Sistolik (mmHg)
             </label>
-            <InputNumber v-model="modalForm.tensiSistolik" :min="60" :max="220" class="w-100 oif-input" />
+            <InputNumber
+              v-model="modalForm.tensiSistolik"
+              :min="60"
+              :max="220"
+              class="w-100 oif-input"
+            />
           </div>
           <div class="col-md-2 col-sm-6">
             <label class="oif-label tensi-sub-label">
               <span class="tensi-badge tensi-badge--d">D</span> Diastolik (mmHg)
             </label>
-            <InputNumber v-model="modalForm.tensiDiastolik" :min="40" :max="140" class="w-100 oif-input" />
+            <InputNumber
+              v-model="modalForm.tensiDiastolik"
+              :min="40"
+              :max="140"
+              class="w-100 oif-input"
+            />
           </div>
           <div class="col-md-5 col-sm-12">
             <label class="oif-label">Durasi Kontraksi</label>
@@ -251,17 +280,39 @@
               <label
                 v-for="opt in durasiOptions"
                 :key="opt.value"
-                :class="['durasi-radio-h', `durasi-radio--${opt.value}`, { selected: modalForm.durasiKontraksi === opt.value }]"
+                :class="[
+                  'durasi-radio-h',
+                  `durasi-radio--${opt.value}`,
+                  { selected: modalForm.durasiKontraksi === opt.value },
+                ]"
               >
-                <input type="radio" v-model="modalForm.durasiKontraksi" :value="opt.value" class="visually-hidden" />
+                <input
+                  type="radio"
+                  v-model="modalForm.durasiKontraksi"
+                  :value="opt.value"
+                  class="visually-hidden"
+                />
                 <span class="durasi-dot-h"></span>
                 {{ opt.label }}
               </label>
             </div>
           </div>
           <div class="col-md-3 col-sm-12 d-flex justify-content-end gap-2 pt-1">
-            <Button label="Batal" icon="pi pi-times" severity="secondary" outlined size="small" @click="showModal = false" />
-            <Button label="Simpan" icon="pi pi-check" class="btn-simpan" size="small" @click="simpanObservasi" />
+            <Button
+              label="Batal"
+              icon="pi pi-times"
+              severity="secondary"
+              outlined
+              size="small"
+              @click="showModal = false"
+            />
+            <Button
+              label="Simpan"
+              icon="pi pi-check"
+              class="btn-simpan"
+              size="small"
+              @click="simpanObservasi"
+            />
           </div>
         </div>
       </div>
@@ -306,7 +357,8 @@
                 <td>{{ obs.suhu ?? '—' }} °C</td>
                 <td>
                   <span v-if="obs.tensiSistolik || obs.tensiDiastolik" class="tensi-cell">
-                    <span class="tensi-s">{{ obs.tensiSistolik ?? '?' }}</span>/<span class="tensi-d">{{ obs.tensiDiastolik ?? '?' }}</span>
+                    <span class="tensi-s">{{ obs.tensiSistolik ?? '?' }}</span
+                    >/<span class="tensi-d">{{ obs.tensiDiastolik ?? '?' }}</span>
                     <small> mmHg</small>
                   </span>
                   <span v-else>—</span>
@@ -468,10 +520,13 @@ const storageKey = computed(() => `partograf_${form.value.noRegister || 'temp'}`
 
 const persist = () => {
   try {
-    localStorage.setItem(storageKey.value, JSON.stringify({
-      form: form.value,
-      observations: observations.value,
-    }))
+    localStorage.setItem(
+      storageKey.value,
+      JSON.stringify({
+        form: form.value,
+        observations: observations.value,
+      }),
+    )
   } catch (_) {}
 }
 
@@ -529,8 +584,7 @@ const buildSeriesData = () => {
     if (obs.tensiDiastolik != null) diastolik[i] = obs.tensiDiastolik
     if (obs.tensiSistolik != null) {
       sistolik[i] = obs.tensiSistolik
-      if (obs.tensiDiastolik != null)
-        tensiGap[i] = obs.tensiSistolik - obs.tensiDiastolik
+      if (obs.tensiDiastolik != null) tensiGap[i] = obs.tensiSistolik - obs.tensiDiastolik
     }
   })
 
@@ -937,7 +991,9 @@ const chartTensiOption = computed(() => {
     },
     yAxis: {
       type: 'value',
-      min: 60, max: 180, interval: 20,
+      min: 60,
+      max: 180,
+      interval: 20,
       name: 'Tensi (mmHg)',
       nameLocation: 'middle',
       nameGap: 32,
@@ -1192,14 +1248,110 @@ const loadDummyData = () => {
   })
 
   observations.value = [
-    { timeIndex: 0,  time: toTime(0),  pembukaan: 4,   penurunan: 5, djj: 140, kontraksi: 2, durasiKontraksi: 'kurang20', nadi: 80, suhu: 36.7, tensiSistolik: 110, tensiDiastolik: 70  },
-    { timeIndex: 2,  time: toTime(2),  pembukaan: 4.5, penurunan: 5, djj: 144, kontraksi: 2, durasiKontraksi: '20_40',   nadi: 82, suhu: 36.8, tensiSistolik: 112, tensiDiastolik: 72  },
-    { timeIndex: 4,  time: toTime(4),  pembukaan: 5.5, penurunan: 4, djj: 148, kontraksi: 3, durasiKontraksi: '20_40',   nadi: 84, suhu: 37.0, tensiSistolik: 115, tensiDiastolik: 74  },
-    { timeIndex: 6,  time: toTime(6),  pembukaan: 6.5, penurunan: 4, djj: 150, kontraksi: 3, durasiKontraksi: '20_40',   nadi: 86, suhu: 37.1, tensiSistolik: 118, tensiDiastolik: 76  },
-    { timeIndex: 8,  time: toTime(8),  pembukaan: 7,   penurunan: 3, djj: 145, kontraksi: 4, durasiKontraksi: 'lebih40', nadi: 88, suhu: 37.0, tensiSistolik: 122, tensiDiastolik: 78  },
-    { timeIndex: 10, time: toTime(10), pembukaan: 8,   penurunan: 3, djj: 152, kontraksi: 4, durasiKontraksi: 'lebih40', nadi: 90, suhu: 37.2, tensiSistolik: 125, tensiDiastolik: 80  },
-    { timeIndex: 12, time: toTime(12), pembukaan: 9,   penurunan: 2, djj: 158, kontraksi: 5, durasiKontraksi: 'lebih40', nadi: 92, suhu: 37.3, tensiSistolik: 130, tensiDiastolik: 82  },
-    { timeIndex: 14, time: toTime(14), pembukaan: 10,  penurunan: 1, djj: 162, kontraksi: 5, durasiKontraksi: 'lebih40', nadi: 94, suhu: 37.4, tensiSistolik: 128, tensiDiastolik: 80  },
+    {
+      timeIndex: 0,
+      time: toTime(0),
+      pembukaan: 4,
+      penurunan: 5,
+      djj: 140,
+      kontraksi: 2,
+      durasiKontraksi: 'kurang20',
+      nadi: 80,
+      suhu: 36.7,
+      tensiSistolik: 110,
+      tensiDiastolik: 70,
+    },
+    {
+      timeIndex: 2,
+      time: toTime(2),
+      pembukaan: 4.5,
+      penurunan: 5,
+      djj: 144,
+      kontraksi: 2,
+      durasiKontraksi: '20_40',
+      nadi: 82,
+      suhu: 36.8,
+      tensiSistolik: 112,
+      tensiDiastolik: 72,
+    },
+    {
+      timeIndex: 4,
+      time: toTime(4),
+      pembukaan: 5.5,
+      penurunan: 4,
+      djj: 148,
+      kontraksi: 3,
+      durasiKontraksi: '20_40',
+      nadi: 84,
+      suhu: 37.0,
+      tensiSistolik: 115,
+      tensiDiastolik: 74,
+    },
+    {
+      timeIndex: 6,
+      time: toTime(6),
+      pembukaan: 6.5,
+      penurunan: 4,
+      djj: 150,
+      kontraksi: 3,
+      durasiKontraksi: '20_40',
+      nadi: 86,
+      suhu: 37.1,
+      tensiSistolik: 118,
+      tensiDiastolik: 76,
+    },
+    {
+      timeIndex: 8,
+      time: toTime(8),
+      pembukaan: 7,
+      penurunan: 3,
+      djj: 145,
+      kontraksi: 4,
+      durasiKontraksi: 'lebih40',
+      nadi: 88,
+      suhu: 37.0,
+      tensiSistolik: 122,
+      tensiDiastolik: 78,
+    },
+    {
+      timeIndex: 10,
+      time: toTime(10),
+      pembukaan: 8,
+      penurunan: 3,
+      djj: 152,
+      kontraksi: 4,
+      durasiKontraksi: 'lebih40',
+      nadi: 90,
+      suhu: 37.2,
+      tensiSistolik: 125,
+      tensiDiastolik: 80,
+    },
+    {
+      timeIndex: 12,
+      time: toTime(12),
+      pembukaan: 9,
+      penurunan: 2,
+      djj: 158,
+      kontraksi: 5,
+      durasiKontraksi: 'lebih40',
+      nadi: 92,
+      suhu: 37.3,
+      tensiSistolik: 130,
+      tensiDiastolik: 82,
+    },
+    {
+      timeIndex: 14,
+      time: toTime(14),
+      pembukaan: 10,
+      penurunan: 1,
+      djj: 162,
+      kontraksi: 5,
+      durasiKontraksi: 'lebih40',
+      nadi: 94,
+      suhu: 37.4,
+      tensiSistolik: 128,
+      tensiDiastolik: 80,
+    },
   ]
 }
 
@@ -1352,23 +1504,47 @@ onMounted(() => {
   font-size: 0.75rem;
   font-weight: 500;
   color: #374151;
-  transition: border-color 0.12s, background 0.12s;
+  transition:
+    border-color 0.12s,
+    background 0.12s;
   user-select: none;
   white-space: nowrap;
 }
-.durasi-radio-h:hover { border-color: #0d9488; background: #f0fdfa; }
-.durasi-radio-h.selected { border-color: #0d9488; background: #f0fdfa; }
-.durasi-radio-h.durasi-radio--kurang20.selected { border-color: #9ca3af; background: #f9fafb; }
-.durasi-radio-h.durasi-radio--20_40.selected    { border-color: #f97316; background: #fff7ed; }
-.durasi-radio-h.durasi-radio--lebih40.selected  { border-color: #374151; background: #f9fafb; }
+.durasi-radio-h:hover {
+  border-color: #0d9488;
+  background: #f0fdfa;
+}
+.durasi-radio-h.selected {
+  border-color: #0d9488;
+  background: #f0fdfa;
+}
+.durasi-radio-h.durasi-radio--kurang20.selected {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+.durasi-radio-h.durasi-radio--20_40.selected {
+  border-color: #f97316;
+  background: #fff7ed;
+}
+.durasi-radio-h.durasi-radio--lebih40.selected {
+  border-color: #374151;
+  background: #f9fafb;
+}
 .durasi-dot-h {
-  width: 12px; height: 12px;
+  width: 12px;
+  height: 12px;
   border-radius: 2px;
   flex-shrink: 0;
 }
-.durasi-radio--kurang20 .durasi-dot-h { background: #d1d5db; }
-.durasi-radio--20_40    .durasi-dot-h { background: repeating-linear-gradient(-45deg,#fb923c 0,#fb923c 3px,#fff 3px,#fff 6px); }
-.durasi-radio--lebih40  .durasi-dot-h { background: #1f2937; }
+.durasi-radio--kurang20 .durasi-dot-h {
+  background: #d1d5db;
+}
+.durasi-radio--20_40 .durasi-dot-h {
+  background: repeating-linear-gradient(-45deg, #fb923c 0, #fb923c 3px, #fff 3px, #fff 6px);
+}
+.durasi-radio--lebih40 .durasi-dot-h {
+  background: #1f2937;
+}
 .sym-x {
   color: #111827;
   font-weight: 900;
@@ -1540,23 +1716,41 @@ onMounted(() => {
 }
 
 /* ═══ Tensi — tabel & modal ══════════════════════════════════════════════ */
-.tensi-cell { white-space: nowrap; font-size: 0.83rem; }
-.tensi-s { color: #dc2626; font-weight: 700; }
-.tensi-d { color: #2563eb; font-weight: 700; }
-.tensi-sub-label { display: flex; align-items: center; gap: 0.35rem; }
+.tensi-cell {
+  white-space: nowrap;
+  font-size: 0.83rem;
+}
+.tensi-s {
+  color: #dc2626;
+  font-weight: 700;
+}
+.tensi-d {
+  color: #2563eb;
+  font-weight: 700;
+}
+.tensi-sub-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
 .tensi-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px; height: 18px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   font-size: 0.65rem;
   font-weight: 800;
   color: #fff;
   flex-shrink: 0;
 }
-.tensi-badge--s { background: #dc2626; }
-.tensi-badge--d { background: #2563eb; }
+.tensi-badge--s {
+  background: #dc2626;
+}
+.tensi-badge--d {
+  background: #2563eb;
+}
 
 /* ═══ Buttons ════════════════════════════════════════════════════════════ */
 .btn-add-obs {

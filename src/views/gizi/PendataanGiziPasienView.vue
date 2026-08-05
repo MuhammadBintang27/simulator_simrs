@@ -232,6 +232,18 @@
               </div>
             </template>
           </Column>
+          <Column field="AKSI" header="AKSI" :sortable="true" style="min-width: 150px">
+            <template #body="slotProps">
+              <Button
+                icon="pi pi-eye"
+                class="p-button-rounded p-button-outlined p-button-info"
+                label="RM EL"
+                size="small"
+                @click="PrintRekamMedisEl(slotProps.data.NOPENDAFTARAN)"
+                v-tooltip.top="'Lengkapi TTV'"
+              />
+            </template>
+          </Column>
         </DataTable>
 
         <!-- Empty State -->
@@ -320,6 +332,15 @@ const keformpoli = (status) => {
       noka: status.NOJAMINAN,
       nomr: status.NOMR,
     },
+  })
+  window.open(routeData.href, '_blank')
+}
+
+const PrintRekamMedisEl = (NOPENDAFTARAN) => {
+  //onHide()
+  const routeData = router.resolve({
+    name: 'RMEViewer',
+    query: { noreg: NOPENDAFTARAN },
   })
   window.open(routeData.href, '_blank')
 }

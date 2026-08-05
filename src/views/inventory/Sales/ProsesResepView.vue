@@ -39,49 +39,8 @@
           style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap"
         >
           <Tag v-if="header" :value="statusProgressLabel" :severity="statusProgressSeverity" />
-          <Button
-            icon="pi pi-refresh"
-            label="Muat Ulang"
-            size="small"
-            severity="secondary"
-            :loading="loading"
-            @click="fetchBill"
-          />
           <template v-if="!isPreview">
-            <Button
-              v-if="items.length > 0"
-              icon="pi pi-print"
-              label="Cetak Resep"
-              size="small"
-              severity="info"
-              @click="bukaCetakResep"
-            />
-            <Button
-              v-if="items.length > 0"
-              icon="pi pi-tag"
-              label="Cetak Etiket"
-              size="small"
-              severity="secondary"
-              @click="bukaCetakEtiket"
-            />
-            <Button
-              icon="pi pi-tablets"
-              label="KCO"
-              size="small"
-              severity="secondary"
-              v-tooltip.bottom="'Kartu Catatan Obat'"
-              @click="bukaKCO"
-            />
             <Button icon="pi pi-pdf" label="Rekam Medis" size="small" @click="PrintRekamMedisEl" />
-            <Button
-              v-if="items.length > 0"
-              icon="pi pi-save"
-              label="Simpan"
-              size="small"
-              severity="success"
-              :loading="loadingSimpan"
-              @click="simpanResep"
-            />
           </template>
         </div>
       </template>
@@ -789,19 +748,53 @@
       <div v-if="!isPreview" class="action-bar">
         <div class="action-bar-left">
           <Button
-            label="Simpan"
-            icon="pi pi-save"
-            @click="simpanResep"
-            class="btn-simpan"
-            v-tooltip.top="'F5'"
+            icon="pi pi-refresh"
+            label="Muat Ulang"
+            size="small"
+            severity="secondary"
+            :loading="loading"
+            @click="fetchBill"
           />
-          <Button label="Cetak Resep" icon="pi pi-print" class="btn-cetak" v-tooltip.top="'F2'" />
           <Button
-            label="Selesai"
-            icon="pi pi-check-circle"
-            class="btn-selesai"
-            v-tooltip.top="'F3'"
-            @click="closeTab"
+            v-if="items.length > 0"
+            icon="pi pi-print"
+            label="Cetak Resep"
+            size="small"
+            severity="info"
+            @click="bukaCetakResep"
+          />
+          <Button
+            v-if="items.length > 0"
+            icon="pi pi-copy"
+            label="Cetak Copy Resep"
+            size="small"
+            severity="warn"
+            @click="bukaCetakResepCopy"
+          />
+          <Button
+            v-if="items.length > 0"
+            icon="pi pi-tag"
+            label="Cetak Etiket"
+            size="small"
+            severity="secondary"
+            @click="bukaCetakEtiket"
+          />
+          <Button
+            icon="pi pi-tablets"
+            label="KCO"
+            size="small"
+            severity="secondary"
+            v-tooltip.bottom="'Kartu Catatan Obat'"
+            @click="bukaKCO"
+          />
+          <Button
+            v-if="items.length > 0"
+            icon="pi pi-save"
+            label="Simpan"
+            size="small"
+            severity="success"
+            :loading="loadingSimpan"
+            @click="simpanResep"
           />
         </div>
         <div class="action-bar-right">
@@ -1060,7 +1053,7 @@
         class="variasi-table"
         selectionMode="single"
         v-model:selection="selectedChgItem"
-        :rowClass="variasiRowClass"
+        :rowClass="chgRowClass"
         @row-select="onChgRowSelect"
       >
         <template #empty>
@@ -1177,7 +1170,8 @@
             ref="chgQtyRef"
             v-model="chgQty"
             :min="0"
-            :max="selectedChgItem.QUNATITY"
+            :max="selectedChgItem.QUNATITY > 0 ? selectedChgItem.QUNATITY : undefined"
+            :disabled="selectedChgItem.QUNATITY <= 0"
             :minFractionDigits="0"
             :maxFractionDigits="2"
             locale="id-ID"
@@ -1189,7 +1183,12 @@
             label="Ganti Item"
             severity="success"
             size="small"
-            :disabled="!chgQty || chgQty <= 0"
+            :disabled="
+              chgQty === null ||
+              chgQty === undefined ||
+              chgQty < 0 ||
+              (chgQty <= 0 && selectedChgItem.QUNATITY > 0)
+            "
             @click="konfirmasiChg"
           />
         </div>
@@ -1379,21 +1378,22 @@ const expClass = (dateStr) => {
   return 'exp-ok'
 }
 
-const variasiRowClass = (data) => (data.QUNATITY <= 0 ? 'variasi-row-habis' : '')
+const variasiRowClass = (data) => {
+  const classes = []
+  if (data.QUNATITY <= 0) classes.push('variasi-row-habis')
+  if (selectedVariasi.value === data) classes.push('variasi-row-selected')
+  return classes.join(' ')
+}
+const chgRowClass = (data) => {
+  const classes = []
+  if (data.QUNATITY <= 0) classes.push('variasi-row-habis-dim')
+  if (selectedChgItem.value === data) classes.push('variasi-row-selected')
+  return classes.join(' ')
+}
 
 const isSubstituted = (row) => !!(row.NAMABARANG_REQ && row.NAMABARANG_REQ !== row.NAMABARANG)
 
 const onVariasiRowSelect = (event) => {
-  if (event.data.QUNATITY <= 0) {
-    selectedVariasi.value = null
-    toast.add({
-      severity: 'warn',
-      summary: 'Stok Habis',
-      detail: 'Barang ini sudah tidak tersedia',
-      life: 2500,
-    })
-    return
-  }
   variasiQty.value = null
   nextTick(() => {
     variasiQtyRef.value?.$el?.querySelector('input')?.focus()
@@ -1582,12 +1582,13 @@ const searchChgItems = async () => {
 
 const onChgRowSelect = (event) => {
   if (event.data.QUNATITY <= 0) {
-    selectedChgItem.value = null
+    chgQty.value = 0
     toast.add({
       severity: 'warn',
       summary: 'Stok Habis',
-      detail: 'Barang ini sudah tidak tersedia',
-      life: 2500,
+      detail:
+        'Stok barang ini kosong — item tetap bisa dipilih untuk copy resep, QTY tidak dapat diubah',
+      life: 3500,
     })
     return
   }
@@ -1598,7 +1599,16 @@ const konfirmasiChg = () => {
   const newItem = selectedChgItem.value
   const qty = chgQty.value ?? 0
   if (!newItem) return
-  if (qty <= 0) {
+  if (qty < 0) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Validasi',
+      detail: 'QTY tidak boleh negatif',
+      life: 3000,
+    })
+    return
+  }
+  if (newItem.QUNATITY > 0 && qty <= 0) {
     toast.add({
       severity: 'warn',
       summary: 'Validasi',
@@ -1607,7 +1617,7 @@ const konfirmasiChg = () => {
     })
     return
   }
-  if (qty > newItem.QUNATITY) {
+  if (newItem.QUNATITY > 0 && qty > newItem.QUNATITY) {
     toast.add({
       severity: 'warn',
       summary: 'Validasi',
@@ -1650,13 +1660,7 @@ const konfirmasiChg = () => {
     },
   ])
 
-  showChgDialog.value = false
-  toast.add({
-    severity: 'success',
-    summary: 'Item Diganti',
-    detail: `${newItem.NAMA} — QTY APP: ${qty}`,
-    life: 3000,
-  })
+  showChgDialog.value = false 
 }
 
 /* ── Cetak Resep ── */
@@ -1670,6 +1674,22 @@ const bukaCetakResep = () => {
       nama: route.query.nama,
       poli: route.query.poli,
       tanggal: route.query.tanggal,
+    },
+  })
+  window.open(resolved.href, '_blank')
+}
+
+const bukaCetakResepCopy = () => {
+  const resolved = router.resolve({
+    name: 'CetakResepView',
+    params: { trans: route.params.trans },
+    query: {
+      nomr: route.query.nomr,
+      noregister: route.query.noregister,
+      nama: route.query.nama,
+      poli: route.query.poli,
+      tanggal: route.query.tanggal,
+      mode: 'copy',
     },
   })
   window.open(resolved.href, '_blank')
@@ -2242,7 +2262,9 @@ onMounted(() => {
 }
 .action-bar-left {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
 }
 .action-bar-right {
@@ -2611,6 +2633,24 @@ onMounted(() => {
 :deep(.variasi-row-habis) {
   opacity: 0.45;
   pointer-events: none;
+}
+:deep(.variasi-row-habis-dim) {
+  opacity: 0.55;
+}
+:deep(.variasi-table .p-datatable-tbody > tr.variasi-row-selected),
+:deep(.variasi-table .p-datatable-tbody > tr.variasi-row-selected > td) {
+  background: var(--p-blue-100, #dbeafe) !important;
+}
+:deep(.variasi-table .p-datatable-tbody > tr.variasi-row-selected) {
+  outline: 2px solid var(--p-blue-500, #3b82f6);
+  outline-offset: -2px;
+  box-shadow: inset 4px 0 0 var(--p-blue-500, #3b82f6);
+  position: relative;
+  z-index: 1;
+}
+:deep(.variasi-table .p-datatable-tbody > tr.variasi-row-selected > td) {
+  font-weight: 700 !important;
+  color: var(--p-blue-800, #1e40af) !important;
 }
 .variasi-footer {
   display: flex;

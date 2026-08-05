@@ -14,11 +14,11 @@
       <i class="pi pi-info-circle"></i> {{ error }}
     </div>
     <div v-else-if="!hasData" class="rme-empty-note">
-      <i class="pi pi-minus-circle"></i> Belum ada data informed consent anestesi untuk kunjungan ini.
+      <i class="pi pi-minus-circle"></i> Belum ada data informed consent anestesi untuk kunjungan
+      ini.
     </div>
 
     <div v-else>
-
       <!-- IDENTITAS PENANDATANGAN -->
       <div class="ica-block">
         <div class="ica-block-hdr">IDENTITAS PENANDATANGAN</div>
@@ -83,11 +83,17 @@
           </div>
           <div class="ica-conf-item" :class="{ 'ica-conf-checked': header.conf_bertanya == 1 }">
             <span class="ica-conf-chk">{{ header.conf_bertanya == 1 ? '✓' : '✗' }}</span>
-            <span>Saya telah diberikan kesempatan untuk bertanya dan pertanyaan saya telah dijawab dengan memuaskan</span>
+            <span
+              >Saya telah diberikan kesempatan untuk bertanya dan pertanyaan saya telah dijawab
+              dengan memuaskan</span
+            >
           </div>
           <div class="ica-conf-item" :class="{ 'ica-conf-checked': header.conf_setuju == 1 }">
             <span class="ica-conf-chk">{{ header.conf_setuju == 1 ? '✓' : '✗' }}</span>
-            <span><strong>Saya menyetujui</strong> dilakukannya tindakan anestesi dengan segala risikonya yang telah dijelaskan</span>
+            <span
+              ><strong>Saya menyetujui</strong> dilakukannya tindakan anestesi dengan segala
+              risikonya yang telah dijelaskan</span
+            >
           </div>
         </div>
       </div>
@@ -112,7 +118,6 @@
         <div class="ica-block-hdr">TANDA TANGAN</div>
         <div class="ica-signers-grid">
           <div v-for="signer in signers" :key="signer.id" class="ica-signer-card">
-
             <!-- Foto -->
             <div class="ica-photo-wrap">
               <img
@@ -153,7 +158,6 @@
         <span v-if="header.updated_at" class="ica-meta-sep">|</span>
         <span v-if="header.updated_at">Diperbarui: {{ header.updated_at }}</span>
       </div>
-
     </div>
   </div>
 </template>
@@ -173,13 +177,13 @@ const configStore = useConfigStore()
 const authStore = useAuthStore()
 const { id_client } = storeToRefs(authStore)
 
-const reportSectionData   = inject('reportSectionData', () => {})
-const kodebookingOperasi  = inject('kodebookingOperasi', ref(null))
-const noregisterOperasi   = inject('noregisterOperasi', ref(''))
+const reportSectionData = inject('reportSectionData', () => {})
+const kodebookingOperasi = inject('kodebookingOperasi', ref(null))
+const noregisterOperasi = inject('noregisterOperasi', ref(''))
 
 const loading = ref(false)
-const error   = ref(null)
-const header  = ref({})
+const error = ref(null)
+const header = ref({})
 const signers = ref([])
 
 const hasData = computed(() => !!header.value?.nama_penandatangan)
@@ -194,8 +198,11 @@ const formatTanggal = (val) => {
   if (!val) return '-'
   try {
     return new Date(val).toLocaleString('id-ID', {
-      day: '2-digit', month: 'long', year: 'numeric',
-      hour: '2-digit', minute: '2-digit',
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     })
   } catch {
     return val
@@ -207,8 +214,8 @@ const fetchData = async () => {
   if (!noreg) return
 
   loading.value = true
-  error.value   = null
-  header.value  = {}
+  error.value = null
+  header.value = {}
   signers.value = []
 
   try {
@@ -218,7 +225,7 @@ const fetchData = async () => {
     )
     const meta = res.data?.metadata
     if (meta?.code === 200) {
-      header.value  = res.data.response?.header  || {}
+      header.value = res.data.response?.header || {}
       signers.value = res.data.response?.signers || []
     }
   } catch (e) {

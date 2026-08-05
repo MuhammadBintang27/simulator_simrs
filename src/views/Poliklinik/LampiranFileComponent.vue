@@ -47,7 +47,7 @@
         >
           <template #body="slotProps">
             <Image
-              :src="slotProps.data.src"
+              :src="proxyUrl(slotProps.data.src)"
               :alt="slotProps.data.caption_file"
               width="100"
               preview
@@ -144,6 +144,16 @@
           >
         </div>
 
+        <!-- Caption Input -->
+        <div class="mb-3">
+          <label class="block mb-1" style="font-size: 0.875rem; font-weight: 500">Keterangan</label>
+          <InputText
+            v-model="captionFile"
+            placeholder="Masukkan keterangan file..."
+            class="w-full"
+          />
+        </div>
+
         <!-- Buttons -->
         <div class="button-group">
           <Button
@@ -208,6 +218,7 @@ const uploadDialogVisible = ref(false)
 const selectedFile = ref(null)
 const selectedFileName = ref('')
 const imagePreview = ref('')
+const captionFile = ref('')
 
 // ==================== Props ====================
 defineProps({
@@ -216,6 +227,16 @@ defineProps({
     default: () => [],
   },
 })
+
+// ==================== Proxy URL ====================
+const proxyUrl = (url) => {
+  if (!url) return ''
+  //const base = configStore.laravel
+
+  //console.log('Proxy URL:', `${base}/${url}`)
+  // return `${base}/api/proxy-image?url=${encodeURIComponent(url)}`
+  return url
+}
 
 // ==================== Toast Functions ====================
 const showSuccess = (message = 'Operasi berhasil') => {
@@ -254,6 +275,7 @@ const resetUploadForm = () => {
   selectedFile.value = null
   selectedFileName.value = ''
   imagePreview.value = ''
+  captionFile.value = ''
   uploadDialogVisible.value = false
   if (fileInput.value) {
     fileInput.value.value = ''
@@ -321,7 +343,7 @@ const uploadImage = async (file) => {
       JSON.stringify({
         noregister: route.query.noreg,
         noreceipt: '',
-        caption_file: 'LAMPIRAN FILE',
+        caption_file: captionFile.value || 'LAMPIRAN FILE',
         noreff: '',
         module_upload: 'LAMPIRAN',
         foldername: 'LAMPIRAN',

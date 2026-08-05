@@ -1,8 +1,18 @@
 <template>
   <div class="content">
     <div class="card">
-      <div class="card-header">
-        <h4><i class="fas fa-bed mr-2"></i> Monitoring pasien DPJP</h4>
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <h4 class="m-0"><i class="fas fa-bed mr-2"></i> Monitoring pasien DPJP</h4>
+        <a
+          class="jadwal-link"
+          :href="router.resolve('/poliklinik/jadwal-kontrol-dokter').href"
+          target="_blank"
+          rel="noopener"
+        >
+          <i class="pi pi-calendar mr-1"></i>
+          Jadwal Kontrol Ulang
+          <i class="pi pi-arrow-right ml-1" style="font-size: 0.7rem"></i>
+        </a>
       </div>
       <div class="card-body">
         <div class="row">
@@ -328,54 +338,17 @@
                 <span class="exp-action-title">
                   <i class="fas fa-folder-open mr-1"></i> Rekam Medis
                 </span>
+
                 <Button
-                  label="Kajian Awal DPJP"
-                  icon="fas fa-stethoscope"
+                  v-for="btn in getVisibleButtons()"
+                  :key="btn.key"
+                  :label="typeof btn.label === 'function' ? btn.label(data) : btn.label"
+                  :icon="typeof btn.icon === 'function' ? btn.icon(data) : btn.icon"
+                  :severity="typeof btn.severity === 'function' ? btn.severity(data) : btn.severity"
+                  :outlined="btn.outlined ?? false"
                   size="small"
-                  severity="info"
                   class="exp-btn"
-                  @click="openKajianAwal(data.NOPENDAFTARAN)"
-                />
-                <Button
-                  label="CPPT / SOAP"
-                  icon="fas fa-file-medical-alt"
-                  size="small"
-                  severity="success"
-                  class="exp-btn"
-                  @click="openCPPT(data.NOPENDAFTARAN)"
-                />
-                <Button
-                  label="Diagnosa Akhir"
-                  icon="fas fa-file-medical-alt"
-                  size="small"
-                  severity="warn"
-                  class="exp-btn"
-                  @click="openDiagnosaAkhir(data.NOPENDAFTARAN)"
-                />
-                <Button
-                  label="Siriraj Score"
-                  icon="fas fa-brain"
-                  size="small"
-                  severity="secondary"
-                  class="exp-btn"
-                  @click="openSiriraj(data.NOPENDAFTARAN)"
-                />
-                <Button
-                  label="Rekam Medis EL"
-                  icon="pi pi-file-pdf"
-                  size="small"
-                  severity="info"
-                  class="exp-btn"
-                  outlined
-                  @click="PrintRekamMedisEl(data.NOPENDAFTARAN)"
-                />
-                <Button
-                  label="Konsultasi"
-                  icon="pi pi-comments"
-                  size="small"
-                  severity="warn"
-                  class="exp-btn"
-                  @click="openKonsultasi(data)"
+                  @click="btn.action(data)"
                 />
               </div>
 
@@ -831,6 +804,17 @@ const onRowCollapse = () => {
   expandedRows.value = {}
 }
 
+const openFormAsal = (data) => {
+  const isIGD = data.KET_RUJUK_INT?.toUpperCase().includes('IGD')
+  const url = isIGD
+    ? router.resolve({ name: 'FormIGDView', params: { noregister: data.REFF_INTERNAL } }).href
+    : router.resolve({
+        name: 'FormPoliKlinikView',
+        query: { noreg: data.REFF_INTERNAL, nomr: data.NOMR },
+      }).href
+  window.open(url, '_blank')
+}
+
 const openKajianAwal = (noregister) => {
   const url = router.resolve({ name: 'KajianAwalDPJPView', params: { noregister } }).href
   window.open(url, '_blank')
@@ -848,6 +832,11 @@ const openDiagnosaAkhir = (noregister) => {
 
 const openSiriraj = (noreg) => {
   const url = router.resolve({ name: 'SirirajView', params: { noreg } }).href
+  window.open(url, '_blank')
+}
+
+const openTindakan = (noregister) => {
+  const url = router.resolve({ name: 'FormTindakanDpjpComponent', params: { noregister } }).href
   window.open(url, '_blank')
 }
 const startDate = ref(new Date())
@@ -1356,9 +1345,81 @@ const formatDateOnlyForAPI = (date) => {
 
 watch([startDate, endDate, sttsPulangSelected, caraBayarSelected, dpjpSelected], saveSearchParams)
 
+// ===== BUTTON RANAP =====
+
+// Aksi per key (tetap di frontend karena berupa fungsi)
+const BUTTON_ACTION_MAP = {
+  form_asal: (d) => openFormAsal(d),
+  kajian_awal: (d) => openKajianAwal(d.NOPENDAFTARAN),
+  cppt_soap: (d) => openCPPT(d.NOPENDAFTARAN),
+  diagnosa_akhir: (d) => openDiagnosaAkhir(d.NOPENDAFTARAN),
+  siriraj_score: (d) => openSiriraj(d.NOPENDAFTARAN),
+  rekam_medis_el: (d) => PrintRekamMedisEl(d.NOPENDAFTARAN),
+  konsultasi: (d) => openKonsultasi(d),
+  tindakan: (d) => openTindakan(d.NOPENDAFTARAN),
+}
+
+// Properti dinamis per key (label/icon/severity berubah sesuai data baris)
+const BUTTON_DYNAMIC_MAP = {
+  form_asal: {
+    label: (d) => (d.KET_RUJUK_INT?.toUpperCase().includes('IGD') ? 'Form IGD' : 'Form Poli'),
+    icon: (d) =>
+      d.KET_RUJUK_INT?.toUpperCase().includes('IGD') ? 'fas fa-ambulance' : 'fas fa-hospital',
+    severity: (d) => (d.KET_RUJUK_INT?.toUpperCase().includes('IGD') ? 'danger' : 'info'),
+  },
+}
+
+const allExpButtonsDef = ref([]) // definisi dari DB
+const aksesButtonKeys = ref(null) // null = tampil semua
+
+const getVisibleButtons = () => {
+  const defs = aksesButtonKeys.value
+    ? allExpButtonsDef.value.filter((b) => aksesButtonKeys.value.includes(b.key))
+    : allExpButtonsDef.value
+
+  return defs.map((btn) => {
+    const dyn = BUTTON_DYNAMIC_MAP[btn.key]
+    return {
+      ...btn,
+      outlined: Number(btn.outlined) === 1,
+      label: dyn?.label ?? btn.label,
+      icon: dyn?.icon ?? btn.icon,
+      severity: dyn?.severity ?? btn.severity,
+      action: BUTTON_ACTION_MAP[btn.key] ?? (() => {}),
+    }
+  })
+}
+
+async function fetchButtonDef() {
+  try {
+    const res = await axios.get(
+      `${configStore.apiBaseUrl}/index.php/api/data_referensi/button_ranap`,
+    )
+    allExpButtonsDef.value = Array.isArray(res.data) ? res.data : []
+    console.log('[button_ranap] fetched:', allExpButtonsDef.value.length, 'buttons', allExpButtonsDef.value)
+  } catch (e) {
+    console.error('[button_ranap] fetch error:', e)
+    allExpButtonsDef.value = []
+  }
+}
+
+async function fetchAksesButton() {
+  try {
+    const res = await axios.get(
+      `${configStore.apiBaseUrl}/index.php/api/data_referensi/akses_button_ranap`,
+      { params: { kddokter: kd_dokter.value, id_client: id_client.value } },
+    )
+    aksesButtonKeys.value = res.data.button_keys ?? null
+  } catch {
+    aksesButtonKeys.value = null
+  }
+}
+
 onMounted(() => {
   loadColumnPreference()
   loadSearchParams()
+  fetchButtonDef()
+  fetchAksesButton()
   if (group_user.value === 'DOKTER') {
     fetchDokterLogin()
   }
@@ -1382,6 +1443,26 @@ onUnmounted(() => {
   font-weight: 700;
   color: #fff;
   letter-spacing: 0.03em;
+}
+.jadwal-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #bfdbfe;
+  text-decoration: none;
+  padding: 3px 10px;
+  border: 1px solid #93c5fd55;
+  border-radius: 20px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.jadwal-link:hover {
+  background: #ffffff22;
+  color: #fff;
+  border-color: #93c5fd;
+  text-decoration: none;
 }
 
 .filter-label {
@@ -1811,17 +1892,15 @@ onUnmounted(() => {
     order: 1;
     flex-direction: column;
     min-width: unset;
-    width: 100%;
-    align-items: flex-start;
+    width: fit-content;
     padding: 8px 10px;
     gap: 6px;
   }
   .exp-action-title {
-    width: 100%;
     margin-bottom: 0;
   }
   .exp-btn {
-    width: auto !important;
+    width: 100% !important;
     flex-shrink: 0;
   }
   .exp-divider {

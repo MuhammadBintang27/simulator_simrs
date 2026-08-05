@@ -1,3 +1,9 @@
+// Prevent AdminLTE IFrame plugin from crashing when localStorage key is missing
+// (happens when RMEViewer is loaded inside a hidden export iframe)
+if (!localStorage.getItem('AdminLTE:IFrame:Options')) {
+  localStorage.setItem('AdminLTE:IFrame:Options', JSON.stringify({ autoIframeMode: false }))
+}
+
 import ContentHeader from '@/components/ContentHeader.vue'
 
 import loading_overlay from '@/components/LoadingFormCompnent.vue'

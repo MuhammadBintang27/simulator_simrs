@@ -166,6 +166,23 @@
        AREA CETAK
   ════════════════════════════════════════════════ -->
   <div class="rme-print-area" :style="{ zoom: zoom / 100 }">
+    <!-- Halaman: Informed Consent / General Consent -->
+    <div
+      class="rme-a4-page"
+      data-section="informed-consent"
+      v-if="sectionVisible('informed-consent')"
+    >
+      <div class="rme-page-header-repeat">
+        <span class="rme-phr-rm">RM: {{ dataPasien?.NOMR }}</span>
+        <span class="rme-phr-name">{{ dataPasien?.NAMAPASIEN }}</span>
+        <span class="rme-phr-reg">Reg: {{ noreg }}</span>
+      </div>
+      <RMEInformedConsentSection :noreg="noreg" :dataPasien="dataPasien" />
+      <div v-if="sectionDataStatus['informed-consent'] === false" class="rme-section-no-data">
+        <i class="pi pi-inbox"></i><span>Informed Consent belum diisi</span>
+      </div>
+    </div>
+
     <!-- Halaman 1: Header + Identitas -->
     <div class="rme-a4-page" data-section="cover" v-if="sectionVisible('cover')">
       <RMEHeaderSection :noreg="noreg" :dataPasien="dataPasien" :loading="loadingPatient" />
@@ -370,6 +387,52 @@
       <RMEOperasiGroupSection :noreg="noreg" :dataPasien="dataPasien" />
     </template>
 
+    <!-- Halaman: Lampiran File -->
+    <template v-if="sectionVisible('lampiran')">
+      <div
+        v-for="(item, idx) in lampiranData"
+        :key="item.id"
+        class="rme-a4-page rme-lampiran-page"
+        :data-section="idx === 0 ? 'lampiran' : null"
+        :data-lampiran-id="item.id"
+      >
+        <div class="rme-page-header-repeat">
+          <span class="rme-phr-rm">RM: {{ dataPasien?.NOMR }}</span>
+          <span class="rme-phr-name">{{ dataPasien?.NAMAPASIEN }}</span>
+          <span class="rme-phr-reg">Reg: {{ noreg }}</span>
+        </div>
+        <div class="rme-lampiran-caption">
+          <span>📎</span>
+          <span>{{ item.caption_file || 'Lampiran' }}</span>
+          <span v-if="item.noreff" style="opacity: 0.6; font-weight: 400"
+            >· Ref: {{ item.noreff }}</span
+          >
+        </div>
+        <div class="rme-lampiran-img-wrap">
+          <img
+            :src="lampiranBase64[item.id] || item.file_lampiran"
+            :data-original-src="item.file_lampiran"
+            class="rme-lampiran-img"
+            alt="Lampiran"
+          />
+        </div>
+      </div>
+    </template>
+
+    <!-- Halaman: Surat Keterangan Kematian (hanya tampil jika CARA_KELUAR = 4) -->
+    <div
+      class="rme-a4-page"
+      data-section="surat-kematian"
+      v-if="sectionVisible('surat-kematian')"
+    >
+      <div class="rme-page-header-repeat">
+        <span class="rme-phr-rm">RM: {{ dataPasien?.NOMR }}</span>
+        <span class="rme-phr-name">{{ dataPasien?.NAMAPASIEN }}</span>
+        <span class="rme-phr-reg">Reg: {{ noreg }}</span>
+      </div>
+      <RMESuratKetMeninggal :noreg="noreg" :dataPasien="dataPasien" />
+    </div>
+
     <!-- Halaman: Billing / Rincian Tagihan (paling bawah) -->
     <div class="rme-a4-page" data-section="billing" v-if="sectionVisible('billing')">
       <div class="rme-page-header-repeat">
@@ -480,6 +543,7 @@ import { storeToRefs } from 'pinia'
 import { useConfigStore, useAuthStore } from '@/stores/config'
 import axios from 'axios'
 
+import RMEInformedConsentSection from './sections/RMEInformedConsentSection.vue'
 import RMEHeaderSection from './sections/RMEHeaderSection.vue'
 import RMETriaseSection from './sections/RMETriaseSection.vue'
 import RMECPPTSection from './sections/RMECPPTSection.vue'
@@ -499,6 +563,7 @@ import RMELembarKlaim from './sections/RMELembarKlaim.vue'
 import RMERujukan from './sections/RMERujukan.vue'
 import RMEHDViewer from './sections/RMEHDViewer.vue'
 import RMEOperasiGroupSection from './sections/Operasi/RMEOperasiGroupSection.vue'
+import RMESuratKetMeninggal from './sections/RMESuratKetMeninggal.vue'
 import SpeedDial from 'primevue/speeddial'
 import Dialog from 'primevue/dialog'
 
@@ -577,11 +642,9 @@ const route = useRoute()
 const router = useRouter()
 const configStore = useConfigStore()
 const authStore = useAuthStore()
-const { id_client, company, LINK_LOGO, user_id } = storeToRefs(authStore)
-
+const { id_client, company, LINK_LOGO, user_id, group_user } = storeToRefs(authStore)
 // ── Params ──────────────────────────────────────────────────────────────────────
 const noreg = computed(() => String(route.query.noreg || route.params.noreg || ''))
-
 // ── Data Pasien ─────────────────────────────────────────────────────────────────
 const dataPasien = ref({})
 const loadingPatient = ref(true)
@@ -621,6 +684,17 @@ const fetchPatient = async () => {
 // ── Sections (dengan icon & warna untuk sticky nav) ─────────────────────────────
 const sections = ref([
   {
+    key: 'informed-consent',
+    shortLabel: 'Informed Consent',
+    label: 'Formulir Persetujuan Rawat Inap (General Consent)',
+    icon: '📝',
+    color: '#1e3a8a',
+    bgColor: '#eff6ff',
+    borderColor: '#93c5fd',
+    visible: true,
+    jenisRawat: 'INAP',
+  },
+  {
     key: 'cover',
     shortLabel: 'Identitas',
     label: 'Identitas Pasien',
@@ -641,6 +715,7 @@ const sections = ref([
     borderColor: '#99d4cb',
     visible: true,
     jenisRawat: null,
+    adminOnly: true,
   },
 
   {
@@ -813,6 +888,29 @@ const sections = ref([
     jenisRawat: null,
   },
   {
+    key: 'lampiran',
+    shortLabel: 'Lampiran',
+    label: 'File Lampiran',
+    icon: '📎',
+    color: '#f57c00',
+    bgColor: '#fff8f0',
+    borderColor: '#ffcc80',
+    visible: true,
+    jenisRawat: null,
+  },
+  {
+    key: 'surat-kematian',
+    shortLabel: 'Ket. Meninggal',
+    label: 'Surat Keterangan Kematian',
+    icon: '🕊️',
+    color: '#4a4a4a',
+    bgColor: '#f5f5f5',
+    borderColor: '#bdbdbd',
+    visible: true,
+    jenisRawat: null,
+    condition: (p) => p.CARA_KELUAR === '4',
+  },
+  {
     key: 'billing',
     shortLabel: 'Billing',
     label: 'Rincian Tagihan Pasien',
@@ -825,11 +923,14 @@ const sections = ref([
   },
 ])
 
+const canViewLembarKlaim = computed(() => ['ADMIN', 'ENTRI_KLAIM'].includes(group_user.value))
+
 const visibleSections = computed(() => sections.value.filter((s) => s.visible))
 
 const sectionVisible = (key) => {
   const sec = sections.value.find((s) => s.key === key)
   if (!sec?.visible) return false
+  if (sec.adminOnly && !canViewLembarKlaim.value) return false
   // Sembunyikan section jika child sudah melapor tidak ada data (false)
   // undefined = belum melapor (masih loading) → tetap tampil
   if (sectionDataStatus[key] === false) return false
@@ -847,8 +948,9 @@ const sectionVisible = (key) => {
 // Hanya tampilkan tab nav yang relevan dengan jenis rawat pasien saat ini
 const visibleNavSections = computed(() => {
   const p = dataPasien.value
-  if (!p?.JENISRAWAT) return sections.value
   return sections.value.filter((s) => {
+    if (s.adminOnly && !canViewLembarKlaim.value) return false
+    if (!p?.JENISRAWAT) return true
     if (s.condition) return s.condition(p)
     if (!s.jenisRawat) return true
     return s.jenisRawat === p.JENISRAWAT
@@ -1055,6 +1157,15 @@ const _fetchImageBase64 = async (src) => {
   return b64
 }
 
+// Dapatkan dimensi natural gambar dari base64/URL
+const _getImageSize = (src) =>
+  new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => resolve({ w: img.naturalWidth || 1, h: img.naturalHeight || 1 })
+    img.onerror = () => resolve({ w: 1, h: 1 })
+    img.src = src
+  })
+
 // Tunggu semua img dalam elemen selesai load sebelum capture
 const _waitForImages = (el, timeout = 10000) =>
   new Promise((resolve) => {
@@ -1083,11 +1194,13 @@ const _prepareImages = async (el) => {
   const imgs = [...el.querySelectorAll('img[src]')]
   const toRestore = []
   for (const img of imgs) {
-    const src = img.getAttribute('src')
-    if (!src || src.startsWith('data:') || src.startsWith('blob:')) continue
-    const b64 = await _fetchImageBase64(src)
+    const displaySrc = img.getAttribute('src')
+    if (!displaySrc || displaySrc.startsWith('data:') || displaySrc.startsWith('blob:')) continue
+    // Gunakan data-original-src jika ada, untuk menghindari double-proxy
+    const fetchSrc = img.getAttribute('data-original-src') || displaySrc
+    const b64 = await _fetchImageBase64(fetchSrc)
     if (b64) {
-      toRestore.push({ img, origSrc: src })
+      toRestore.push({ img, origSrc: displaySrc })
       img.src = b64
     }
   }
@@ -1122,9 +1235,108 @@ const exportToPDF = async (returnBuffer = false) => {
 
       exportProgress.value = `Memproses ${i + 1}/${pages.length}: ${sectionKey}...`
 
+      // Lampiran: render khusus (bypass html2canvas normal yang gagal untuk cross-origin)
+      if (page.classList.contains('rme-lampiran-page')) {
+        const imgEl = page.querySelector('.rme-lampiran-img')
+        const originalSrc = imgEl?.getAttribute('data-original-src')
+        const lampiranId = page.dataset.lampiranId
+        let b64 = lampiranBase64.value[lampiranId] || null
+
+        // Coba 1: Laravel proxy-image (baca file dari storage server, CORS-safe)
+        if (!b64 && originalSrc) {
+          try {
+            const laravelProxy = `${configStore.laravel}/proxy-image?url=${encodeURIComponent(originalSrc)}`
+            const r = await axios.get(laravelProxy, { responseType: 'blob' })
+            if (r.data?.type && !r.data.type.includes('html')) b64 = await _blobToBase64(r.data)
+          } catch {}
+        }
+
+        // Coba 2: direct axios (berhasil jika same-origin)
+        if (!b64 && originalSrc) {
+          try {
+            const r = await axios.get(originalSrc, { responseType: 'blob' })
+            if (r.data) b64 = await _blobToBase64(r.data)
+          } catch {}
+        }
+
+        // Coba 3: CodeIgniter proxy + fallback lainnya (sama seperti gambar biasa)
+        if (!b64 && originalSrc) b64 = await _fetchImageBase64(originalSrc)
+
+        if (b64) {
+          // Path A: jsPDF addImage langsung — paling andal
+          if (!pdf) {
+            pdf = new jsPDF({ unit: 'mm', format: [210, 297], orientation: 'portrait' })
+          } else {
+            pdf.addPage([210, 297], 'portrait')
+          }
+          pdf.setFontSize(8)
+          pdf.setTextColor(120, 120, 120)
+          pdf.text(`RM: ${dataPasien.value?.NOMR || ''}`, 14, 8)
+          pdf.text(dataPasien.value?.NAMAPASIEN || '', 105, 8, { align: 'center' })
+          pdf.text(`Reg: ${noreg.value}`, 196, 8, { align: 'right' })
+          pdf.setDrawColor(220, 220, 220)
+          pdf.line(14, 10, 196, 10)
+          const capEl = page.querySelector('.rme-lampiran-caption')
+          const capText = capEl?.innerText?.replace(/\s+/g, ' ').trim() || 'Lampiran'
+          pdf.setFontSize(9)
+          pdf.setFont('helvetica', 'bold')
+          pdf.setTextColor(22, 45, 78)
+          pdf.text(capText, 14, 16)
+          const imgType = b64.startsWith('data:image/png') ? 'PNG' : 'JPEG'
+          // Hitung dimensi gambar dengan aspect ratio terjaga, lalu center di area yang tersedia
+          const { w: nw, h: nh } = await _getImageSize(b64)
+          const availX = 14,
+            availY = 20,
+            availW = 182,
+            availH = 263
+          const scale = Math.min(availW / nw, availH / nh)
+          const drawW = nw * scale
+          const drawH = nh * scale
+          const imgX = availX + (availW - drawW) / 2
+          const imgY = availY + (availH - drawH) / 2
+          pdf.addImage(b64, imgType, imgX, imgY, drawW, drawH)
+        } else {
+          // Path B: html2canvas dengan allowTaint=true
+          // Berhasil jika gambar same-origin; SecurityError jika cross-origin (tainted canvas)
+          try {
+            await _waitForImages(page)
+            const lampiranCanvas = await html2canvas(page, {
+              scale: preset.scale,
+              useCORS: false,
+              allowTaint: true,
+              logging: false,
+              backgroundColor: '#ffffff',
+              width: page.offsetWidth || Math.round(page.getBoundingClientRect().width),
+              height: page.scrollHeight,
+            })
+            const imgData = lampiranCanvas.toDataURL('image/jpeg', preset.imgQuality)
+            const pgW = 210
+            const pgH = (lampiranCanvas.height / lampiranCanvas.width) * pgW
+            if (!pdf) {
+              pdf = new jsPDF({ unit: 'mm', format: [pgW, pgH], orientation: 'portrait' })
+            } else {
+              pdf.addPage([pgW, pgH], 'portrait')
+            }
+            pdf.addImage(imgData, 'JPEG', 0, 0, pgW, pgH)
+          } catch {
+            // Tainted canvas (cross-origin tanpa CORS header) — tambah halaman kosong
+            if (!pdf) {
+              pdf = new jsPDF({ unit: 'mm', format: [210, 297], orientation: 'portrait' })
+            } else {
+              pdf.addPage([210, 297], 'portrait')
+            }
+          }
+        }
+        continue
+      }
+
       // Tunggu semua img selesai load, lalu konversi ke base64 agar tidak terblokir CORS
       await _waitForImages(page)
       const restoreImages = await _prepareImages(page)
+
+      // Sembunyikan lampiran gambar radiologi saat capture PDF
+      const radAttachments = [...page.querySelectorAll('.rad-attachment-wrap')]
+      radAttachments.forEach((el) => (el.style.display = 'none'))
 
       const rect = page.getBoundingClientRect()
       const captureW = page.offsetWidth || Math.round(rect.width)
@@ -1140,13 +1352,14 @@ const exportToPDF = async (returnBuffer = false) => {
         height: captureH,
       })
 
-      // Kembalikan src asli setelah capture
+      // Kembalikan src asli dan tampilkan kembali lampiran radiologi
       restoreImages()
+      radAttachments.forEach((el) => (el.style.display = ''))
 
       const imgData = canvas.toDataURL('image/jpeg', preset.imgQuality)
 
       // Dimensi halaman PDF
-      const pageWidthMM  = isLandscape ? 297 : 210
+      const pageWidthMM = isLandscape ? 297 : 210
       // Landscape: tinggi fixed 210mm (A4 landscape). Portrait: ikuti rasio konten.
       const pageHeightMM = isLandscape ? 210 : (canvas.height / canvas.width) * pageWidthMM
 
@@ -1166,7 +1379,7 @@ const exportToPDF = async (returnBuffer = false) => {
       // Untuk landscape: scale konten agar muat dalam 297×210mm (pertahankan rasio)
       if (isLandscape) {
         const canvasRatio = canvas.height / canvas.width
-        const pdfRatio    = pdfH / pdfW
+        const pdfRatio = pdfH / pdfW
         let imgW = pdfW
         let imgH = pdfW * canvasRatio
         if (canvasRatio > pdfRatio) {
@@ -1250,6 +1463,57 @@ const speedDialItems = computed(() => [
   },
 ])
 
+// ── Lampiran ─────────────────────────────────────────────────────────────────────
+const lampiranData = ref([])
+const lampiranBase64 = ref({})
+const isLoadingLampiran = ref(false)
+
+const fetchLampiran = async () => {
+  if (!noreg.value) return
+  isLoadingLampiran.value = true
+  try {
+    const res = await axios.post(
+      `${configStore.apiBaseUrl}/index.php/api/data_referensi/getlampiran_upload`,
+      { noregister: noreg.value, id_client: id_client.value },
+    )
+    const items =
+      res.data?.metadata?.code === 200 && Array.isArray(res.data.response)
+        ? res.data.response
+        : res.data?.code === 200 && Array.isArray(res.data.response)
+          ? res.data.response
+          : []
+    lampiranData.value = items
+
+    // Pre-fetch gambar agar PDF export siap
+    await Promise.all(
+      items.map(async (item) => {
+        if (!item.file_lampiran) return
+        let b64 = null
+
+        // Coba 1: Laravel proxy
+        try {
+          const proxyUrl = `${configStore.laravel}/proxy-image?url=${encodeURIComponent(item.file_lampiran)}`
+          const r = await axios.get(proxyUrl, { responseType: 'blob' })
+          if (r.data?.type && !r.data.type.includes('html')) {
+            b64 = await _blobToBase64(r.data)
+          }
+        } catch {}
+
+        // Coba 2: CodeIgniter proxy + fallback lainnya (sama seperti gambar biasa)
+        if (!b64) b64 = await _fetchImageBase64(item.file_lampiran)
+
+        if (b64) lampiranBase64.value[item.id] = b64
+      }),
+    )
+  } catch (e) {
+    console.error('fetchLampiran:', e)
+    lampiranData.value = []
+  } finally {
+    isLoadingLampiran.value = false
+    sectionDataStatus['lampiran'] = lampiranData.value.length > 0
+  }
+}
+
 // ── Lifecycle ────────────────────────────────────────────────────────────────────
 // ── Section Settings Dialog ──────────────────────────────────────────────────────
 const showSettingsDialog = ref(false)
@@ -1318,7 +1582,7 @@ const saveSettings = async () => {
 }
 
 onMounted(async () => {
-  await Promise.all([fetchPatient(), fetchSectionSettings()])
+  await Promise.all([fetchPatient(), fetchSectionSettings(), fetchLampiran()])
   nextTick(setupObserver)
   document.addEventListener('keydown', onKeyZoom)
   document.addEventListener('wheel', onWheelZoom, { passive: false })
@@ -2277,6 +2541,38 @@ body {
   text-decoration: underline dotted;
 }
 
+/* ── Lampiran ── */
+.rme-lampiran-page {
+  padding: 10mm 14mm 10mm;
+  display: flex;
+  flex-direction: column;
+}
+.rme-lampiran-caption {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 11px;
+  color: #162d4e;
+  background: #eef2f8;
+  border-left: 4px solid #f57c00;
+  padding: 5px 10px;
+  margin-bottom: 8px;
+}
+.rme-lampiran-img-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.rme-lampiran-img {
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  object-fit: contain;
+}
+
 /* ── Landscape page (Kartu Catatan Obat) ── */
 .rme-landscape-page {
   width: 297mm;
@@ -2506,11 +2802,10 @@ body {
   }
 
   .rme-print-area {
+    display: block !important;
     margin-top: 0 !important;
     margin-left: 0 !important;
     padding: 0 !important;
-    gap: 0 !important;
-    align-items: stretch !important;
   }
 
   .rme-a4-page {
@@ -2537,6 +2832,29 @@ body {
 
   .rme-tbl-data tr {
     page-break-inside: avoid;
+  }
+
+  .rme-lampiran-page {
+    break-inside: auto;
+  }
+
+  /* Elemen tepat setelah lampiran (billing atau halaman lain) mulai di halaman baru */
+  .rme-lampiran-page + .rme-a4-page {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .rme-lampiran-img-wrap {
+    flex: none;
+    overflow: visible;
+    display: block;
+  }
+
+  .rme-lampiran-img {
+    width: 100%;
+    height: auto;
+    max-height: none;
+    display: block;
   }
 
   .rme-badge {

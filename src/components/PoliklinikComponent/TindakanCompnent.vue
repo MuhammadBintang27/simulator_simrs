@@ -228,8 +228,7 @@
           </div>
         </div>
       </div>
-    </div>
-
+    </div> 
     <!-- EMPTY STATE -->
     <div v-else class="tindakan-empty">
       <i class="pi pi-inbox"></i>

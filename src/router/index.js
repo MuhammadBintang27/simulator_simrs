@@ -27,6 +27,7 @@ const RekapDietView = () => import('@/views/gizi/RekapDietView.vue')
 // Ruang Operasi
 const ListPasienOperasiView = () => import('@/views/RuangOperasi/ListPasienOperasiView.vue')
 const PersiapanOperasiVIew = () => import('@/views/RuangOperasi/PersiapanOperasiVIew.vue')
+const IntraOperasiView = () => import('@/views/RuangOperasi/Anestesi/IntraOperasiView.vue')
 
 // Informed Consent
 const AnestesiConsentView = () => import('@/views/RuangOperasi/Consent/AnestesiConsentView.vue')
@@ -44,6 +45,7 @@ const RevenueReportView = () => import('@/views/laporan/RevenueReportView.vue')
 const DatakunjunganView = () => import('@/views/Statistik/DatakunjunganView.vue')
 
 const KlaimManajemenView = () => import('@/views/keuangan/KlaimManajemenView.vue')
+const SEPMonitoringView = () => import('@/views/keuangan/SEPMonitoringView.vue')
 
 const KasirView = () => import('@/views/keuangan/KasirView.vue')
 
@@ -56,6 +58,7 @@ const SalesPosSettingView = () => import('@/views/sales/PosSettingView.vue')
 const SalesTransaksiLainView = () => import('@/views/sales/TransaksiLainView.vue')
 const SalesLabaRugiView = () => import('@/views/sales/LabaRugiView.vue')
 const SalesRingkasanKasirView = () => import('@/views/sales/RingkasanKasirView.vue')
+
 const SalesRekapPiutangView = () => import('@/views/sales/RekapPiutangView.vue')
 const SalesDetailPiutangView = () => import('@/views/sales/DetailPiutangView.vue')
 
@@ -68,7 +71,11 @@ const EditPendaftaranComponent = () => import('@/views/Pendaftaran/EditPendaftar
 const FormStockOpnameView = () => import('@/views/Persediaan/StockOpname/FormStockOpnameView.vue')
 //setting
 const JadwalDokterView = () => import('@/views/setting/JadwalDokterView.vue')
+const AksesButtonRanapView = () => import('@/views/setting/AksesButtonRanapView.vue')
+const JadwalKontrolDokterView = () => import('@/views/Poliklinik/JadwalKontrolDokterView.vue')
 const GantiPasswordView = () => import('@/views/setting/GantiPasswordView.vue')
+const InformConsentTemplateView = () => import('@/views/setting/InformConsentTemplateView.vue')
+const JenisSuratTemplateView = () => import('@/views/setting/JenisSuratTemplateView.vue')
 
 //Laboratorium
 const PermintaanLabView = () => import('@/views/Laboratorium/PermintaanLabView.vue')
@@ -110,9 +117,15 @@ const ListPasienIGDView = () => import('@/views/IGD/ListPasienIGDView.vue')
 
 const TindakLanjutPasienView = () => import('@/views/TindakLanjut/TindakLanjutPasienView.vue')
 const ResumeRanapView = () => import('@/views/keuangan/ResumeRanapView.vue')
+const ResumeRawatJalanView = () => import('@/views/keuangan/ResumeRawatJalanView.vue')
 
 // Manajemen
 const MenuItemsView = () => import('@/views/Manajemen/MenuItemsView.vue')
+const AssignMenuView = () => import('@/views/Manajemen/AssignMenuView.vue')
+const UserManajemenView = () => import('@/views/Manajemen/UserManajemenView.vue')
+
+// Kajian Awal
+const ResikoJatuhView = () => import('@/views/KajianAwal/ResikoJatuhView.vue')
 
 // Rawat Inap
 const MonitoringPasienRanapView = () => import('@/views/RawatInap/MonitoringPasienRanapView.vue')
@@ -121,6 +134,7 @@ const CPPTView = () => import('@/views/RawatInap/CPPTView.vue')
 const DiagnosaAkhirDPJP = () => import('@/views/RawatInap/DiagnosaAkhirDPJP.vue')
 const JawabKonsulView = () => import('@/views/RawatInap/KonsultasiDokter/JawabKonsul.vue')
 const KonsultasiFormView = () => import('@/views/RawatInap/KonsultasiDokter/KonsultasiFormView.vue')
+const FormTindakanDpjpComponent = () => import('@/views/RawatInap/FormTindakanDpjpComponent.vue')
 
 // Fisioterapi
 const HomeFisioterapiView = () => import('@/views/Poliklinik/Fisioteraphi/HomeFisioterapiView.vue')
@@ -239,13 +253,10 @@ const router = createRouter({
     },
     {
       // Struk penjualan & tutup shift Kasir POS — satu view untuk keduanya (bedanya lewat payload.type).
-      // Data dikirim lewat sessionStorage (lihat KasirView.doCheckout/submitTutupShift), bukan API,
-      // karena datanya sudah lengkap di tangan FE begitu transaksi/tutup-shift sukses.
       path: '/sales/print-struk',
       name: 'PrintStruk',
       component: PrintStrukView,
     },
-
     {
       path: '/',
       component: MainLayouts,
@@ -275,12 +286,17 @@ const router = createRouter({
           component: KlaimManajemenView,
         },
         {
+          path: 'keuangan/sep-monitoring',
+          name: 'SEPMonitoringView',
+          meta: { requiresAuth: true },
+          component: SEPMonitoringView,
+        },
+        {
           path: 'keuangan/kasir',
           name: 'KasirView',
           meta: { requiresAuth: true }, // ✅ Protect this route
           component: KasirView,
         },
-
         // Sales Langsung (Kasir Apotik)
         {
           path: 'sales/pos',
@@ -389,6 +405,12 @@ const router = createRouter({
           component: PersiapanOperasiVIew,
         },
         {
+          path: 'operasi/intra-operasi',
+          name: 'IntraOperasiView',
+          meta: { requiresAuth: true },
+          component: IntraOperasiView,
+        },
+        {
           path: 'operasi/consent/anestesi/:noreg/:kodebooking?',
           name: 'AnestesiConsentView',
           meta: { requiresAuth: true },
@@ -457,10 +479,34 @@ const router = createRouter({
           component: JadwalDokterView,
         },
         {
+          path: 'setting/akses-button-ranap',
+          name: 'AksesButtonRanapView',
+          meta: { requiresAuth: true },
+          component: AksesButtonRanapView,
+        },
+        {
+          path: 'poliklinik/jadwal-kontrol-dokter',
+          name: 'JadwalKontrolDokterView',
+          meta: { redirectPath: true },
+          component: JadwalKontrolDokterView,
+        },
+        {
           path: 'setting/ganti-password',
           name: 'GantiPasswordView',
           meta: { requiresAuth: true },
           component: GantiPasswordView,
+        },
+        {
+          path: 'setting/template-inform-consent',
+          name: 'InformConsentTemplateView',
+          meta: { redirectPath: true },
+          component: InformConsentTemplateView,
+        },
+        {
+          path: 'setting/jenis-surat',
+          name: 'JenisSuratTemplateView',
+          meta: { requiresAuth: true },
+          component: JenisSuratTemplateView,
         },
         {
           path: 'persediaan/stock-opname',
@@ -573,7 +619,7 @@ const router = createRouter({
           component: MasterAssetView,
         },
         {
-          path: 'igd/form-igd',
+          path: 'igd/form-igd/:noregister',
           name: 'FormIGDView',
           meta: { requiresAuth: true },
           component: FormIGDView,
@@ -607,6 +653,18 @@ const router = createRouter({
           name: 'ResumeRanapView',
           meta: { requiresAuth: true },
           component: ResumeRanapView,
+        },
+        {
+          path: 'keuangan/resume-rajal',
+          name: 'ResumeRawatJalanView',
+          meta: { requiresAuth: true },
+          component: ResumeRawatJalanView,
+        },
+        {
+          path: 'kajian-awal/resiko-jatuh/:noregister',
+          name: 'ResikoJatuhView',
+          meta: { requiresAuth: true },
+          component: ResikoJatuhView,
         },
         {
           path: 'rawat-inap/monitoring-pasien',
@@ -645,6 +703,12 @@ const router = createRouter({
           component: DiagnosaAkhirDPJP,
         },
         {
+          path: 'rawat-inap/form-tindakan-dpjp/:noregister',
+          name: 'FormTindakanDpjpComponent',
+          meta: { requiresAuth: true },
+          component: FormTindakanDpjpComponent,
+        },
+        {
           path: 'fisioterapi/home',
           name: 'HomeFisioterapiView',
           meta: { requiresAuth: true },
@@ -671,6 +735,18 @@ const router = createRouter({
           name: 'MenuItemsView',
           meta: { requiresAuth: true },
           component: MenuItemsView,
+        },
+        {
+          path: 'manajemen/assign-menu',
+          name: 'AssignMenuView',
+          meta: { requiresAuth: true },
+          component: AssignMenuView,
+        },
+        {
+          path: 'manajemen/user-management',
+          name: 'UserManajemenView',
+          meta: { requiresAuth: true },
+          component: UserManajemenView,
         },
 
         // Inventory / Sales

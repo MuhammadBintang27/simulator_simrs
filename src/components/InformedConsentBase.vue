@@ -250,7 +250,9 @@
                 class="canvas-preview-area"
                 :class="{ 'has-signature': signer.signatureData, 'is-locked': signer.is_auth }"
                 @click="!signer.is_auth && openFullscreenCanvas(idx)"
-                :title="signer.is_auth ? 'Tanda tangan telah terverifikasi' : 'Klik untuk tanda tangan'"
+                :title="
+                  signer.is_auth ? 'Tanda tangan telah terverifikasi' : 'Klik untuk tanda tangan'
+                "
               >
                 <img
                   v-if="signer.signatureData"
@@ -728,9 +730,20 @@ const capturePhoto = () => {
   const video = videoRef.value,
     canvas = captureCanvas.value
   if (!video || !canvas) return
-  canvas.width = video.videoWidth || 640
-  canvas.height = video.videoHeight || 480
-  canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height)
+  const w = video.videoWidth
+  const h = video.videoHeight
+  if (!w || !h) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Perhatian',
+      detail: 'Kamera belum siap, coba lagi.',
+      life: 3000,
+    })
+    return
+  }
+  canvas.width = w
+  canvas.height = h
+  canvas.getContext('2d').drawImage(video, 0, 0, w, h)
   if (activePhotoCameraIndex.value !== null)
     signers.value[activePhotoCameraIndex.value].photoData = canvas.toDataURL('image/jpeg', 0.85)
   closeCamera()
@@ -773,21 +786,26 @@ const simpanData = async () => {
     const signerPayload = signers.value
       .filter((s) => s.signatureData)
       .map((s) => ({
-        hubungan: s.hubungan,
+        label: s.hubungan,
         nama: s.nama || '',
-        signature_b64:
+        // Backend PHP membaca 'signatureData' dan 'photoData' (base64 data URL)
+        signatureData:
           typeof s.signatureData === 'string' && s.signatureData.startsWith('data:')
             ? s.signatureData
             : null,
-        photo_b64:
+        photoData:
           typeof s.photoData === 'string' && s.photoData.startsWith('data:') ? s.photoData : null,
-        // Kirim URL lama jika tidak ada base64 baru (re-save tanpa re-sign)
+        // URL lama jika tidak ada base64 baru (re-save tanpa re-sign)
         signature_url:
           typeof s.signatureData === 'string' && !s.signatureData.startsWith('data:')
             ? s.signatureData
             : null,
         photo_url:
-          typeof s.photoData === 'string' && !s.photoData.startsWith('data:') ? s.photoData : null,
+          typeof s.photoData === 'string' &&
+          s.photoData.length > 0 &&
+          !s.photoData.startsWith('data:')
+            ? s.photoData
+            : null,
       }))
 
     const payload = {
@@ -802,6 +820,7 @@ const simpanData = async () => {
     emit('before-save', { baseForm, extraForm: props.extraForm, conf, signers: signerPayload })
 
     const { data } = await axios.post(`${configStore.apiBaseUrl}${props.apiEndpoint}`, payload)
+
     const code = data?.code || data?.metadata?.code
 
     if (code === 200 || code === '200') {

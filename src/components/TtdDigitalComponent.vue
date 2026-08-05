@@ -30,6 +30,7 @@
 
       <div class="ttd-divider" />
       <!-- Form -->
+
       <div class="ttd-body">
         <div v-if="!isDokter" class="ttd-field">
           <label class="ttd-label">Username</label>
@@ -52,6 +53,7 @@
           <label class="ttd-label">Kode PIN / Passphrase</label>
           <div class="ttd-input-wrap" :class="{ 'is-invalid': otpError }">
             <i class="pi pi-lock ttd-input-icon" />
+
             <InputText
               v-model="password"
               type="password"
@@ -204,7 +206,10 @@ const verifyOtp = async () => {
       mode: props.mode,
     }
     if (props.record_id != null) payload.id = props.record_id
-    const response = await axios.post(`${configStore.apiBaseUrl}/index.php/api/Triaseigd/${link}`, payload)
+    const response = await axios.post(
+      `${configStore.apiBaseUrl}/index.php/api/Triaseigd/${link}`,
+      payload,
+    )
 
     if (response.data.metadata.code == '200') {
       toast.add({

@@ -72,7 +72,7 @@
             v-if="!item.children || item.children.length === 0"
             :to="item.path || '#'"
             class="sb__item"
-            active-class="sb__item--active"
+            :class="{ 'sb__item--active': isActive(item.path) }"
           >
             <i :class="item.icon" class="sb__item-icon"></i>
             <span v-show="!isCollapsedView" class="sb__item-label">{{ item.title }}</span>
@@ -96,7 +96,7 @@
                   :key="child.id"
                   :to="child.path"
                   class="sb__child"
-                  active-class="sb__child--active"
+                  :class="{ 'sb__child--active': isActive(child.path) }"
                 >
                   <span class="sb__child-dot"></span>
                   <span>{{ child.title }}</span>
@@ -118,7 +118,7 @@
                 :key="child.id"
                 :to="child.path"
                 class="sb__popup-child"
-                active-class="sb__popup-child--active"
+                :class="{ 'sb__popup-child--active': isActive(child.path) }"
               >
                 <i :class="child.icon" class="sb__popup-child-icon"></i>
                 {{ child.title }}
@@ -138,7 +138,7 @@
             v-if="!item.isLogout"
             :to="item.path"
             class="sb__item"
-            active-class="sb__item--active"
+            :class="{ 'sb__item--active': isActive(item.path) }"
           >
             <i :class="item.icon" class="sb__item-icon"></i>
             <span v-show="!isCollapsedView" class="sb__item-label">{{ item.title }}</span>
@@ -170,7 +170,7 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/config'
 import { storeToRefs } from 'pinia'
 import { useConfigStore } from '@/stores/config'
@@ -183,6 +183,12 @@ const { id_client, user_id, LINK_LOGO } = storeToRefs(authStore)
 const { sidebarCollapsed: collapsed, mobileSidebarOpen } = storeToRefs(configStore)
 
 const router = useRouter()
+const route = useRoute()
+
+const isActive = (path) => {
+  if (!path || path === '#') return false
+  return route.path === path
+}
 
 const sidebarHovered = ref(false)
 // Sidebar terlihat collapsed hanya jika collapsed = true DAN mouse tidak sedang hover
@@ -332,6 +338,12 @@ const mainMenuItems = ref([
         path: '/operasi/data-pasien-op',
         icon: 'fas fa-user-injured',
       },
+      {
+        id: 'intra-operasi',
+        title: 'Monitoring Intra Operasi',
+        path: '/operasi/intra-operasi',
+        icon: 'fas fa-heart-pulse',
+      },
     ],
   },
   {
@@ -397,6 +409,18 @@ const mainMenuItems = ref([
         path: '/manajemen/menu-items',
         icon: 'fas fa-bars',
       },
+      {
+        id: 'setting-template-inform-consent',
+        title: 'Template Informed Consent',
+        path: '/setting/template-inform-consent',
+        icon: 'fas fa-file-signature',
+      },
+      {
+        id: 'setting-jenis-surat',
+        title: 'Master Jenis Surat',
+        path: '/setting/jenis-surat',
+        icon: 'fas fa-file-medical',
+      },
     ],
   },
 ])
@@ -405,11 +429,11 @@ const mainMenuItems_real = ref([])
 const LoadMenu = async () => {
   try {
     const res = await axios.get(
-      `${configStore.apiBaseUrl}/index.php/api/data_referensi/get_menu_item/${user_id.value}/${id_client.value}`,
+      `${configStore.apiBaseUrl}/index.php/api/data_referensi/get_menu_item_v2/${user_id.value}/${id_client.value}`,
     )
     let data = res.data || []
     if (data && typeof data === 'object' && !Array.isArray(data)) data = Object.values(data)
-    mainMenuItems_real.value = data
+    mainMenuItems_real.value = Array.isArray(data) && data.length > 0 ? data : mainMenuItems.value
   } catch {
     mainMenuItems_real.value = mainMenuItems.value
   }

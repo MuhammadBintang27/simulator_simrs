@@ -9,19 +9,28 @@
           <p class="hero-desc">Kelola struktur navigasi aplikasi secara dinamis</p>
         </div>
       </div>
-      <div class="hero-stats">
-        <div class="stat-card">
-          <span class="stat-num">{{ listData.length }}</span>
-          <span class="stat-lbl">Total Item</span>
+      <div class="hero-right">
+        <div class="hero-stats">
+          <div class="stat-card">
+            <span class="stat-num">{{ listData.length }}</span>
+            <span class="stat-lbl">Total Item</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-num">{{ menuTree.length }}</span>
+            <span class="stat-lbl">Menu Utama</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-num">{{ listData.length - menuTree.length }}</span>
+            <span class="stat-lbl">Sub Menu</span>
+          </div>
         </div>
-        <div class="stat-card">
-          <span class="stat-num">{{ menuTree.length }}</span>
-          <span class="stat-lbl">Menu Utama</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-num">{{ listData.length - menuTree.length }}</span>
-          <span class="stat-lbl">Sub Menu</span>
-        </div>
+        <Button
+          label="Assign Menu ke User"
+          icon="pi pi-user-edit"
+          size="small"
+          class="btn-assign"
+          @click="router.push('/manajemen/assign-menu')"
+        />
       </div>
     </div>
 
@@ -345,6 +354,7 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useConfigStore, useAuthStore } from '@/stores/config'
 import { storeToRefs } from 'pinia'
 import { useToast } from 'primevue/usetoast'
@@ -358,6 +368,7 @@ import Button from 'primevue/button'
 import ConfirmDialog from 'primevue/confirmdialog'
 import { id } from 'date-fns/locale'
 
+const router = useRouter()
 const configStore = useConfigStore()
 const authStore = useAuthStore()
 const { id_client } = storeToRefs(authStore)
@@ -886,10 +897,22 @@ onMounted(() => {
   opacity: 0.8;
   margin: 0;
 }
+.hero-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.6rem;
+}
 .hero-stats {
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
+}
+.btn-assign {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  color: #fff !important;
+  white-space: nowrap;
 }
 .stat-card {
   background: rgba(255, 255, 255, 0.15);

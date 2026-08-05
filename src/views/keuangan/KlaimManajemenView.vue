@@ -667,6 +667,26 @@
               {{ formatDateOnlyForAPI(data.KELUARPOLY_NULL) }}
             </template>
           </Column>
+
+          <Column
+            field="RUJUK_INTERNAL"
+            header="RUJUK INTERNAL"
+            sortable
+            style="min-width: 9rem"
+            :showFilterMenu="false"
+          >
+            <template #filter="{ filterModel, filterCallback }">
+              <MultiSelect
+                :maxSelectedLabels="2"
+                v-model="filterModel.value"
+                @change="filterCallback()"
+                :options="rujukInternalOptions"
+                placeholder="Rujuk Internal"
+                class="p-column-filter"
+                showClear
+              />
+            </template>
+          </Column>
         </DataTable>
       </div>
     </div>
@@ -883,11 +903,57 @@
         </span>
         <span style="font-size: 12px; font-weight: 700; color: #162d4e">{{ batchProgress }}%</span>
       </div>
-      <ProgressBar :value="batchProgress" style="margin-bottom: 10px; height: 8px" />
+      <ProgressBar :value="batchProgress" style="margin-bottom: 6px; height: 8px" />
+
+      <!-- ETA -->
+      <div v-if="isBatchExporting && batchEtaLabel" class="batch-eta">
+        <i class="pi pi-clock"></i>
+        {{ batchEtaLabel }}
+      </div>
+
+      <!-- Filter tombol -->
+      <div class="batch-log-filter">
+        <button
+          class="blf-btn"
+          :class="{ active: batchLogFilter === 'all' }"
+          @click="batchLogFilter = 'all'"
+        >
+          Semua ({{ batchLog.length }})
+        </button>
+        <button
+          class="blf-btn"
+          :class="{ active: batchLogFilter === 'pending' }"
+          @click="batchLogFilter = 'pending'"
+        >
+          <i class="pi pi-clock"></i>
+          Belum selesai ({{
+            batchLog.filter((x) => x.status === 'waiting' || x.status === 'processing').length
+          }})
+        </button>
+        <button
+          class="blf-btn"
+          :class="{ active: batchLogFilter === 'done' }"
+          @click="batchLogFilter = 'done'"
+        >
+          <i class="pi pi-check-circle"></i>
+          Selesai ({{
+            batchLog.filter((x) => x.status === 'done' || x.status === 'skipped').length
+          }})
+        </button>
+        <button
+          v-if="errorCount > 0"
+          class="blf-btn blf-btn-err"
+          :class="{ active: batchLogFilter === 'error' }"
+          @click="batchLogFilter = 'error'"
+        >
+          <i class="pi pi-times-circle"></i>
+          Gagal ({{ errorCount }})
+        </button>
+      </div>
 
       <div class="batch-log-scroll">
         <div
-          v-for="(item, idx) in batchLog"
+          v-for="(item, idx) in filteredBatchLog"
           :key="item.noreg"
           class="batch-log-item"
           :class="`batch-log-${item.status}`"
@@ -993,6 +1059,10 @@ const isBatchExporting = ref(false)
 const batchProgress = ref(0)
 const batchCurrentIdx = ref(0)
 const batchLog = ref([])
+const batchLogFilter = ref('all')
+const batchEtaMs = ref(null)
+const batchEtaNow = ref(Date.now())
+let _batchEtaTimer = null
 const cancelBatchExport = ref(false)
 
 // ── Kualitas PDF batch (disinkron dengan localStorage yg dibaca RMEViewer) ──
@@ -1067,6 +1137,12 @@ const closeBatchDialog = () => {
   batchProgress.value = 0
   batchCurrentIdx.value = 0
   cancelBatchExport.value = false
+  batchLogFilter.value = 'all'
+  batchEtaMs.value = null
+  if (_batchEtaTimer) {
+    clearInterval(_batchEtaTimer)
+    _batchEtaTimer = null
+  }
 }
 
 const exportPatientViaIframe = (noreg) =>
@@ -1136,11 +1212,45 @@ const exportPatientViaIframe = (noreg) =>
 
 const errorCount = computed(() => batchLog.value.filter((x) => x.status === 'error').length)
 
+const batchEtaLabel = computed(() => {
+  if (!batchEtaMs.value) return null
+  const diffMs = batchEtaMs.value - batchEtaNow.value
+  if (diffMs <= 0) return 'Sebentar lagi...'
+  const diffSec = Math.round(diffMs / 1000)
+  const h = Math.floor(diffSec / 3600)
+  const m = Math.floor((diffSec % 3600) / 60)
+  const s = diffSec % 60
+  const sisa = h > 0 ? `${h} jam ${m} menit` : m > 0 ? `${m} menit ${s} detik` : `${s} detik`
+  const pukul = new Date(batchEtaMs.value).toLocaleTimeString('id-ID', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+  return `~${sisa} lagi · selesai pukul ${pukul}`
+})
+
+const filteredBatchLog = computed(() => {
+  if (batchLogFilter.value === 'pending')
+    return batchLog.value.filter((x) => x.status === 'waiting' || x.status === 'processing')
+  if (batchLogFilter.value === 'done')
+    return batchLog.value.filter((x) => x.status === 'done' || x.status === 'skipped')
+  if (batchLogFilter.value === 'error') return batchLog.value.filter((x) => x.status === 'error')
+  return batchLog.value
+})
+
 const runBatchLoop = async () => {
   isBatchExporting.value = true
   cancelBatchExport.value = false
+  batchEtaMs.value = null
+  batchEtaNow.value = Date.now()
+
+  _batchEtaTimer = setInterval(() => {
+    batchEtaNow.value = Date.now()
+  }, 1000)
 
   const items = batchLog.value
+  let processedCount = 0
+  let totalProcessedMs = 0
+
   for (let i = 0; i < items.length; i++) {
     if (cancelBatchExport.value) break
     batchCurrentIdx.value = i
@@ -1149,6 +1259,7 @@ const runBatchLoop = async () => {
     if (item.status !== 'waiting') continue
 
     item.status = 'processing'
+    const itemStart = Date.now()
     try {
       await exportPatientViaIframe(item.noreg)
       item.status = 'done'
@@ -1157,14 +1268,28 @@ const runBatchLoop = async () => {
       item.error = e.message
     }
 
+    processedCount++
+    totalProcessedMs += Date.now() - itemStart
+
     const settled = items.filter((x) => x.status !== 'waiting' && x.status !== 'processing').length
     batchProgress.value = Math.round((settled / items.length) * 100)
+
+    const remaining = items.filter((x) => x.status === 'waiting').length
+    if (remaining > 0) {
+      const avgMs = totalProcessedMs / processedCount
+      batchEtaMs.value = Date.now() + avgMs * remaining + 800 * (remaining - 1)
+    } else {
+      batchEtaMs.value = null
+    }
 
     if (i < items.length - 1 && !cancelBatchExport.value) {
       await new Promise((r) => setTimeout(r, 800))
     }
   }
 
+  clearInterval(_batchEtaTimer)
+  _batchEtaTimer = null
+  batchEtaMs.value = null
   isBatchExporting.value = false
 }
 
@@ -1247,6 +1372,7 @@ const visibleColumns = ref([
   'IS_AKTIF_SEP',
   'NOTELP',
   'OBATAN',
+  'RUJUK_INTERNAL',
 ])
 
 const allColumns = ref([
@@ -1273,6 +1399,7 @@ const allColumns = ref([
   { field: 'NOTELP', header: 'No Telp' },
   { field: 'KELUARPOLY_NULL', header: 'Tgl Pulang' },
   { field: 'IS_AKTIF_SEP', header: 'SEP Aktif' },
+  { field: 'RUJUK_INTERNAL', header: 'Rujuk Internal' },
 ])
 // --- Filters ---
 const filters = ref({
@@ -1288,6 +1415,7 @@ const filters = ref({
   NOSEP: { value: null, matchMode: FilterMatchMode.CONTAINS },
   TARIFCBG: { value: null, matchMode: FilterMatchMode.IN },
   IS_AKTIF_SEP: { value: null, matchMode: FilterMatchMode.IN },
+  RUJUK_INTERNAL: { value: null, matchMode: FilterMatchMode.IN },
 })
 
 // Summary reactive
@@ -1417,6 +1545,7 @@ const sudahFilanClaim = ref([])
 const KetaranganOpt = ref([])
 const tarifCbgOptions = ref([])
 const isAktifSEP = ref([])
+const rujukInternalOptions = ref([])
 const sttsCoderFilterOptions = ref([
   { label: 'M', value: 0 },
   { label: 'C', value: 1 },
@@ -1474,6 +1603,7 @@ const updateFilterOptions = () => {
   noSEP.value = getUniqueValues('NOSEP')
   tarifCbgOptions.value = getUniqueValues('TARIFCBG')
   isAktifSEP.value = getUniqueValues('IS_AKTIF_SEP')
+  rujukInternalOptions.value = getUniqueValues('RUJUK_INTERNAL')
 }
 
 const toggleColumn = (fieldName) => {
@@ -1666,6 +1796,7 @@ const clearFilters = () => {
     NOSEP: { value: null, matchMode: FilterMatchMode.CONTAINS },
     TARIFCBG: { value: null, matchMode: FilterMatchMode.IN },
     IS_AKTIF_SEP: { value: null, matchMode: FilterMatchMode.IN },
+    RUJUK_INTERNAL: { value: null, matchMode: FilterMatchMode.IN },
   }
   sttsCoderFilter.value = null
   localStorage.removeItem(COLUMN_FILTER_STORAGE_KEY)
@@ -2468,6 +2599,67 @@ const formatDateTimeForAPI = (date) => {
 }
 .batch-resume-btn:hover {
   background: #fde68a;
+}
+
+/* ── Batch ETA ───────────────────────────────────────────────────── */
+.batch-eta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #4a7ab5;
+  font-weight: 500;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  background: #eff6ff;
+  border-radius: 6px;
+  border: 1px solid #bfdbfe;
+}
+
+/* ── Batch log filter ─────────────────────────────────────────────── */
+.batch-log-filter {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.blf-btn {
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid #d1d5db;
+  border-radius: 20px;
+  background: #f9fafb;
+  color: #374151;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+.blf-btn:hover {
+  background: #e5e7eb;
+}
+.blf-btn.active {
+  background: #162d4e;
+  border-color: #162d4e;
+  color: #fff;
+}
+.blf-btn-err {
+  border-color: #fca5a5;
+  color: #b91c1c;
+  background: #fef2f2;
+}
+.blf-btn-err:hover {
+  background: #fee2e2;
+}
+.blf-btn-err.active {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  color: #fff;
 }
 
 /* ── Progress table ───────────────────────────────────────────────── */

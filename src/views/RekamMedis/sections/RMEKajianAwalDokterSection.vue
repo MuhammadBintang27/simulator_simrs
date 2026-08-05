@@ -163,47 +163,22 @@
       <div class="rme-subsection-title">
         <span class="kad-sub-icon">🩺</span> Pemeriksaan Sistemik
       </div>
-      <div v-if="loadingSurvey" class="rme-loading-row">
-        <span class="rme-loading-dot"></span> Memuat data pemeriksaan sistemik...
-      </div>
-      <div v-else-if="!surveyFisik || surveyFisik.length === 0" class="rme-empty-note">
+      <div v-if="!surveyFisikList || surveyFisikList.length === 0" class="rme-empty-note">
         <i class="pi pi-minus-circle"></i> Tidak ada data pemeriksaan sistemik.
       </div>
       <table v-else class="rme-tbl-data kad-survey-tbl">
         <thead>
           <tr>
-            <th style="width: 32%">OBJEK PEMERIKSAAN</th>
-            <th style="width: 15%" class="text-center">STATUS</th>
-            <th>KETERANGAN</th>
+            <th style="width: 30%">ORGAN / SISTEM</th>
+            <th>TEMUAN</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="item in surveyFisik" :key="item.survey">
+          <tr v-for="item in surveyFisikList" :key="item.organ">
+            <td class="kad-organ-cell">{{ item.label }}</td>
             <td>
-              <strong>{{ item.survey }}</strong>
-            </td>
-            <td class="text-center">
-              <span
-                :class="[
-                  'rme-badge',
-                  item.hasil === 'NORMAL'
-                    ? 'rme-badge-success'
-                    : item.hasil
-                      ? 'rme-badge-danger'
-                      : 'rme-badge-default',
-                ]"
-              >
-                {{ item.hasil === 'NORMAL' ? 'NORMAL' : item.hasil ? 'TIDAK NORMAL' : '-' }}
-              </span>
-            </td>
-            <td>
-              <span
-                v-if="item.hasil && item.hasil !== 'NORMAL'"
-                style="color: #a04040; font-weight: 600"
-                >{{ item.hasil }}</span
-              >
-              <span v-else-if="item.hasil === 'NORMAL'" style="color: #4a8c4e">Normal</span>
-              <span v-else class="rme-empty-note" style="margin: 0; padding: 0">-</span>
+              <span v-if="item.isNormal" class="kad-temuan-normal">Dalam batas normal</span>
+              <span v-else class="kad-temuan-text">{{ item.temuanText }}</span>
             </td>
           </tr>
         </tbody>
@@ -298,6 +273,7 @@ import { ref, computed, watch, inject } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConfigStore, useAuthStore } from '@/stores/config'
 import axios from 'axios'
+import { buildOrganLabels, buildFieldSchemaMap } from '@/composables/useSecondarySurveyList'
 
 // ── Props ──────────────────────────────────────────────────────────────────────
 const props = defineProps({
@@ -315,16 +291,49 @@ const addTimelineEvent = inject('addTimelineEvent', () => {})
 
 // ── Data State ─────────────────────────────────────────────────────────────────
 const loading = ref(true)
-const loadingSurvey = ref(false)
 const error = ref(null)
 const data = ref({})
 const hasilLabAbnormal = ref([])
-const surveyFisik = ref([])
 
 // ── Computed ───────────────────────────────────────────────────────────────────
 const hasData = computed(
   () => !!data.value?.keluhan_utama || !!data.value?.dx_awal || !!data.value?.riwayat_peny_skrg,
 )
+
+const ORGAN_LABELS = buildOrganLabels()
+const FIELD_SCHEMA_MAP = buildFieldSchemaMap()
+
+const fmtKey = (k) => k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+
+const surveyFisikList = computed(() => {
+  const list = data.value?.data_survey_fisik
+  if (!Array.isArray(list) || list.length === 0) return []
+  return list.map((item) => {
+    const fieldSchema = FIELD_SCHEMA_MAP[item.organ] || {}
+    const parts = []
+    if (item.fields && typeof item.fields === 'object') {
+      for (const [k, v] of Object.entries(item.fields)) {
+        const sf = fieldSchema[k]
+        const label = sf?.label || fmtKey(k)
+        if (Array.isArray(v)) {
+          if (v.length === 0) continue
+          const disp = v.map((val) => sf?.options?.find((o) => o.value === val)?.label || val).join(', ')
+          parts.push(`${label}: ${disp}`)
+        } else if (typeof v === 'string' && v.trim()) {
+          const disp = sf?.options ? sf.options.find((o) => o.value === v)?.label || v : v
+          parts.push(`${label}: ${disp}`)
+        }
+      }
+    }
+    const isNormal = parts.length === 0
+    return {
+      organ: item.organ,
+      label: ORGAN_LABELS[item.organ] || item.organ,
+      isNormal,
+      temuanText: parts.join(' | '),
+    }
+  })
+})
 
 // ── Helper ─────────────────────────────────────────────────────────────────────
 const isChecked = (arr, item) => Array.isArray(arr) && arr.includes(item)
@@ -352,7 +361,8 @@ const fetchKajianAwal = async () => {
       nomr: props.dataPasien?.NOMR || '',
       id_client: id_client.value,
     })
-    data.value = res.data?.response || {}
+    const resp = res.data?.response || {}
+    data.value = resp
     hasilLabAbnormal.value = res.data?.hasil_lab_positif || []
   } catch (e) {
     error.value = 'Gagal memuat kajian awal dokter: ' + (e.message || '')
@@ -378,31 +388,11 @@ const fetchKajianAwal = async () => {
   }
 }
 
-// ── Fetch: survey fisik ───────────────────────────────────────────────────────
-const fetchSurveyFisik = async () => {
-  loadingSurvey.value = true
-  try {
-    const url = configStore.apiBaseUrl
-    const res = await axios.post(`${url}/index.php/api/data_referensi/survey_fisik_ranap`, {
-      noregister: props.dataPasien?.NOPENDAFTARAN || props.noreg,
-      id_client: id_client.value,
-    })
-    surveyFisik.value = res.data?.response || []
-  } catch (e) {
-    console.error('[KajianAwalSection] survey fisik:', e)
-  } finally {
-    loadingSurvey.value = false
-  }
-}
-
 // ── Watch ─────────────────────────────────────────────────────────────────────
 watch(
   () => props.dataPasien?.NOPENDAFTARAN,
   (val) => {
-    if (val) {
-      fetchKajianAwal()
-      fetchSurveyFisik()
-    }
+    if (val) fetchKajianAwal()
   },
   { immediate: true },
 )
@@ -527,6 +517,22 @@ watch(
   letter-spacing: 0.4px;
   background: #eef4f9;
   color: #4a7ab5;
+}
+.kad-organ-cell {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  color: #3d5a80;
+}
+.kad-temuan-normal {
+  color: #4a8c4e;
+  font-size: 12px;
+}
+.kad-temuan-text {
+  font-size: 12px;
+  color: #333;
+  line-height: 1.6;
 }
 
 /* ── Hasil lab abnormal ──────────────────────────────────────────── */

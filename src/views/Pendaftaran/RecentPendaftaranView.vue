@@ -19,7 +19,7 @@
             </div>
             <div>
               <p class="dialog-header-title">Riwayat Pendaftaran</p>
-              <p class="dialog-header-sub">{{ fact.length }} data ditemukan</p>
+              <p class="dialog-header-sub">{{ filteredFact.length }} data ditemukan</p>
             </div>
           </div>
         </template>
@@ -34,6 +34,7 @@
               :showButtonBar="true"
               placeholder="Tgl Awal"
               class="mf-datepicker"
+              @date-select="clearQuickDate"
             />
             <InputGroupAddon class="mf-addon">Akhir</InputGroupAddon>
             <DatePicker
@@ -43,6 +44,7 @@
               :showButtonBar="true"
               placeholder="Tgl Akhir"
               class="mf-datepicker"
+              @date-select="clearQuickDate"
             />
             <InputText
               v-model="searchKeyword"
@@ -52,10 +54,53 @@
             />
             <Button icon="pi pi-search" :loading="loading" class="btn-search" @click="onSearch" />
           </InputGroup>
+
+          <div class="quick-date-row">
+            <button
+              :class="['quick-date-btn', selectedQuickDate === '2m' && 'quick-date-btn-active']"
+              @click="setQuickDate(2, 'month', '2m')"
+            >
+              2 Bulan Lalu
+            </button>
+            <button
+              :class="['quick-date-btn', selectedQuickDate === '1m' && 'quick-date-btn-active']"
+              @click="setQuickDate(1, 'month', '1m')"
+            >
+              1 Bulan Lalu
+            </button>
+            <button
+              :class="['quick-date-btn', selectedQuickDate === '2w' && 'quick-date-btn-active']"
+              @click="setQuickDate(2, 'week', '2w')"
+            >
+              2 Minggu Lalu
+            </button>
+            <button
+              :class="['quick-date-btn', selectedQuickDate === '1w' && 'quick-date-btn-active']"
+              @click="setQuickDate(1, 'week', '1w')"
+            >
+              1 Minggu Lalu
+            </button>
+          </div>
+
+          <div class="jenisrawat-filter-row">
+            <span class="jr-label">Jenis Rawat</span>
+            <label class="jr-radio-item">
+              <RadioButton v-model="filterJenisRawat" value="ALL" name="jenisrawat" />
+              <span>Semua</span>
+            </label>
+            <label class="jr-radio-item">
+              <RadioButton v-model="filterJenisRawat" value="JALAN" name="jenisrawat" />
+              <span>Rawat Jalan</span>
+            </label>
+            <label class="jr-radio-item">
+              <RadioButton v-model="filterJenisRawat" value="INAP" name="jenisrawat" />
+              <span>Rawat Inap</span>
+            </label>
+          </div>
         </div>
 
         <div class="mobile-cards">
-          <div v-if="fact.length === 0" class="empty-state">
+          <div v-if="filteredFact.length === 0" class="empty-state">
             <i class="pi pi-inbox empty-icon"></i>
             <p class="empty-title">Tidak ada data</p>
             <p class="empty-sub">Coba ubah filter pencarian Anda</p>
@@ -97,7 +142,6 @@
 
             <div class="card-mobile-body">
               <div class="card-patient-row">
-                <div class="patient-avatar patient-avatar-sm">{{ initials(item.NAMAPASIEN) }}</div>
                 <div class="flex-1">
                   <p class="patient-name">{{ item.NAMAPASIEN }}</p>
                   <p class="patient-age">
@@ -120,31 +164,26 @@
                 </div>
               </div>
 
-              <div class="card-detail-grid-compact">
-                <div class="card-detail-item">
-                  <p class="card-label-dark">Dokter</p>
-                  <p class="card-value truncate">{{ item.NAMADOKTER }}</p>
-                </div>
-                <div class="card-detail-item">
-                  <p class="card-label-dark">Poli</p>
-                  <p class="card-value truncate">{{ item.POLI }}</p>
-                </div>
-                <div class="card-detail-item">
-                  <p class="card-label-dark">Cara Bayar</p>
-                  <span
-                    :class="['bayar-badge', bayarClass(item.CARABAYAR)]"
-                    style="font-size: 0.68rem"
-                    >{{ item.CARABAYAR }}</span
-                  >
-                </div>
-                <div class="card-detail-item">
-                  <p class="card-label-dark">Jenis Rawat</p>
-                  <span
-                    :class="['rawat-badge', rawatClass(item.JENISRAWAT)]"
-                    style="font-size: 0.68rem"
-                    >{{ item.JENISRAWAT }}</span
-                  >
-                </div>
+              <div class="card-detail-inline">
+                <span class="detail-chip" v-tooltip.top="'Dokter'"
+                  ><i class="pi pi-user-md"></i>{{ item.NAMADOKTER }}</span
+                >
+                <span class="detail-sep">&bull;</span>
+                <span class="detail-chip" v-tooltip.top="'Poli'"
+                  ><i class="pi pi-map-marker"></i>{{ item.POLI }}</span
+                >
+                <span :class="['bayar-badge', bayarClass(item.CARABAYAR)]">{{
+                  item.CARABAYAR
+                }}</span>
+                <span :class="['rawat-badge', rawatClass(item.JENISRAWAT)]">{{
+                  item.JENISRAWAT
+                }}</span>
+                <span v-if="item.NOSEP" class="detail-chip mono" v-tooltip.top="'No SEP'"
+                  >SEP:{{ item.NOSEP }}</span
+                >
+                <span v-if="item.STTS_PULANG" class="detail-chip detail-chip-pulang">{{
+                  item.STTS_PULANG
+                }}</span>
               </div>
 
               <div v-if="item.INI_BUKAN_PASIEN_KAMI === '1'" class="unclaim-notice">
@@ -240,14 +279,16 @@
           <div class="page-info">
             <span class="page-current">{{ mobilePage }}</span>
             <span class="page-sep">/</span>
-            <span class="page-total">{{ Math.ceil(fact.length / mobileRowsPerPage) || 1 }}</span>
+            <span class="page-total">{{
+              Math.ceil(filteredFact.length / mobileRowsPerPage) || 1
+            }}</span>
           </div>
           <Button
             icon="pi pi-chevron-right"
             text
             rounded
             @click="mobilePage++"
-            :disabled="mobilePage >= Math.ceil(fact.length / mobileRowsPerPage)"
+            :disabled="mobilePage >= Math.ceil(filteredFact.length / mobileRowsPerPage)"
           />
         </div>
       </Dialog>
@@ -375,7 +416,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useConfigStore } from '@/stores/config'
 import axios from 'axios'
 import { useAuthStore } from '@/stores/config'
@@ -414,18 +455,42 @@ const endDate = ref(new Date())
 const mobilePage = ref(1)
 const mobileRowsPerPage = ref(5)
 
-const paginatedMobileFact = computed(() => {
-  const start = (mobilePage.value - 1) * mobileRowsPerPage.value
-  return fact.value.slice(start, start + mobileRowsPerPage.value)
+const filterJenisRawat = ref('ALL')
+watch(filterJenisRawat, () => {
+  mobilePage.value = 1
 })
 
-const initials = (name = '') =>
-  name
-    .split(' ')
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase()
+const filteredFact = computed(() => {
+  if (filterJenisRawat.value === 'ALL') return fact.value
+  return fact.value.filter(
+    (item) => (item.JENISRAWAT || '').toUpperCase() === filterJenisRawat.value,
+  )
+})
+
+const paginatedMobileFact = computed(() => {
+  const start = (mobilePage.value - 1) * mobileRowsPerPage.value
+  return filteredFact.value.slice(start, start + mobileRowsPerPage.value)
+})
+
+const selectedQuickDate = ref(null)
+
+const setQuickDate = (amount, unit, key) => {
+  const end = new Date()
+  const start = new Date()
+  if (unit === 'month') {
+    start.setMonth(start.getMonth() - amount)
+  } else {
+    start.setDate(start.getDate() - amount * 7)
+  }
+  startDate.value = start
+  endDate.value = end
+  selectedQuickDate.value = key
+  onSearch()
+}
+
+const clearQuickDate = () => {
+  selectedQuickDate.value = null
+}
 
 const bayarClass = (carabayar = '') => {
   const v = carabayar.toUpperCase()
@@ -831,9 +896,9 @@ onMounted(() => {})
 }
 
 .patient-avatar-sm {
-  width: 32px;
-  height: 32px;
-  font-size: 0.7rem;
+  width: 28px;
+  height: 28px;
+  font-size: 0.65rem;
 }
 
 .patient-name {
@@ -877,9 +942,9 @@ onMounted(() => {})
 .bayar-badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.15rem 0.5rem;
+  padding: 0.05rem 0.45rem;
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -923,9 +988,9 @@ onMounted(() => {})
 .rawat-badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.15rem 0.5rem;
+  padding: 0.05rem 0.45rem;
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -1005,11 +1070,17 @@ onMounted(() => {})
 }
 
 .mf-addon {
+  flex: 0 0 auto;
   font-size: 0.7rem;
   font-weight: 600;
   color: #6b7280;
   white-space: nowrap;
   padding: 0 0.45rem;
+}
+
+.mf-datepicker {
+  flex: 0 1 auto !important;
+  width: auto !important;
 }
 
 :deep(.mf-datepicker .p-inputtext) {
@@ -1027,6 +1098,71 @@ onMounted(() => {})
   flex: 1 1 80px;
   min-width: 0;
   font-size: 0.78rem;
+}
+
+.quick-date-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.quick-date-btn {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.quick-date-btn:hover {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+
+.quick-date-btn-active {
+  background: #1d4ed8;
+  color: #fff;
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.25);
+}
+
+.quick-date-btn-active:hover {
+  background: #1e40af;
+  border-color: #1e40af;
+}
+
+.jenisrawat-filter-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding-top: 0.25rem;
+  border-top: 1px dashed #e5e7eb;
+}
+
+.jr-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.jr-radio-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: #374151;
+  cursor: pointer;
 }
 
 .w-full {
@@ -1065,7 +1201,7 @@ onMounted(() => {})
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding: 0.45rem 0.6rem 0.5rem;
+  padding: 0.35rem 0.6rem;
   background: linear-gradient(135deg, #2d1b69 0%, #11998e 100%);
 }
 .card-header-top {
@@ -1123,7 +1259,7 @@ onMounted(() => {})
   background: rgba(255, 255, 255, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 4px;
-  padding: 3px 9px;
+  padding: 2px 8px;
   white-space: nowrap;
 }
 .time-chip i {
@@ -1172,17 +1308,17 @@ onMounted(() => {})
 }
 
 .card-mobile-body {
-  padding: 0.4rem 0.6rem;
+  padding: 0.35rem 0.6rem;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.25rem;
 }
 
 .card-patient-row {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding-bottom: 0.3rem;
+  padding-bottom: 0.25rem;
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -1220,16 +1356,44 @@ onMounted(() => {})
   border-color: #3b82f6;
 }
 
-.card-detail-grid-compact {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-  gap: 0.25rem 0.4rem;
+.card-detail-inline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: 3px;
+  column-gap: 6px;
+  font-size: 0.72rem;
+  color: #4b5563;
+  line-height: 1.3;
 }
 
-.card-detail-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
+.detail-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.detail-chip i {
+  font-size: 0.68rem;
+  color: #9ca3af;
+}
+
+.detail-chip.mono {
+  font-family: monospace;
+  color: #374151;
+}
+
+.detail-chip-pulang {
+  color: #0f766e;
+  font-weight: 600;
+}
+
+.detail-sep {
+  color: #d1d5db;
 }
 
 .card-value {
@@ -1276,9 +1440,9 @@ onMounted(() => {})
 
 .card-mobile-footer {
   display: flex;
-  gap: 0.35rem;
+  gap: 0.3rem;
   flex-wrap: wrap;
-  padding: 0.35rem 0.5rem;
+  padding: 0.3rem 0.5rem;
   background: #f9fafb;
   border-top: 1px solid #e5e7eb;
 }

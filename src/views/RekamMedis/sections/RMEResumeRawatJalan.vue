@@ -180,7 +180,7 @@
         <div class="rj-footer-inner">
           <div class="rj-footer-ttl">Dokter Penanggung Jawab Pasien</div>
           <div class="rj-qr-wrap">
-            <QrcodeVue :value="noreg" :size="40" level="M" render-as="svg" />
+            <QrcodeVue :value="noreg" :size="20" level="M" render-as="svg" />
           </div>
           <div class="rj-footer-line"></div>
           <div class="rj-footer-dokter">{{ dataPasien?.NAMADOKTER || '—' }}</div>

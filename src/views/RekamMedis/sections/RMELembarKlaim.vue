@@ -94,7 +94,7 @@
             <td class="lk-val">{{ pasien.USIA_PASIEN?.tahun ?? pasien.USIA ?? '-' }}</td>
             <td class="lk-lbl">Tanggal Keluar</td>
             <td class="lk-sep">:</td>
-            <td class="lk-val">{{ formatDate(pasien.KELUARPOLY_NULL || pasien.KELUARPOLY) }}</td>
+            <td class="lk-val">{{ formatDate(tanggalKeluar) }}</td>
           </tr>
           <tr>
             <td class="lk-lbl lk-lbl-c">Umur Hari</td>
@@ -303,13 +303,21 @@ const umurHari = computed(() => {
   return parts.length ? parts.join(' ') : '-'
 })
 
+// ── Tanggal Keluar (rawat jalan = sama dengan tanggal masuk) ─────────────────
+const tanggalKeluar = computed(() => {
+  const p = pasien.value
+  const jenisRawat = p?.JENISRAWAT || klaimData.value?.JENIS_RAWAT
+  if (jenisRawat === 'JALAN') return p?.MASUKPOLY
+  return p?.KELUARPOLY_NULL || p?.KELUARPOLY
+})
+
 // ── LOS ───────────────────────────────────────────────────────────────────────
 const los = computed(() => {
   const p = pasien.value
   if (p?.LOS) return p.LOS
   if (p?.JLM_HARI_RAWAT) return p.JLM_HARI_RAWAT
   const masuk = p?.MASUKPOLY
-  const keluar = p?.KELUARPOLY_NULL || p?.KELUARPOLY
+  const keluar = tanggalKeluar.value
   if (!masuk || !keluar) return '-'
   const diff = new Date(keluar) - new Date(masuk)
   const days = Math.round(diff / (1000 * 60 * 60 * 24))
@@ -336,7 +344,6 @@ const fetchKlaim = async () => {
     )
     // Response: { data: [ { ...klaim, pasien: {...} } ] }
 
-    console.log('fetchKlaim response:', res.data)
     const arr = res.data?.data
     klaimData.value = Array.isArray(arr) ? (arr[0] ?? null) : (arr ?? null)
     reportSectionData('lembar-klaim', klaimData.value !== null)

@@ -16,13 +16,19 @@
           </div>
           <h2 class="otp-title">Tanda Tangan Digital</h2>
           <p class="otp-description">
-            Masukkan username dan kode PIN untuk verifikasi tanda tangan digital Anda
+            {{
+              isVerifyMode
+                ? isDokter
+                  ? 'Masukkan PIN untuk mengonfirmasi identitas Anda'
+                  : 'Masukkan username dan PIN untuk konfirmasi'
+                : 'Masukkan username dan kode PIN untuk verifikasi tanda tangan digital Anda'
+            }}
           </p>
         </div>
 
         <!-- Form -->
         <div class="otp-form">
-          <div class="form-field">
+          <div v-if="showUsernameField" class="form-field">
             <label class="form-label"> <i class="pi pi-user" /> Username </label>
 
             <InputText
@@ -44,7 +50,7 @@
               placeholder="PIN atau passphrase"
               class="form-input"
               :class="{ 'p-invalid': otpError }"
-              @keydown.enter="verifyOtp"
+              @keydown.enter="onSubmit"
             />
             <small v-if="otpError" class="error-text">{{ otpError }}</small>
           </div>
@@ -54,7 +60,7 @@
         <div class="otp-actions">
           <Button
             label="Verifikasi"
-            @click="verifyOtp"
+            @click="onSubmit"
             :loading="loading"
             class="verify-btn"
             icon="pi pi-check"
@@ -71,8 +77,14 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import { storeToRefs } from 'pinia'
+import axios from 'axios'
+import { useConfigStore, useAuthStore } from '@/stores/config'
 
 const toast = useToast()
+const configStore = useConfigStore()
+const authStore = useAuthStore()
+const { id_client, group_user, user_id } = storeToRefs(authStore)
 
 /* Props */
 const props = defineProps({
@@ -80,8 +92,18 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-  noregister: String,
+  noregister: [String, Number],
   mode: Number,
+  link_ttd: { type: String, default: null },
+  record_id: { type: [Number, String], default: null },
+  // formMode 1: verifikasi langsung ke server (perilaku TtdDigitalComponent lama) —
+  //   username/PIN divalidasi lewat endpoint otorisasi, event 'otpVerified' baru terpicu
+  //   setelah server mengonfirmasi valid.
+  // formMode 2 (default, perilaku form ini sejak awal): form HANYA menampung ketikan
+  //   username & password, tanpa panggilan API. Isian di-emit apa adanya lewat 'otpVerified'
+  //   supaya form pemanggil yang menentukan mau diapakan (mis. dipakai untuk API otorisasi
+  //   miliknya sendiri, seperti di ProsesLabView.vue).
+  formMode: { type: Number, default: 2 },
 })
 
 /* Emits */
@@ -94,6 +116,14 @@ const usernameError = ref('')
 const otpError = ref('')
 const loading = ref(false)
 
+const isVerifyMode = computed(() => props.formMode === 1)
+const isDokter = computed(() => group_user.value === 'DOKTER')
+// DOKTER → ambil dari store login, non-DOKTER / mode input → dari input form
+const apiUserId = computed(() => (isVerifyMode.value && isDokter.value ? user_id.value : username.value))
+// Di mode verifikasi, DOKTER tidak perlu isi username (identitasnya dari sesi login).
+// Di mode input, username selalu ditampilkan karena form ini murni penampung ketikan.
+const showUsernameField = computed(() => !(isVerifyMode.value && isDokter.value))
+
 /* Visibility using v-model */
 const localVisible = computed({
   get: () => props.showFormOtorisasi,
@@ -102,12 +132,15 @@ const localVisible = computed({
 
 /* Auto load username from localStorage */
 const loadUsername = () => {
+  if (isVerifyMode.value && isDokter.value) return
   const saved = localStorage.getItem('username')
   if (saved) username.value = saved
 }
 
 watch(username, (val) => {
-  localStorage.setItem('username', val)
+  if (showUsernameField.value && val) {
+    localStorage.setItem('username', val)
+  }
 })
 
 watch(
@@ -125,9 +158,13 @@ onMounted(() => {
 const validate = () => {
   let valid = true
 
-  if (!username.value.trim()) {
-    usernameError.value = 'Username tidak boleh kosong'
-    valid = false
+  if (showUsernameField.value) {
+    if (!username.value.trim()) {
+      usernameError.value = 'Username tidak boleh kosong'
+      valid = false
+    } else {
+      usernameError.value = ''
+    }
   } else {
     usernameError.value = ''
   }
@@ -142,10 +179,8 @@ const validate = () => {
   return valid
 }
 
-/* Emit data ke parent */
-const verifyOtp = async () => {
-  if (!validate()) return
-
+/* formMode 2 (default): tidak ada panggilan API, langsung emit isian ke parent */
+const submitInputOnly = () => {
   loading.value = true
 
   setTimeout(() => {
@@ -158,14 +193,74 @@ const verifyOtp = async () => {
     })
 
     loading.value = false
-    localVisible.value = false
+    handleClose()
   }, 500)
+}
+
+/* formMode 1: verifikasi ke endpoint otorisasi (sama seperti TtdDigitalComponent lama) */
+const submitVerify = async () => {
+  try {
+    loading.value = true
+
+    const link = props.link_ttd?.trim() || 'otorisasi_v3'
+    const payload = {
+      id_client: id_client.value,
+      user_id: apiUserId.value,
+      pwd: password.value,
+      noregister: props.noregister,
+      mode: props.mode,
+    }
+    if (props.record_id != null) payload.id = props.record_id
+
+    const response = await axios.post(
+      `${configStore.apiBaseUrl}/index.php/api/Triaseigd/${link}`,
+      payload,
+    )
+
+    if (response.data.metadata.code == '200') {
+      toast.add({
+        severity: 'success',
+        summary: 'Berhasil',
+        detail: 'Tanda tangan digital telah dikonfirmasi.',
+        life: 3000,
+      })
+
+      if (props.mode == 10 && response.data.metadata?.url) {
+        window.open(response.data.metadata.url, '_blank')
+      }
+
+      emit('otpVerified', { username: apiUserId.value, verified: true })
+      handleClose()
+    } else {
+      toast.add({
+        severity: 'error',
+        summary: 'Verifikasi Gagal',
+        detail: response.data?.message || 'Username atau PIN tidak valid',
+        life: 4000,
+      })
+    }
+  } catch {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Terjadi kesalahan koneksi.',
+      life: 4000,
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
+const onSubmit = () => {
+  if (!validate()) return
+  isVerifyMode.value ? submitVerify() : submitInputOnly()
 }
 
 /* Close Dialog */
 const handleClose = () => {
   usernameError.value = ''
   otpError.value = ''
+  password.value = ''
   localVisible.value = false
 }
 </script>

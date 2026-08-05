@@ -1323,8 +1323,9 @@ watch(
 )
 
 const printResumePasien = () => {
+  const isRanap = props.datapasien?.JENISRAWAT === 'INAP'
   const routeData = router.resolve({
-    name: 'ResumeRanapView',
+    name: isRanap ? 'ResumeRanapView' : 'ResumeRawatJalanView',
     query: { noreg: props.datapasien.NOPENDAFTARAN },
   })
   window.open(routeData.href, '_blank')

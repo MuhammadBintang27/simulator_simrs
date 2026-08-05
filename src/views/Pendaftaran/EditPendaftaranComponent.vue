@@ -1703,7 +1703,7 @@ const doSaveNomorSEP = async () => {
 
     const response = await axios.post(`${url}/index.php/api/penunjang/update_nomor_sep`, payload)
 
-    console.log('Response update SEP:', response.data)
+    //console.log('Response update SEP:', response.data)
 
     const code = response.data?.code ?? response.data?.metadata?.code ?? response.data?.status
     const message =
@@ -1744,7 +1744,7 @@ const saveData = async () => {
       ...formData.value,
     }
 
-    console.log('data save', JSON.stringify(formData.value))
+    // // console.log('data save', JSON.stringify(formData.value))
     const response = await axios.post(
       `${configStore.apiBaseUrl}/index.php/api/transaksi_pasien/update_sep_pasien_v2`,
       formData.value,

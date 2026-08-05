@@ -68,14 +68,24 @@
         </div>
       </template>
       <template #icons>
-        <Button
-          class="round-button2"
-          icon="pi pi-search"
-          :loading="loadingTemplate"
-          @click="panggilTemplate()"
-          label="Template"
-          size="small"
-        />
+        <div class="flex gap-2">
+          <Button
+            class="round-button2"
+            icon="pi pi-search"
+            :loading="loadingTemplate"
+            @click="panggilTemplate()"
+            label="Template"
+            size="small"
+          />
+          <Button
+            class="round-button2"
+            icon="pi pi-file"
+            severity="info"
+            @click="PrintRekamMedisEl()"
+            label="Rekam Medis El"
+            size="small"
+          />
+        </div>
       </template>
 
       <!-- ===== MAIN 3-COLUMN LAYOUT ===== -->
@@ -460,6 +470,14 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
+const PrintRekamMedisEl = () => {
+  const routeData = router.resolve({
+    name: 'RMEViewer',
+    query: { noreg: fact.value?.NOREGISTER },
+  })
+  window.open(routeData.href, '_blank')
+}
+
 // Toast functions
 const showSuccess = (message = 'Operation successful') => {
   toast.add({
@@ -489,7 +507,6 @@ const singkron_data = async (items) => {
       .trim() ?? ''
 
   LoadHasilPemeriksaanlist.value.forEach((template) => {
-    console.log(template)
     items.forEach((item) => {
       if (clean(item.kode_pemeriksaan) === clean(template.SUB_KATEGORI)) {
         template.HASIL = item.hasil?.nilai_hasil ?? null
@@ -630,8 +647,6 @@ const sync_lis = async () => {
       `${url}/index.php/api/penunjang/list_get_hasil/${no_laboratorium.value}`,
     )
 
-    console.log(response.data)
-
     if (response.data.status == 200) {
       showSuccess(response.data.message)
       dataLab.value = response.data.response
@@ -647,7 +662,6 @@ const sync_lis = async () => {
 }
 
 const addKategori = (items) => {
-  console.log(items)
   items.forEach((item) => {
     LoadHasilPemeriksaanlist.value.push({
       ID: item.ID,

@@ -190,6 +190,7 @@ const profile_rs = async (id_client) => {
 
     localStorage.setItem('use_tte_bsre', response.data.use_tte_bsre)
     localStorage.setItem('disable_jika_sediaan_nol', response.data.disable_jika_sediaan_nol)
+    localStorage.setItem('kop_surat', response.data.kop_surat)
 
     return response.data
   } catch (error) {

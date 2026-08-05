@@ -9,17 +9,10 @@
         <Tab value="2">ASSESMEN PRA ANESTESI</Tab>
         <Tab value="1">CHECK LIST KESELAMATAN</Tab>
         <Tab value="5">PENANDAAN LOKASI OPERASI</Tab>
-        <Tab value="3">PETUGAS PELAKSANA OPERASI</Tab>
+        <Tab value="9"> MONITORING INTRA OPERASI </Tab>
         <Tab value="4">LAPORAN OPERASI</Tab>
-        <Tab value="6">
-          <i class="fa-solid fa-clipboard-list" style="margin-right: 6px"></i>FORMULIR ANESTESI
-        </Tab>
-        <Tab value="7">
-          <i class="fa-solid fa-pills" style="margin-right: 6px"></i>OBAT BMHP OPERASI
-        </Tab>
-        <Tab value="8">
-          <i class="fa-solid fa-file-contract" style="margin-right: 6px"></i>INFORM CONSENT
-        </Tab>
+        <Tab value="7"> OBAT BMHP OPERASI </Tab>
+        <Tab value="8"> INFORM CONSENT </Tab>
       </TabList>
 
       <TabPanels>
@@ -396,23 +389,20 @@
         <TabPanel value="2">
           <AssPraAnastesiview />
         </TabPanel>
-        <TabPanel value="3">
-          <PetugasPelaksanaOperasiView />
-        </TabPanel>
         <TabPanel value="4">
           <LaporanOperasiView />
         </TabPanel>
         <TabPanel value="5">
           <PenandaanLokasiOperasiView />
         </TabPanel>
-        <TabPanel value="6">
-          <FormulirAnastesi />
-        </TabPanel>
         <TabPanel value="7">
-          <PaketObatOperasiComponent />
+          <PaketObatOperasiComponent :datapasien="form" />
         </TabPanel>
         <TabPanel value="8">
           <InformConserntOperasi />
+        </TabPanel>
+        <TabPanel value="9">
+          <IntraOperasiView />
         </TabPanel>
       </TabPanels>
     </Tabs>
@@ -433,9 +423,8 @@ import { ref, onMounted, computed } from 'vue'
 import CardPasienTransComponent from '@/components/umum/CardPasienTransComponent.vue'
 import ChecklistKeselamatanView from '@/views/RuangOperasi/ChecklistKeselamatanView.vue'
 import PenandaanLokasiOperasiView from '@/views/RuangOperasi/PenandaanLokasiOperasiView.vue'
-import PetugasPelaksanaOperasiView from '@/views/RuangOperasi/PetugasPelaksanaOperasiView.vue'
 import LaporanOperasiView from '@/views/RuangOperasi/LaporanOperasiView.vue'
-import FormulirAnastesi from '@/views/RuangOperasi/Anestesi/FormulisAnastesiView.vue'
+import IntraOperasiView from '@/views/RuangOperasi/Anestesi/IntraOperasiView.vue'
 import AssPraAnastesiview from '@/views/RuangOperasi/Anestesi/AssPraAnastesiview.vue'
 import PaketObatOperasiComponent from '@/views/RuangOperasi/PaketObatOperasiComponent.vue'
 import ttdUser from '@/components/TtdDigitalComponent.vue'

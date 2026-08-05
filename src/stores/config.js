@@ -4,11 +4,9 @@ import { ref } from 'vue'
 
 export const useConfigStore = defineStore('config', {
   state: () => {
-    const isProd = false // 'production' // import.meta.env.MODE === 'development'
-
+    const isProd = true // 'production' // import.meta.env.MODE === 'development'
     return {
       mode: isProd ? 'production' : 'development',
-
       apiBaseUrl:
         isProd == true
           ? 'https://ws-simrs.net/ws_sim_v2/' //'https://ws-simrs.link/ws_sim_v2'
@@ -30,7 +28,6 @@ export const useConfigStore = defineStore('config', {
       mobileSidebarOpen: false,
     }
   },
-
   actions: {
     toggleSidebar() {
       this.sidebarCollapsed = !this.sidebarCollapsed
@@ -60,6 +57,7 @@ export const useAuthStore = defineStore('auth', {
     company: localStorage.getItem('NAMA_RS') || null,
     ALAMAT: localStorage.getItem('ALAMAT') || null,
     LINK_LOGO: localStorage.getItem('LINK_LOGO') || null,
+    kop_surat: localStorage.getItem('kop_surat') || null,
     id_lokasi: localStorage.getItem('id_lokasi') || null,
     use_tte_bsre: localStorage.getItem('use_tte_bsre') || null,
     disable_jika_sediaan_nol: localStorage.getItem('disable_jika_sediaan_nol') || null,
@@ -130,6 +128,7 @@ export const useAuthStore = defineStore('auth', {
       this.company = null
       this.ALAMAT = null
       this.LINK_LOGO = null
+      this.kop_surat = null
       this.id_lokasi = null
       this.use_tte_bsre = 0
       this.tampilkan_no_urutan_display = 0
@@ -145,6 +144,7 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('NAMA_RS')
       localStorage.removeItem('ALAMAT')
       localStorage.removeItem('LINK_LOGO')
+      localStorage.removeItem('kop_surat')
       localStorage.removeItem('loggedIn')
       localStorage.removeItem('id_lokasi')
       localStorage.removeItem('use_tte_bsre')

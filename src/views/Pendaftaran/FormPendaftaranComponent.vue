@@ -74,6 +74,7 @@
       <div class="reg-grid-2">
         <div class="reg-field">
           <label class="reg-label">Jenis Rawat <span class="req">*</span></label>
+
           <Select
             v-model="jenisrawatSelected"
             :options="JenisRawatList"
@@ -547,6 +548,9 @@
             <span v-if="props.os.nik"
               ><i class="pi pi-credit-card"></i> NIK: {{ props.os.nik }}</span
             >
+            <span v-else style="font-size: 10px; opacity: 0.6; font-style: italic">
+              <i class="pi pi-info-circle"></i> Tidak ada NIK — isi &quot;-&quot; pada form pasien
+            </span>
             <span v-if="props.os.tglLahir"
               ><i class="pi pi-calendar"></i> {{ props.os.tglLahir
               }}<template v-if="props.os.umur?.umurSekarang">
@@ -1731,6 +1735,9 @@ const submitForm = async () => {
       user_id: user_id.value,
     }
 
+    // console.log('Payload for createSEP:', JSON.stringify(payload))
+    // return
+
     const response = await axios.post(`${url}/index.php/api/Bpjs_api/createSEP`, payload)
 
     console.log('Response from createSEP:', response.data)
@@ -1844,7 +1851,7 @@ const validateForm = () => {
     isValid = false
   }
 
-  if (carabayarSelected.value?.KODE === 5) {
+  if (carabayarSelected.value?.KODE == 5) {
     if (!TanggalSEP.value) {
       formErrors.value.TanggalSEP = 'Tanggal SEP wajib diisi untuk pasien BPJS'
       isValid = false
@@ -1899,6 +1906,32 @@ const showConfirmDialog = ref(false)
 
 const openConfirmDialog = () => {
   if (!validateForm()) return
+
+  // Rawat inap langsung hanya untuk bayi baru lahir (usia 0 tahun)
+  // Pengecualian: jika "Hanya simpan ke server BPJS" diaktifkan
+  if (jenisrawatSelected.value.code === 1 && !hanyaSimpanKeBPJS.value) {
+    const tglLahir = props.os?.tglLahir
+    if (tglLahir) {
+      const birth = new Date(tglLahir)
+      if (!isNaN(birth.getTime())) {
+        const now = new Date()
+        let usia = now.getFullYear() - birth.getFullYear()
+        const bln = now.getMonth() - birth.getMonth()
+        if (bln < 0 || (bln === 0 && now.getDate() < birth.getDate())) usia--
+        if (usia > 0) {
+          toast.add({
+            severity: 'warn',
+            summary: 'Pendaftaran Rawat Inap Tidak Diizinkan',
+            detail:
+              'Pendaftaran langsung rawat inap hanya untuk bayi baru lahir (usia 0 tahun). Untuk mendaftarkan pasien ini ke rawat inap, Silahkan lanjutkan dari dari rawat jalan atau IGD agar rekam medis dapat terhubung.',
+            life: 8000,
+          })
+          return
+        }
+      }
+    }
+  }
+
   showConfirmDialog.value = true
 }
 

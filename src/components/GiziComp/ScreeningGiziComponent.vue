@@ -162,15 +162,20 @@ async function getDataAssesmentGizi() {
     })
 
     const gizi = response.data.data_gizi
-    form.value.penurunanBB = {
-      caption: gizi.penurunanBB.caption,
-      value: gizi.penurunanBB.value,
+    if (!gizi) return
+    if (gizi.penurunanBB) {
+      form.value.penurunanBB = {
+        caption: gizi.penurunanBB.caption,
+        value: gizi.penurunanBB.value,
+      }
     }
-    form.value.turunnafsuMakan = {
-      caption: gizi.turunnafsu_makan.caption,
-      value: gizi.turunnafsu_makan.value,
+    if (gizi.turunnafsu_makan) {
+      form.value.turunnafsuMakan = {
+        caption: gizi.turunnafsu_makan.caption,
+        value: gizi.turunnafsu_makan.value,
+      }
     }
-    form.value.nilai_mst = gizi.nilai_mst
+    if (gizi.nilai_mst !== undefined) form.value.nilai_mst = gizi.nilai_mst
   } catch (error) {
     console.error(error)
   } finally {
@@ -180,7 +185,11 @@ async function getDataAssesmentGizi() {
 
 function getValue() {
   form.value.nilai_mst = skorMst.value
-  return form.value
+  return {
+    penurunanBB: form.value.penurunanBB,
+    turunnafsu_makan: form.value.turunnafsuMakan,
+    nilai_mst: form.value.nilai_mst,
+  }
 }
 
 function setValue() {

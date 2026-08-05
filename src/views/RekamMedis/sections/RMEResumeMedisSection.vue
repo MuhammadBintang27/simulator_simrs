@@ -89,7 +89,8 @@
             </div>
             <div class="rs-row">
               <span class="rs-lbl">Tanggal Masuk</span><span class="rs-sep">:</span
-              ><span class="rs-val">{{ data_ranap.MASUKPOLY_DISPLAY || '—' }}</span>
+              ><span class="rs-val">{{ masuk_dari.MASUKPOLY_DISPLAY || '-' }} </span>
+              <!-- <p> {{data_ranap.MASUKPOLY_DISPLAY }}</p> -->
             </div>
           </div>
           <div>
@@ -154,9 +155,7 @@
           <div>
             <div class="rs-row">
               <span class="rs-lbl">Keluhan Utama</span><span class="rs-sep">:</span
-              ><span class="rs-val">{{
-                triase_igd.keluhan_utama || resume.keluhan_utama || '—'
-              }}</span>
+              ><span class="rs-val">{{ resume.keluhan_utama || '—' }}</span>
             </div>
             <div class="rs-row">
               <span class="rs-lbl">Diagnosis Utama</span><span class="rs-sep">:</span
@@ -405,6 +404,7 @@ const fetchData = async () => {
       noregister: props.noreg,
       id_client: id_client.value,
     })
+    console.log('data resume', JSON.stringify(res.data.masuk_dari.MASUKPOLY))
     const d = res.data
     pasien.value = d.pasien ?? {}
     data_ranap.value = d.data_ranap ?? {}

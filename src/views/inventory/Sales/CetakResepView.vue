@@ -5,9 +5,23 @@
       <button class="cetak-btn-back" @click="$router.back()">
         <i class="pi pi-arrow-left" /> Kembali
       </button>
-      <button class="cetak-btn-print" @click="doCetak">
-        <i class="pi pi-print" /> Cetak Resep
-      </button>
+
+      <!-- Mode toggle -->
+      <div class="cetak-mode-group">
+        <button
+          class="cetak-mode-btn"
+          :class="{ active: mode === 'biasa' }"
+          @click="mode = 'biasa'"
+        >
+          <i class="pi pi-file" /> Resep Biasa
+        </button>
+        <button class="cetak-mode-btn" :class="{ active: mode === 'copy' }" @click="mode = 'copy'">
+          <i class="pi pi-copy" /> Copy Resep
+          <span v-if="copyItemCount > 0" class="cetak-mode-badge">{{ copyItemCount }}</span>
+        </button>
+      </div>
+
+      <button class="cetak-btn-print" @click="doCetak"><i class="pi pi-print" /> Cetak</button>
     </div>
 
     <!-- Loading state -->
@@ -28,13 +42,13 @@
             <div class="rp-rs-addr">{{ ALAMAT }}</div>
           </div>
         </div>
-        <div class="rp-page-num">P1</div>
+        <div class="rp-page-num">{{ mode === 'copy' ? 'COPY' : '' }}</div>
       </div>
       <div class="rp-divider"></div>
 
       <!-- ── JUDUL + POLI ── -->
       <div class="rp-title-row">
-        <div class="rp-title">Resep Pasien</div>
+        <div class="rp-title">{{ mode === 'copy' ? 'Copy Resep' : 'Resep Pasien' }}</div>
         <div class="rp-poli">{{ poliName }}</div>
       </div>
 
@@ -88,9 +102,12 @@
       <div class="rp-divider"></div>
 
       <!-- ── DAFTAR OBAT ── -->
-      <div class="rp-items">
-        <template v-for="(group, gIdx) in groupedItems" :key="gIdx">
+      <div v-if="activeGroups.length === 0" class="rp-empty no-print">
+        <i class="pi pi-info-circle" /> Tidak ada item copy resep untuk dicetak.
+      </div>
 
+      <div class="rp-items">
+        <template v-for="(group, gIdx) in activeGroups" :key="gIdx">
           <!-- ─ Resep Tunggal ─ -->
           <div v-if="group.type === 'tunggal'" class="rp-group">
             <div class="rp-item-row">
@@ -98,7 +115,7 @@
               <span class="rp-drug-name">{{ group.item.NAMA }}</span>
               <span class="rp-no-qty">
                 <span class="rp-no-label">No.</span>
-                <span class="rp-qty-roman">{{ fmtQty(group.item) }}</span>
+                <span class="rp-qty-roman">{{ activeQty(group.item) }}</span>
               </span>
             </div>
             <div v-if="group.item.REMARK_ITEM" class="rp-signa">
@@ -114,7 +131,7 @@
               <span class="rp-drug-name rp-racikan-title">{{ group.parent.NAMA }}</span>
               <span class="rp-no-qty">
                 <span class="rp-no-label">No.</span>
-                <span class="rp-qty-roman">{{ fmtQty(group.parent) }}</span>
+                <span class="rp-qty-roman">{{ activeQty(group.parent) }}</span>
               </span>
             </div>
             <div v-for="(child, cIdx) in group.children" :key="cIdx" class="rp-child-row">
@@ -128,7 +145,7 @@
           </div>
 
           <!-- separator antar group -->
-          <div v-if="gIdx < groupedItems.length - 1" class="rp-group-sep"></div>
+          <div v-if="gIdx < activeGroups.length - 1" class="rp-group-sep"></div>
         </template>
       </div>
       <div class="rp-dashed"></div>
@@ -153,7 +170,7 @@
           </table>
         </div>
 
-        <!-- Telaah Obat + Tanda Tangan -->
+        <!-- Telaah Obat -->
         <div class="rp-telaah-wrap">
           <table class="rp-telaah-table">
             <thead>
@@ -214,6 +231,7 @@ const { id_client, company, LINK_LOGO, ALAMAT } = storeToRefs(authStore)
 
 const loading = ref(true)
 const allData = ref(null)
+const mode = ref(route.query.mode === 'copy' ? 'copy' : 'biasa')
 
 const ps = computed(() => allData.value?.PS?.[0] || {})
 const drugItems = computed(() => allData.value?.RESEP || [])
@@ -270,17 +288,12 @@ const tglMasuk = computed(() => {
   return `${dd}/${mm}/${yyyy} ${hh}:${min}`
 })
 
-/* ── Group resep: tunggal vs racikan ──
-   Tunggal : NO = "No. "  AND  BARCODE ≠ "00000"
-   Racikan header : NO = "No. "  AND  BARCODE = "00000"
-   Racikan child  : NO = ""  AND  JENIS_RESEP = ""
-*/
-const groupedItems = computed(() => {
-  const items = [...drugItems.value].sort((a, b) => Number(a.ITEMSEQNO) - Number(b.ITEMSEQNO))
+/* ── Build groups (tunggal / racikan) dari array item ── */
+const buildGroups = (items) => {
+  const sorted = [...items].sort((a, b) => Number(a.ITEMSEQNO) - Number(b.ITEMSEQNO))
   const groups = []
   let currentRacikan = null
-
-  for (const item of items) {
+  for (const item of sorted) {
     if (item.NO === 'No. ' && item.BARCODE !== '00000') {
       currentRacikan = null
       groups.push({ type: 'tunggal', item })
@@ -291,16 +304,36 @@ const groupedItems = computed(() => {
       if (currentRacikan) currentRacikan.children.push(item)
     }
   }
-
   return groups
-})
+}
 
+/* ── Mode biasa: semua item ── */
+const groupedItems = computed(() => buildGroups(drugItems.value))
+
+/* ── Mode copy: hanya item dengan QTY_COPY_INT > 0 ── */
+const copyItems = computed(() =>
+  drugItems.value.filter((item) => parseFloat(item.QTY_COPY_INT) > 0),
+)
+const copyItemCount = computed(() => copyItems.value.length)
+const groupedCopyItems = computed(() => buildGroups(copyItems.value))
+
+/* ── Active groups berdasarkan mode ── */
+const activeGroups = computed(() =>
+  mode.value === 'copy' ? groupedCopyItems.value : groupedItems.value,
+)
+
+/* ── Qty display: mode biasa → QTY_ROMAWI, copy → QTY_COPYROMAWI ── */
 const fmtQty = (item) => {
   if (item.QTY_ROMAWI) return item.QTY_ROMAWI
   const n = parseFloat(item.QTY_INT)
-  if (!isNaN(n) && n > 0) return String(n)
-  return ''
+  return !isNaN(n) && n > 0 ? String(n) : ''
 }
+const fmtCopyQty = (item) => {
+  if (item.QTY_COPYROMAWI) return item.QTY_COPYROMAWI
+  const n = parseFloat(item.QTY_COPY_INT)
+  return !isNaN(n) && n > 0 ? String(n) : ''
+}
+const activeQty = (item) => (mode.value === 'copy' ? fmtCopyQty(item) : fmtQty(item))
 
 /* ── Resep info from RESEP[0] ── */
 const poliName = computed(() => resepInfo.value.POLI_RUANG || ps.value.POLI || '—')
@@ -331,16 +364,14 @@ const formattedDate = computed(() => {
   return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`
 })
 
-/* ── Fetch resep + pasien dari satu endpoint ── */
+/* ── Fetch ── */
 const fetchPatient = async () => {
   const noregister = route.query.noregister || ''
   const notrans = route.params.trans || ''
   const nomr = route.query.nomr || ''
   const idclient = id_client.value || ''
-
   const url = `${configStore.apiBaseUrl}/index.php/api/transaksi_pasien/get_all_resepv2/${noregister}/${notrans}/${nomr}/${idclient}`
   const res = await axios.get(url)
-  console.log(res.data)
   allData.value = res.data || null
 }
 
@@ -369,8 +400,10 @@ onMounted(async () => {
 }
 .cetak-toolbar {
   display: flex;
+  align-items: center;
   gap: 10px;
   margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 .cetak-btn-back,
 .cetak-btn-print {
@@ -391,6 +424,45 @@ onMounted(async () => {
   background: #198754;
   color: #fff;
 }
+
+/* ── Mode toggle ── */
+.cetak-mode-group {
+  display: flex;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.cetak-mode-btn {
+  padding: 6px 14px;
+  border: none;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #495057;
+  transition: background 0.15s;
+  position: relative;
+}
+.cetak-mode-btn:not(:last-child) {
+  border-right: 1px solid #dee2e6;
+}
+.cetak-mode-btn.active {
+  background: #0d6efd;
+  color: #fff;
+}
+.cetak-mode-badge {
+  background: #dc3545;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 0 5px;
+  min-width: 16px;
+  text-align: center;
+}
+
 .cetak-loading {
   display: flex;
   flex-direction: column;
@@ -509,6 +581,12 @@ onMounted(async () => {
 }
 
 /* ── Daftar Obat ── */
+.rp-empty {
+  text-align: center;
+  color: #888;
+  font-size: 9pt;
+  padding: 16px 0;
+}
 .rp-items {
   margin: 6px 0 4px;
   display: flex;
@@ -585,7 +663,6 @@ onMounted(async () => {
   border-top: 1px dotted #bbb;
   margin: 2px 0;
 }
-
 .rp-dashed {
   border: none;
   border-top: 1px dashed #555;

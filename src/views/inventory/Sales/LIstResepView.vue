@@ -158,6 +158,61 @@
       </div>
     </Panel>
 
+    <!-- ══ FILTER RUANGAN & DOKTER ══ -->
+    <Panel toggleable class="mb-2">
+      <template #header="{ class: cls }">
+        <div :class="cls" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap">
+          <span>Filter Ruangan &amp; Dokter</span>
+          <template v-if="filterRuangan.length > 0 || filterDokter.length > 0">
+            <Tag
+              v-for="r in filterRuangan"
+              :key="'r-' + r"
+              :value="r"
+              severity="info"
+              style="font-size: 11px; font-weight: 500"
+            />
+            <Tag
+              v-for="d in filterDokter"
+              :key="'d-' + d"
+              :value="d"
+              severity="success"
+              style="font-size: 11px; font-weight: 500"
+            />
+          </template>
+        </div>
+      </template>
+      <div class="filter-grid">
+        <div class="filter-group filter-group-grow">
+          <label class="filter-lbl">Ruangan</label>
+          <MultiSelect
+            v-model="filterRuangan"
+            :options="ruanganOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Semua ruangan..."
+            display="chip"
+            filter
+            showClear
+            class="w-full"
+          />
+        </div>
+        <div class="filter-group filter-group-grow">
+          <label class="filter-lbl">Dokter</label>
+          <MultiSelect
+            v-model="filterDokter"
+            :options="dokterOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Semua dokter..."
+            display="chip"
+            filter
+            showClear
+            class="w-full"
+          />
+        </div>
+      </div>
+    </Panel>
+
     <!-- ══ BANNER RESEP BARU ══ -->
     <Transition name="banner-slide">
       <div v-if="showNewBanner && newResepCount > 0" class="new-resep-banner">
@@ -1079,6 +1134,10 @@ const jenisRawatOptions = [
   { label: 'Rawat Inap', value: 'INAP' },
 ]
 
+/* ── Filter Ruangan & Dokter ── */
+const filterRuangan = ref([])
+const filterDokter = ref([])
+
 const formatDateParam = (date) => {
   if (!date) return ''
   const d = new Date(date)
@@ -1179,6 +1238,43 @@ const statusLabel = (s) => {
 const resepByLokasi = computed(() => {
   if (!id_lokasi.value) return allResep.value
   return allResep.value.filter((r) => String(r.ID_LOKASI) === String(id_lokasi.value))
+})
+
+const ruanganOptions = computed(() => {
+  let data = resepByLokasi.value
+  if (filterDokter.value.length > 0) {
+    data = data.filter((r) => filterDokter.value.includes(r.DPJP))
+  }
+  const set = new Set(data.map((r) => r.POLI_RUANG).filter(Boolean))
+  return [...set].sort().map((v) => ({ label: v, value: v }))
+})
+
+const dokterOptions = computed(() => {
+  let data = resepByLokasi.value
+  if (filterRuangan.value.length > 0) {
+    data = data.filter((r) => filterRuangan.value.includes(r.POLI_RUANG))
+  }
+  const set = new Set(data.map((r) => r.DPJP).filter(Boolean))
+  return [...set].sort().map((v) => ({ label: v, value: v }))
+})
+
+// Buang pilihan yang sudah tidak ada di daftar opsi setelah filter silang berubah.
+// Hanya assign ulang saat benar-benar ada yang terbuang, supaya tidak memicu
+// loop reaktif tak berujung antara ruanganOptions <-> dokterOptions.
+watch(ruanganOptions, (opts) => {
+  const valid = new Set(opts.map((o) => o.value))
+  const next = filterRuangan.value.filter((v) => valid.has(v))
+  if (next.length !== filterRuangan.value.length) {
+    filterRuangan.value = next
+  }
+})
+
+watch(dokterOptions, (opts) => {
+  const valid = new Set(opts.map((o) => o.value))
+  const next = filterDokter.value.filter((v) => valid.has(v))
+  if (next.length !== filterDokter.value.length) {
+    filterDokter.value = next
+  }
 })
 
 const countByStatus = (status) => {
@@ -1323,6 +1419,14 @@ const baseFilteredResep = computed(() => {
 
   if (filterJenisRawat.value) {
     data = data.filter((r) => (r.JENISRAWAT || '').toUpperCase() === filterJenisRawat.value)
+  }
+
+  if (filterRuangan.value.length > 0) {
+    data = data.filter((r) => filterRuangan.value.includes(r.POLI_RUANG))
+  }
+
+  if (filterDokter.value.length > 0) {
+    data = data.filter((r) => filterDokter.value.includes(r.DPJP))
   }
 
   const q = searchQuery.value.trim().toLowerCase()
@@ -1654,6 +1758,8 @@ const fetchResep = async () => {
 const resetFilter = () => {
   searchQuery.value = ''
   filterJenisRawat.value = null
+  filterRuangan.value = []
+  filterDokter.value = []
   filterUsia.value = null
   tanggalAwal.value = new Date(today.getFullYear(), today.getMonth(), today.getDate())
   tanggalAkhir.value = new Date(today.getFullYear(), today.getMonth(), today.getDate())

@@ -260,7 +260,6 @@ const fetchData = async () => {
       payload,
     )
 
-    console.log('Fetch Rujukan response:', res.data)
     const raw = res.data?.response
     daataRS.value = res.data?.profile
     rujukanData.value = Array.isArray(raw) ? (raw[0] ?? null) : (raw ?? null)

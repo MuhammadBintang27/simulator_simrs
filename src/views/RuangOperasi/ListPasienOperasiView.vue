@@ -1,211 +1,200 @@
 <template>
   <loading_overlay :is-loading="loading" message="Memuat data...." />
 
-  <div class="content">
-    <!-- ═══════════════════════════════════════════════════════
-         HERO SECTION
-    ═══════════════════════════════════════════════════════ -->
-    <div class="hero-section">
-      <div class="hero-content">
-        <div class="hero-icon">
-          <i class="pi pi-heart"></i>
+  <div class="op-page">
+    <!-- PAGE HEADER -->
+    <div class="op-header">
+      <div class="op-header__left">
+        <div class="op-header__icon">
+          <i class="pi pi-building"></i>
         </div>
-        <div class="hero-text">
-          <h1 class="hero-title">Pendaftaran Pasien Operasi</h1>
-          <p class="hero-description">
-            Pendaftaran pasien operasi dilakukan sebagai langkah awal sebelum tindakan bedah. Proses
-            ini mencakup pengisian data identitas pasien, riwayat kesehatan, diagnosa medis, serta
-            jenis operasi yang akan dilakukan.
-          </p>
+        <div>
+          <h1 class="op-header__title">Jadwal Pasien Operasi</h1>
+          <p class="op-header__desc">Manajemen jadwal dan status pelaksanaan tindakan bedah</p>
         </div>
       </div>
-      <div class="hero-stats">
-        <div class="stat-card">
-          <div class="stat-icon"><i class="pi pi-calendar"></i></div>
-          <div class="stat-value">{{ totalDijadwalkan }}</div>
-          <div class="stat-label">Dijadwalkan</div>
+      <div class="op-header__stats">
+        <div class="op-stat">
+          <i class="pi pi-calendar op-stat__icon"></i>
+          <div class="op-stat__body">
+            <span class="op-stat__val">{{ totalDijadwalkan }}</span>
+            <span class="op-stat__lbl">Dijadwalkan</span>
+          </div>
         </div>
-        <div class="stat-card stat-green">
-          <div class="stat-icon"><i class="pi pi-check-circle"></i></div>
-          <div class="stat-value">{{ totalTerlaksana }}</div>
-          <div class="stat-label">Terlaksana</div>
+        <div class="op-stat op-stat--success">
+          <i class="pi pi-check-circle op-stat__icon"></i>
+          <div class="op-stat__body">
+            <span class="op-stat__val">{{ totalTerlaksana }}</span>
+            <span class="op-stat__lbl">Terlaksana</span>
+          </div>
         </div>
-        <div class="stat-card stat-red">
-          <div class="stat-icon"><i class="pi pi-times-circle"></i></div>
-          <div class="stat-value">{{ totalDibatalkan }}</div>
-          <div class="stat-label">Dibatalkan</div>
+        <div class="op-stat op-stat--danger">
+          <i class="pi pi-times-circle op-stat__icon"></i>
+          <div class="op-stat__body">
+            <span class="op-stat__val">{{ totalDibatalkan }}</span>
+            <span class="op-stat__lbl">Dibatalkan</span>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════
-         FILTER SECTION
-    ═══════════════════════════════════════════════════════ -->
-    <div class="filter-section">
-      <div class="filter-header">
-        <h3 class="filter-title">
-          <i class="pi pi-sliders-h"></i>
-          Filter &amp; Pencarian
-        </h3>
-      </div>
-      <div class="filter-grid">
-        <div class="filter-group">
-          <label class="filter-label"><i class="pi pi-search"></i> Pencarian Global</label>
-          <InputText v-model="globalFilter" placeholder="Cari nama, No MR, alamat..." />
-        </div>
-        <div class="filter-group">
-          <label class="filter-label"><i class="pi pi-calendar-plus"></i> Tanggal Mulai</label>
+    <!-- TOOLBAR -->
+    <div class="op-toolbar">
+      <div class="op-toolbar__left">
+        <IconField>
+          <InputIcon class="pi pi-search" />
+          <InputText
+            v-model="globalFilter"
+            placeholder="Cari nama, No MR, alamat..."
+            style="width: 240px"
+            @keyup.enter="fetchData"
+          />
+        </IconField>
+        <div class="op-toolbar__date-group">
           <DatePicker
             v-model="startDate"
             dateFormat="dd M yy"
-            placeholder="Pilih tanggal mulai"
+            placeholder="Tanggal Mulai"
             showIcon
             iconDisplay="input"
           />
-        </div>
-        <div class="filter-group">
-          <label class="filter-label"><i class="pi pi-calendar-minus"></i> Tanggal Selesai</label>
+          <span class="op-toolbar__date-sep"><i class="pi pi-arrow-right"></i></span>
           <DatePicker
             v-model="endDate"
             dateFormat="dd M yy"
-            placeholder="Pilih tanggal selesai"
+            placeholder="Tanggal Selesai"
             showIcon
             iconDisplay="input"
           />
         </div>
-        <div class="filter-group filter-action">
-          <Button
-            icon="pi pi-refresh"
-            label="Refresh"
-            @click="fetchData"
-            class="round-button2"
-            size="small"
-          />
-        </div>
       </div>
+      <Button icon="pi pi-refresh" label="Refresh" @click="fetchData" outlined size="small" />
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════
-         DATA TABLE
-    ═══════════════════════════════════════════════════════ -->
-    <Panel class="table-panel">
+    <!-- DATA TABLE -->
+    <div class="op-table-wrap">
       <DataTable
         :value="filteredFact"
         paginator
         :rows="10"
-        responsiveLayout="scroll"
         :rowsPerPageOptions="[5, 10, 20, 50]"
         sortMode="multiple"
         showGridlines
         scrollable
         scrollHeight="480px"
+        size="small"
+        stripedRows
         class="op-table"
+        tableStyle="min-width: 1240px"
+        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport"
+        currentPageReportTemplate="Menampilkan {first}–{last} dari {totalRecords} data"
       >
-        <Column field="nomorrm" header="No. RM" sortable style="min-width: 100px" />
-        <Column field="nama" header="Nama Pasien" sortable style="min-width: 160px" />
-        <Column field="jeniskelamin" header="JK" sortable style="min-width: 55px" />
-        <Column field="usia" header="Usia" sortable style="min-width: 60px" />
-        <Column field="alamat" header="Alamat" style="min-width: 160px" />
-        <Column field="kodebooking" header="Kode Booking" style="min-width: 120px" />
-        <Column field="tindakan" header="Tindakan" style="min-width: 120px">
-          <template #body="slotProps">
-            <small class="badge badge-success"
-              ><i class="far fa-clock"></i> {{ slotProps.data.tindakan }}</small
-            >
-            <small v-if="slotProps.data.tindakan2" class="badge badge-success"
-              ><i class="far fa-clock"></i> {{ slotProps.data.tindakan2 }}</small
-            >
+        <template #empty>
+          <div class="op-empty">
+            <i class="pi pi-inbox"></i>
+            <p>Tidak ada data operasi untuk ditampilkan</p>
+            <small>Coba ubah filter tanggal atau kata kunci pencarian</small>
+          </div>
+        </template>
+
+        <Column field="nomorrm" header="No. RM" sortable style="min-width: 110px" />
+        <Column field="nama" header="Nama Pasien" sortable style="min-width: 180px" />
+        <Column field="jeniskelamin" header="JK" sortable style="min-width: 58px" />
+        <Column field="usia" header="Usia" sortable style="min-width: 65px" />
+        <Column field="alamat" header="Alamat" style="min-width: 170px" />
+        <Column field="kodebooking" header="Kode Booking" style="min-width: 130px" />
+        <Column field="NOSEP" header="No. SEP" style="min-width: 130px" />
+        <Column header="Tindakan" style="min-width: 150px">
+          <template #body="{ data }">
+            <div class="tindakan-tags">
+              <Tag v-if="data.tindakan" :value="data.tindakan" severity="secondary" />
+              <Tag v-if="data.tindakan2" :value="data.tindakan2" severity="secondary" />
+            </div>
           </template>
         </Column>
         <Column field="namapoli" header="Poli" sortable style="min-width: 120px" />
-        <Column field="dokter" header="Dokter" style="min-width: 140px" />
-        <Column header="Tgl Operasi" sortable style="min-width: 140px">
-          <template #body="slotProps">
-            {{ formatDate_database(slotProps.data.tanggaloperasi) }}
+        <Column field="dokter" header="Dokter" style="min-width: 160px" />
+        <Column header="Tgl Operasi" sortable style="min-width: 120px">
+          <template #body="{ data }">
+            {{ formatDate_database(data.tanggaloperasi) }}
           </template>
         </Column>
-        <Column field="jam" header="Jam" style="min-width: 70px" />
-        <Column header="Status" style="min-width: 120px">
-          <template #body="slotProps">
-            <span :class="['status-badge', statusBadgeClass(slotProps.data.terlaksana)]">
-              <i :class="statusBadgeIcon(slotProps.data.terlaksana)"></i>
-              {{ statusBadgeLabel(slotProps.data.terlaksana) }}
-            </span>
+        <Column field="jam" header="Jam" style="min-width: 75px" />
+        <Column header="Status" style="min-width: 135px">
+          <template #body="{ data }">
+            <Tag
+              :severity="statusSeverity(data.terlaksana)"
+              :value="statusBadgeLabel(data.terlaksana)"
+              :icon="statusBadgeIcon(data.terlaksana)"
+            />
           </template>
         </Column>
-        <Column header="Aksi" style="min-width: 120px; position: sticky; right: 0">
-          <template #body="slotProps">
-            <div class="action-btns">
+        <Column header="Aksi" frozen alignFrozen="right" style="min-width: 105px">
+          <template #body="{ data }">
+            <div class="op-row-actions">
               <Button
                 icon="pi pi-pencil"
-                class="btn-edit"
                 size="small"
+                severity="secondary"
+                outlined
+                rounded
                 v-tooltip.top="'Edit Data Operasi'"
-                @click="openEditModal(slotProps.data)"
+                @click="openEditModal(data)"
               />
               <Button
                 icon="pi pi-arrow-right"
-                class="btn-goto"
                 size="small"
+                rounded
                 v-tooltip.top="'Lakukan Persiapan'"
-                @click="lakukan_persiapan(slotProps.data)"
+                @click="lakukan_persiapan(data)"
               />
             </div>
           </template>
         </Column>
       </DataTable>
-    </Panel>
+    </div>
 
-    <!-- ═══════════════════════════════════════════════════════
-         MODAL UPDATE OPERASI
-    ═══════════════════════════════════════════════════════ -->
+    <!-- MODAL UPDATE OPERASI -->
     <Dialog
       v-model:visible="modalVisible"
       modal
       :closable="true"
-      :style="{ width: '620px', maxWidth: '96vw' }"
-      :pt="{
-        root: { class: 'op-modal' },
-        header: { class: 'op-modal-header' },
-        content: { class: 'op-modal-content' },
-        footer: { class: 'op-modal-footer' },
-      }"
+      :draggable="false"
+      :style="{ width: '630px', maxWidth: '96vw' }"
     >
-      <!-- Modal Header -->
       <template #header>
-        <div class="modal-hd-wrap">
-          <div class="modal-hd-icon"><i class="pi pi-calendar-plus"></i></div>
+        <div class="dlg-hd">
+          <div class="dlg-hd__icon"><i class="pi pi-calendar-plus"></i></div>
           <div>
-            <div class="modal-hd-title">Update Data Operasi</div>
-            <div class="modal-hd-sub" v-if="editForm.nama">
+            <div class="dlg-hd__title">Update Data Operasi</div>
+            <div class="dlg-hd__sub" v-if="editForm.nama">
               <i class="pi pi-user"></i>&nbsp;{{ editForm.nama }}
-              &nbsp;&nbsp;
+              <span class="dlg-hd__sep">·</span>
               <i class="pi pi-id-card"></i>&nbsp;{{ editForm.nomorrm }}
             </div>
           </div>
         </div>
       </template>
 
-      <!-- Modal Body -->
-      <div class="modal-body">
-        <!-- Status strip -->
-        <div :class="['status-strip', currentStatusStripClass]">
+      <div class="dlg-body">
+        <!-- Status banner -->
+        <div class="dlg-status" :class="`dlg-status--${statusBarVariant}`">
           <i :class="currentStatusIcon"></i>
           <span
-            >Status Saat Ini: <strong>{{ currentStatusLabel }}</strong></span
+            >Status Saat Ini:&nbsp;<strong>{{ currentStatusLabel }}</strong></span
           >
         </div>
 
-        <!-- ── Informasi Pasien (readonly) ── -->
-        <div class="mcard">
-          <div class="mcard-label"><i class="pi pi-user"></i> Informasi Pasien</div>
+        <!-- Informasi Pasien -->
+        <div class="dlg-sec">
+          <div class="dlg-sec__title"><i class="pi pi-user"></i> Informasi Pasien</div>
           <div class="info-grid">
             <div class="info-item">
-              <span class="info-key">No. RM</span>
+              <span class="info-key">No. Rekam Medis</span>
               <span class="info-val">{{ editForm.nomorrm || '—' }}</span>
             </div>
             <div class="info-item">
-              <span class="info-key">Nama</span>
+              <span class="info-key">Nama Pasien</span>
               <span class="info-val">{{ editForm.nama || '—' }}</span>
             </div>
             <div class="info-item">
@@ -213,18 +202,19 @@
               <span class="info-val">{{ editForm.kodebooking || '—' }}</span>
             </div>
             <div class="info-item">
-              <span class="info-key">Dokter</span>
+              <span class="info-key">Dokter Operator</span>
               <span class="info-val">{{ editForm.dokter || '—' }}</span>
             </div>
           </div>
         </div>
 
-        <!-- ── Jenis Tindakan ── -->
+        <Divider />
 
-        <div class="mcard">
-          <div class="mcard-label"><i class="pi pi-heart"></i> Jenis Tindakan Operasi</div>
-          <div class="field-wrap">
-            <label class="field-label">Pilih Tindakan 1<span class="req">*</span></label>
+        <!-- Jenis Tindakan -->
+        <div class="dlg-sec">
+          <div class="dlg-sec__title"><i class="pi pi-heart"></i> Jenis Tindakan Operasi</div>
+          <div class="field-col">
+            <label class="field-lbl">Tindakan 1 <span class="req">*</span></label>
             <Select
               v-model="editForm.jenistindakan"
               :options="list_tindakan_operas"
@@ -235,16 +225,16 @@
               showClear
               class="w-full"
             >
-              <template #option="sp">
-                <div class="tindakan-opt">
-                  <span class="tindakan-kode">{{ sp.option.IDBARANG }}</span>
-                  <span>{{ sp.option.NAMA }}</span>
+              <template #option="{ option }">
+                <div class="opt-row">
+                  <span class="opt-kode">{{ option.IDBARANG }}</span>
+                  <span>{{ option.NAMA }}</span>
                 </div>
               </template>
             </Select>
           </div>
-          <div class="field-wrap mt-3">
-            <label class="field-label">Pilih Tindakan 2 </label>
+          <div class="field-col" style="margin-top: 0.75rem">
+            <label class="field-lbl"> Tindakan 2 <span class="opt-badge">Opsional</span> </label>
             <Select
               v-model="editForm.jenistindakan_dua"
               :options="list_tindakan_operas"
@@ -255,22 +245,24 @@
               showClear
               class="w-full"
             >
-              <template #option="sp">
-                <div class="tindakan-opt">
-                  <span class="tindakan-kode">{{ sp.option.IDBARANG }}</span>
-                  <span>{{ sp.option.NAMA }}</span>
+              <template #option="{ option }">
+                <div class="opt-row">
+                  <span class="opt-kode">{{ option.IDBARANG }}</span>
+                  <span>{{ option.NAMA }}</span>
                 </div>
               </template>
             </Select>
           </div>
         </div>
 
-        <!-- ── Jadwal ── -->
-        <div class="mcard">
-          <div class="mcard-label"><i class="pi pi-clock"></i> Jadwal Operasi</div>
+        <Divider />
+
+        <!-- Jadwal -->
+        <div class="dlg-sec">
+          <div class="dlg-sec__title"><i class="pi pi-clock"></i> Jadwal Operasi</div>
           <div class="two-col">
-            <div class="field-wrap">
-              <label class="field-label">Tanggal Operasi <span class="req">*</span></label>
+            <div class="field-col">
+              <label class="field-lbl">Tanggal Operasi <span class="req">*</span></label>
               <DatePicker
                 v-model="editForm.tanggaloperasi"
                 dateFormat="dd M yy"
@@ -280,26 +272,20 @@
                 class="w-full"
               />
             </div>
-            <div class="field-wrap">
-              <label class="field-label">Jam Operasi <span class="req">*</span></label>
-
+            <div class="field-col">
+              <label class="field-lbl">Jam Operasi <span class="req">*</span></label>
               <DatePicker id="datepicker-timeonly" v-model="editForm.jam" timeOnly fluid />
-              <!-- <InputText
-                v-model="editForm.jam"
-                placeholder="08:00"
-                class="w-full"
-                maxlength="5"
-                @input="onJamInput"
-              /> -->
             </div>
           </div>
         </div>
 
-        <!-- ── Ruang Operasi ── -->
-        <div class="mcard">
-          <div class="mcard-label"><i class="pi pi-building"></i> Ruang Operasi</div>
-          <div class="field-wrap">
-            <label class="field-label">Pilih Ruang <span class="req">*</span></label>
+        <Divider />
+
+        <!-- Ruang Operasi -->
+        <div class="dlg-sec">
+          <div class="dlg-sec__title"><i class="pi pi-building"></i> Ruang Operasi</div>
+          <div class="field-col">
+            <label class="field-lbl">Pilih Ruang <span class="req">*</span></label>
             <Select
               v-model="editForm.ruangoperasi"
               :options="ruang_operasi"
@@ -308,19 +294,21 @@
               placeholder="— Pilih ruang operasi —"
               class="w-full"
             >
-              <template #option="sp">
-                <div class="ruang-opt">
-                  <i class="pi pi-building" style="color: #71b280"></i>
-                  <span>{{ sp.option.nama }}</span>
+              <template #option="{ option }">
+                <div class="opt-row">
+                  <i class="pi pi-building" style="color: var(--p-primary-color)"></i>
+                  <span>{{ option.nama }}</span>
                 </div>
               </template>
             </Select>
           </div>
         </div>
 
-        <!-- ── Status ── -->
-        <div class="mcard">
-          <div class="mcard-label"><i class="pi pi-flag"></i> Perubahan Status</div>
+        <Divider />
+
+        <!-- Status -->
+        <div class="dlg-sec">
+          <div class="dlg-sec__title"><i class="pi pi-flag"></i> Perubahan Status</div>
           <div class="status-chips">
             <div
               v-for="s in statusOptions"
@@ -328,22 +316,24 @@
               :class="['schip', s.cls, { active: editForm.terlaksana === s.value }]"
               @click="editForm.terlaksana = s.value"
             >
-              <div class="schip-icon"><i :class="s.icon"></i></div>
-              <div class="schip-body">
-                <div class="schip-label">{{ s.label }}</div>
-                <div class="schip-desc">{{ s.desc }}</div>
+              <i :class="[s.icon, 'schip__icon']"></i>
+              <div class="schip__body">
+                <span class="schip__label">{{ s.label }}</span>
+                <span class="schip__desc">{{ s.desc }}</span>
               </div>
-              <div class="schip-check" v-if="editForm.terlaksana === s.value">
+              <div class="schip__check" v-if="editForm.terlaksana === s.value">
                 <i class="pi pi-check"></i>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- ── Catatan ── -->
-        <div class="mcard">
-          <div class="mcard-label">
-            <i class="pi pi-file-edit"></i> Catatan Perubahan <span class="opt-tag">Opsional</span>
+        <Divider />
+
+        <!-- Catatan -->
+        <div class="dlg-sec">
+          <div class="dlg-sec__title">
+            <i class="pi pi-file-edit"></i> Catatan <span class="opt-badge">Opsional</span>
           </div>
           <Textarea
             v-model="editForm.catatan"
@@ -354,15 +344,12 @@
           />
         </div>
       </div>
-      <!-- /modal-body -->
 
-      <!-- Modal Footer -->
       <template #footer>
-        <div class="modal-foot">
+        <div class="dlg-footer">
           <Button
             label="Batal"
             icon="pi pi-times"
-            class="btn-cancel"
             severity="secondary"
             outlined
             @click="modalVisible = false"
@@ -370,7 +357,6 @@
           <Button
             label="Simpan Perubahan"
             icon="pi pi-save"
-            class="btn-save"
             @click="submitUpdate"
             :loading="saving"
           />
@@ -391,21 +377,18 @@ import { storeToRefs } from 'pinia'
 import { useToast } from 'primevue/usetoast'
 import DatePicker from 'primevue/datepicker'
 
-// ─── Stores ──────────────────────────────────────────────────────────────────
 const configStore = useConfigStore()
 const authStore = useAuthStore()
 const { id_client } = storeToRefs(authStore)
 const toast = useToast()
 const router = useRouter()
 
-// ─── Page State ──────────────────────────────────────────────────────────────
 const loading = ref(false)
 const fact = ref([])
 const globalFilter = ref('')
 const startDate = ref(new Date())
 const endDate = ref(new Date())
 
-// ─── Modal State ─────────────────────────────────────────────────────────────
 const modalVisible = ref(false)
 const saving = ref(false)
 
@@ -449,7 +432,6 @@ const statusOptions = [
   },
 ]
 
-// ─── Computed ─────────────────────────────────────────────────────────────────
 const filteredFact = computed(() => {
   if (!globalFilter.value) return fact.value
   const q = globalFilter.value.toLowerCase()
@@ -466,23 +448,23 @@ const totalDijadwalkan = computed(() => fact.value.filter((r) => Number(r.terlak
 const totalTerlaksana = computed(() => fact.value.filter((r) => Number(r.terlaksana) === 1).length)
 const totalDibatalkan = computed(() => fact.value.filter((r) => Number(r.terlaksana) === 2).length)
 
-const currentStatusLabel = computed(() => {
-  return statusOptions.find((s) => s.value === editForm.value.terlaksana)?.label ?? '—'
-})
-const currentStatusIcon = computed(() => {
-  return statusOptions.find((s) => s.value === editForm.value.terlaksana)?.icon ?? 'pi pi-question'
-})
-const currentStatusStripClass = computed(() => {
-  const map = { 0: 'strip-blue', 1: 'strip-green', 2: 'strip-red' }
-  return map[editForm.value.terlaksana] ?? 'strip-blue'
+const currentStatusLabel = computed(
+  () => statusOptions.find((s) => s.value === editForm.value.terlaksana)?.label ?? '—',
+)
+const currentStatusIcon = computed(
+  () => statusOptions.find((s) => s.value === editForm.value.terlaksana)?.icon ?? 'pi pi-question',
+)
+const statusBarVariant = computed(() => {
+  const map = { 0: 'blue', 1: 'green', 2: 'red' }
+  return map[editForm.value.terlaksana] ?? 'blue'
 })
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatDate_database = (date) => {
   if (!date) return null
   const d = new Date(date)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
+
 const formatDateTime_database = (date, time) => {
   if (!date || !time) return null
   return `${date} ${time}`
@@ -494,33 +476,16 @@ const form_time_only = (date) => {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`
 }
 
-const renderDate = (row) => {
-  if (!row.tanggaloperasi) return '—'
-  return new Date(row.tanggaloperasi).toLocaleDateString('id-ID', {
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit',
-  })
+const statusSeverity = (val) => {
+  const map = { 0: 'info', 1: 'success', 2: 'danger' }
+  return map[Number(val)] ?? 'info'
 }
 
-const statusBadgeClass = (val) => {
-  const map = { 0: 'badge-blue', 1: 'badge-green', 2: 'badge-red' }
-  return map[Number(val)] ?? 'badge-blue'
-}
-const statusBadgeIcon = (val) => {
-  return statusOptions.find((s) => s.value === Number(val))?.icon ?? 'pi pi-circle'
-}
-const statusBadgeLabel = (val) => {
-  return statusOptions.find((s) => s.value === Number(val))?.label ?? '—'
-}
+const statusBadgeIcon = (val) =>
+  statusOptions.find((s) => s.value === Number(val))?.icon ?? 'pi pi-circle'
 
-const onJamInput = (e) => {
-  let v = e.target.value.replace(/\D/g, '')
-  if (v.length >= 3) v = v.slice(0, 2) + ':' + v.slice(2, 4)
-  editForm.value.jam = v
-}
+const statusBadgeLabel = (val) => statusOptions.find((s) => s.value === Number(val))?.label ?? '—'
 
-// ─── Actions ──────────────────────────────────────────────────────────────────
 const openEditModal = (row) => {
   editForm.value = {
     nopendaftaran: row.noregister,
@@ -552,19 +517,19 @@ const lakukan_persiapan = (row) => {
   window.open(rd.href, '_blank')
 }
 
-// ─── Fetch ────────────────────────────────────────────────────────────────────
 const fetchData = async () => {
   try {
     loading.value = true
+    const searchTerm = globalFilter.value.trim()
     const param = {
       tanggalawal: formatDate_database(startDate.value),
       tanggalakhir: formatDate_database(endDate.value),
       id_client: id_client.value,
-      mode: 3,
+      mode: searchTerm ? 4 : 3,
+      ...(searchTerm && { nomorrm: searchTerm }),
     }
     const url = configStore.apiBaseUrl
     const res = await axios.post(`${url}/index.php/api/Mobil_jkn/getjadwaloperasi_v4`, param)
-
     if (res.data.metadata?.code !== '200') {
       toast.add({ severity: 'warn', summary: 'Info', detail: 'Data tidak ditemukan', life: 3000 })
       fact.value = []
@@ -583,15 +548,12 @@ const ruang_operasi = ref([])
 const list_ruang_operasi = async () => {
   try {
     loading.value = true
-
     const url = configStore.apiBaseUrl
     const res = await axios.get(
       `${url}/index.php/api/data_referensi/list_ruang_operasi/${id_client.value}`,
     )
-
     if (res.data.metadata?.code !== 200) {
       toast.add({ severity: 'warn', summary: 'Info', detail: 'Data tidak ditemukan', life: 3000 })
-      fact.value = []
       return
     }
     ruang_operasi.value = [...res.data.response]
@@ -607,13 +569,10 @@ const list_tindakan_operas = ref([])
 const get_list_tindakan_operasi = async () => {
   try {
     loading.value = true
-
     const url = configStore.apiApotikUrl
     const res = await axios.get(`${url}/index.php/api/barang/get_listoperasi/${id_client.value}`)
-
     if (res.data.metadata?.code !== '200') {
       toast.add({ severity: 'warn', summary: 'Info', detail: 'Data tidak ditemukan', life: 3000 })
-      fact.value = []
       return
     }
     list_tindakan_operas.value = [...res.data.response]
@@ -625,7 +584,6 @@ const get_list_tindakan_operasi = async () => {
   }
 }
 
-// ─── Submit Update ────────────────────────────────────────────────────────────
 const submitUpdate = async () => {
   if (!editForm.value.jenistindakan) {
     toast.add({
@@ -680,9 +638,7 @@ const submitUpdate = async () => {
       mode: 1,
     }
     const url = configStore.apiBaseUrl
-
     const res = await axios.post(`${url}/index.php/api/Mobil_jkn/updatejadwaloperasiv2`, param)
-
     if (res.data.metadata?.code !== 200) {
       toast.add({
         severity: 'error',
@@ -721,403 +677,458 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* ══════════════════════════════════════════════════
-   HERO
-══════════════════════════════════════════════════ */
-.hero-section {
-  background: linear-gradient(135deg, #134e5e 0%, #71b280 100%);
-  border-radius: 10px;
-  padding: 1.5rem;
-  margin-bottom: 0.75rem;
-  color: white;
-  box-shadow: 0 12px 32px rgba(19, 78, 94, 0.28);
-}
-.hero-content {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
-}
-.hero-icon {
-  background: rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: 1rem;
-  font-size: 1.8rem;
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-.hero-title {
-  font-size: 1.7rem;
-  font-weight: 700;
-  margin: 0 0 0.2rem;
-}
-.hero-description {
-  font-size: 0.8rem;
-  opacity: 0.88;
-  line-height: 1.55;
-  margin: 0;
-}
-.hero-stats {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-.stat-card {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  border-radius: 10px;
-  padding: 0.85rem 1.25rem;
-  min-width: 140px;
-  text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+/* ── Layout ── */
+.op-page {
   display: flex;
   flex-direction: column;
+  gap: 0.85rem;
+}
+
+/* ── Header ── */
+.op-header {
+  background: linear-gradient(135deg, var(--p-primary-700) 0%, var(--p-primary-400) 100%);
+  border-radius: 12px;
+  padding: 1.4rem 1.75rem;
+  display: flex;
   align-items: center;
-  gap: 0.2rem;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
-.stat-card.stat-green {
-  background: rgba(34, 197, 94, 0.25);
-  border-color: rgba(34, 197, 94, 0.4);
+
+.op-header__left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: white;
 }
-.stat-card.stat-red {
-  background: rgba(239, 68, 68, 0.25);
-  border-color: rgba(239, 68, 68, 0.4);
+
+.op-header__icon {
+  width: 3rem;
+  height: 3rem;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.22);
 }
-.stat-icon {
-  font-size: 1.1rem;
-  opacity: 0.85;
+
+.op-header__title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0 0 0.2rem;
+  color: white;
 }
-.stat-value {
-  font-size: 1.6rem;
+
+.op-header__desc {
+  font-size: 0.78rem;
+  opacity: 0.82;
+  margin: 0;
+  color: white;
+}
+
+.op-header__stats {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.op-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  padding: 0.7rem 1rem;
+  min-width: 120px;
+  color: white;
+}
+
+.op-stat--success {
+  background: rgba(34, 197, 94, 0.22);
+  border-color: rgba(34, 197, 94, 0.38);
+}
+
+.op-stat--danger {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: rgba(239, 68, 68, 0.38);
+}
+
+.op-stat__icon {
+  font-size: 1.25rem;
+  opacity: 0.88;
+}
+
+.op-stat__val {
+  display: block;
+  font-size: 1.55rem;
   font-weight: 800;
-  line-height: 1;
+  line-height: 1.1;
 }
-.stat-label {
-  font-size: 0.72rem;
-  opacity: 0.85;
+
+.op-stat__lbl {
+  display: block;
+  font-size: 0.7rem;
+  opacity: 0.8;
   font-weight: 500;
 }
 
-/* ══════════════════════════════════════════════════
-   FILTER
-══════════════════════════════════════════════════ */
-.filter-section {
-  background: white;
+/* ── Toolbar ── */
+.op-toolbar {
+  background: var(--p-surface-0, #ffffff);
+  border: 1px solid var(--p-surface-200, #e5e7eb);
   border-radius: 10px;
-  padding: 1.25rem 1.5rem;
-  margin-bottom: 0.75rem;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
-  border: 1px solid #e9edf2;
+  padding: 0.8rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
-.filter-header {
-  margin-bottom: 1rem;
+
+.op-toolbar__left {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
 }
-.filter-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #1e293b;
+
+.op-toolbar__date-group {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin: 0;
-}
-.filter-title i {
-  color: #71b280;
-}
-.filter-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  align-items: end;
-}
-.filter-group {
-  display: flex;
-  flex-direction: column;
-}
-.filter-action {
-  justify-content: flex-end;
-}
-.filter-label {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
 }
 
-/* ══════════════════════════════════════════════════
-   TABLE
-══════════════════════════════════════════════════ */
-.table-panel {
-  margin-top: 0;
+.op-toolbar__date-sep {
+  color: var(--p-text-muted-color, #94a3b8);
+  font-size: 0.75rem;
+}
+
+/* ── Table ── */
+.op-table-wrap {
+  background: var(--p-surface-0, #ffffff);
+  border: 1px solid var(--p-surface-200, #e5e7eb);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
 :deep(.op-table .p-datatable-thead > tr > th) {
-  font-weight: 700;
-  font-size: 0.78rem;
-  border: 1px solid #2d7a5a;
-  white-space: nowrap;
-}
-:deep(.op-table .p-datatable-tbody > tr:nth-child(even)) {
-  background-color: #f7faf8;
-}
-:deep(.op-table .p-datatable-tbody > tr:hover) {
-  background-color: #e8f5ec !important;
-}
-:deep(.op-table .p-datatable-tbody > tr > td) {
-  padding: 0.45rem 0.65rem;
-  font-size: 0.82rem;
-  border-color: #e5eee8;
-}
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.28rem 0.65rem;
-  border-radius: 20px;
   font-size: 0.73rem;
   font-weight: 700;
-}
-.badge-blue {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-.badge-green {
-  background: #dcfce7;
-  color: #15803d;
-}
-.badge-red {
-  background: #fee2e2;
-  color: #b91c1c;
+  text-transform: uppercase;
+  letter-spacing: 0.045em;
+  white-space: nowrap;
+  background: var(--p-surface-50, #f9fafb);
 }
 
-.action-btns {
+:deep(.op-table .p-datatable-tbody > tr > td) {
+  font-size: 0.83rem;
+  padding: 0.5rem 0.75rem;
+  vertical-align: middle;
+}
+
+.tindakan-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.op-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 2.5rem 1rem;
+  color: var(--p-text-muted-color, #94a3b8);
+  text-align: center;
+}
+
+.op-empty i {
+  font-size: 2.2rem;
+  opacity: 0.35;
+}
+
+.op-empty p {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.op-empty small {
+  font-size: 0.77rem;
+  opacity: 0.75;
+}
+
+.op-row-actions {
   display: flex;
   gap: 0.4rem;
+  align-items: center;
 }
-.btn-edit {
-  background: #f0f9ff !important;
-  border: 1px solid #bae6fd !important;
-  color: #0369a1 !important;
+
+/* ── Dialog Header ── */
+:deep(.p-dialog .p-dialog-header) {
+  background: linear-gradient(135deg, var(--p-primary-700) 0%, var(--p-primary-500) 100%);
+  padding: 1rem 1.4rem;
+  border-radius: 12px 12px 0 0;
 }
-.btn-edit:hover {
-  background: #0ea5e9 !important;
-  color: white !important;
+
+:deep(.p-dialog .p-dialog-header-icon) {
+  color: rgba(255, 255, 255, 0.7) !important;
 }
-.btn-goto {
-  background: #f0fdf4 !important;
-  border: 1px solid #bbf7d0 !important;
-  color: #15803d !important;
-}
-.btn-goto:hover {
-  background: #22c55e !important;
+
+:deep(.p-dialog .p-dialog-header-icon:hover) {
+  background: rgba(255, 255, 255, 0.15) !important;
   color: white !important;
 }
 
-/* ══════════════════════════════════════════════════
-   MODAL
-══════════════════════════════════════════════════ */
-:deep(.op-modal-header) {
-  background: linear-gradient(135deg, #134e5e 0%, #71b280 100%);
-  padding: 1.1rem 1.5rem;
-  border-radius: 10px 10px 0 0;
-}
-:deep(.op-modal-content) {
+:deep(.p-dialog .p-dialog-content) {
   padding: 0;
-  background: #f4f8f5;
-}
-:deep(.op-modal-footer) {
-  padding: 1rem 1.5rem;
-  background: #eaf2ec;
-  border-top: 1px solid #d0e8d5;
+  background: var(--p-surface-50, #f8fafc);
 }
 
-.modal-hd-wrap {
+:deep(.p-dialog .p-dialog-footer) {
+  padding: 0.85rem 1.25rem;
+  background: var(--p-surface-100, #f1f5f9);
+  border-top: 1px solid var(--p-surface-200, #e5e7eb);
+}
+
+.dlg-hd {
   display: flex;
   align-items: center;
-  gap: 0.9rem;
+  gap: 0.85rem;
+}
+
+.dlg-hd__icon {
+  width: 2.2rem;
+  height: 2.2rem;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
   color: white;
 }
-.modal-hd-icon {
-  background: rgba(255, 255, 255, 0.18);
-  border-radius: 10px;
-  padding: 0.7rem;
-  font-size: 1.3rem;
-  display: flex;
-  align-items: center;
-}
-.modal-hd-title {
-  font-size: 1.1rem;
+
+.dlg-hd__title {
+  font-size: 0.98rem;
   font-weight: 700;
   color: white;
 }
-.modal-hd-sub {
-  font-size: 0.77rem;
-  color: rgba(255, 255, 255, 0.85);
+
+.dlg-hd__sub {
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.8);
   margin-top: 0.1rem;
 }
 
-/* ── Modal Body ── */
-.modal-body {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  overflow-y: auto;
+.dlg-hd__sep {
+  margin: 0 0.4rem;
+  opacity: 0.5;
 }
 
-/* Status strip */
-.status-strip {
+/* Dialog Body */
+.dlg-body {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  max-height: 72vh;
+}
+
+.dlg-status {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.55rem 0.9rem;
-  border-radius: 8px;
-  font-size: 0.83rem;
+  padding: 0.6rem 1rem;
+  font-size: 0.82rem;
   font-weight: 500;
-}
-.strip-blue {
-  background: #dbeafe;
-  color: #1d4ed8;
-  border-left: 4px solid #3b82f6;
-}
-.strip-green {
-  background: #dcfce7;
-  color: #15803d;
-  border-left: 4px solid #22c55e;
-}
-.strip-red {
-  background: #fee2e2;
-  color: #b91c1c;
-  border-left: 4px solid #ef4444;
+  margin: 0.85rem 1.25rem 0;
+  border-radius: 8px;
 }
 
-/* Cards */
-.mcard {
-  background: white;
-  border-radius: 10px;
-  padding: 0.2rem 1.1rem;
-  border: 1px solid #deeae1;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+.dlg-status--blue {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-left: 3px solid #3b82f6;
 }
-.mcard-label {
-  font-size: 0.7rem;
+
+.dlg-status--green {
+  background: #dcfce7;
+  color: #15803d;
+  border-left: 3px solid #22c55e;
+}
+
+.dlg-status--red {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-left: 3px solid #ef4444;
+}
+
+.dlg-sec {
+  padding: 0.9rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.dlg-sec__title {
+  font-size: 0.69rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #64748b;
-  margin-bottom: 0.8rem;
+  letter-spacing: 0.065em;
+  color: var(--p-text-muted-color, #64748b);
   display: flex;
   align-items: center;
   gap: 0.4rem;
-}
-.mcard-label i {
-  color: #71b280;
+  margin-bottom: 0.1rem;
 }
 
-/* Info grid */
+.dlg-sec__title i {
+  color: var(--p-primary-color);
+  font-size: 0.8rem;
+}
+
+:deep(.p-divider) {
+  margin: 0;
+}
+
+/* Info Grid */
 .info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.5rem 1.5rem;
+  gap: 0.6rem 1.75rem;
+  background: var(--p-surface-0, white);
+  border: 1px solid var(--p-surface-200, #e5e7eb);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
 }
+
 .info-item {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
+  gap: 0.15rem;
 }
+
 .info-key {
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 700;
-  color: #94a3b8;
+  color: var(--p-text-muted-color, #94a3b8);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
 }
+
 .info-val {
   font-size: 0.84rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--p-text-color, #1e293b);
 }
 
 /* Fields */
-.field-wrap {
+.field-col {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
-.field-label {
-  font-size: 0.78rem;
+
+.field-lbl {
+  font-size: 0.8rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--p-text-color, #374151);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
 }
+
 .req {
   color: #ef4444;
 }
+
+.opt-badge {
+  font-size: 0.59rem;
+  background: var(--p-primary-100, #ddeee9);
+  color: var(--p-primary-700, #345f50);
+  padding: 0.1rem 0.45rem;
+  border-radius: 20px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 .two-col {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 /* Dropdown options */
-.tindakan-opt {
+.opt-row {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
-.tindakan-kode {
-  font-size: 0.68rem;
-  background: #dbeafe;
-  color: #1d4ed8;
+
+.opt-kode {
+  font-size: 0.66rem;
+  background: var(--p-primary-100, #ddeee9);
+  color: var(--p-primary-700, #345f50);
   padding: 0.1rem 0.4rem;
   border-radius: 4px;
   font-weight: 700;
-  min-width: 58px;
+  min-width: 54px;
   text-align: center;
-}
-.ruang-opt {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 /* Status Chips */
 .status-chips {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.65rem;
+  gap: 0.6rem;
 }
+
 .schip {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  padding: 0.75rem 0.9rem;
+  gap: 0.6rem;
+  padding: 0.7rem 0.85rem;
   border-radius: 10px;
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: all 0.16s ease;
   border: 2px solid transparent;
   position: relative;
   user-select: none;
 }
-.schip-icon {
-  font-size: 1.2rem;
+
+.schip__icon {
+  font-size: 1.05rem;
   flex-shrink: 0;
 }
-.schip-label {
-  font-size: 0.82rem;
+
+.schip__body {
+  display: flex;
+  flex-direction: column;
+}
+
+.schip__label {
+  font-size: 0.79rem;
   font-weight: 700;
   line-height: 1;
 }
-.schip-desc {
-  font-size: 0.67rem;
-  opacity: 0.75;
-  margin-top: 0.2rem;
+
+.schip__desc {
+  font-size: 0.63rem;
+  opacity: 0.72;
+  margin-top: 0.15rem;
 }
 
 .schip-blue {
@@ -1129,7 +1140,7 @@ onMounted(() => {
   background: #0ea5e9;
   color: white;
   border-color: #0ea5e9;
-  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.35);
+  box-shadow: 0 3px 12px rgba(14, 165, 233, 0.3);
 }
 
 .schip-green {
@@ -1140,7 +1151,8 @@ onMounted(() => {
 .schip-green.active {
   background: #22c55e;
   color: white;
-  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
+  border-color: #22c55e;
+  box-shadow: 0 3px 12px rgba(34, 197, 94, 0.3);
 }
 
 .schip-red {
@@ -1152,61 +1164,35 @@ onMounted(() => {
   background: #ef4444;
   color: white;
   border-color: #ef4444;
-  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);
+  box-shadow: 0 3px 12px rgba(239, 68, 68, 0.3);
 }
 
-.schip-check {
+.schip__check {
   position: absolute;
   top: -7px;
   right: -7px;
   background: white;
   border-radius: 50%;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14);
 }
-.schip-check i {
-  font-size: 0.62rem;
+
+.schip__check i {
+  font-size: 0.58rem;
   color: #15803d;
-  font-weight: 900;
 }
 
-/* Opt tag */
-.opt-tag {
-  font-size: 0.62rem;
-  background: #e0f2fe;
-  color: #0369a1;
-  padding: 0.1rem 0.5rem;
-  border-radius: 20px;
-  font-weight: 600;
-  margin-left: 0.4rem;
-  text-transform: none;
-  letter-spacing: 0;
-}
-
-/* Footer */
-.modal-foot {
+/* Dialog Footer */
+.dlg-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
+  gap: 0.65rem;
 }
 
-/* PrimeVue input overrides */
-:deep(.p-inputtext),
-:deep(.p-dropdown),
-:deep(.p-textarea) {
-  border-radius: 8px;
-  font-size: 0.87rem;
-}
-:deep(.p-inputtext:focus),
-:deep(.p-dropdown.p-focus),
-:deep(.p-dropdown:focus) {
-  border-color: #71b280 !important;
-  box-shadow: 0 0 0 3px rgba(113, 178, 128, 0.22) !important;
-}
 :deep(.w-full) {
   width: 100% !important;
 }
