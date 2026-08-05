@@ -49,6 +49,16 @@ const KasirView = () => import('@/views/keuangan/KasirView.vue')
 
 const KasilPrintBill = () => import('@/views/keuangan/KasilPrintBill.vue')
 
+// Sales Langsung (Kasir Apotik)
+const SalesKasirView = () => import('@/views/sales/KasirView.vue')
+const SalesLaporanPenjualanView = () => import('@/views/sales/LaporanPenjualanView.vue')
+const SalesPosSettingView = () => import('@/views/sales/PosSettingView.vue')
+const SalesTransaksiLainView = () => import('@/views/sales/TransaksiLainView.vue')
+const SalesLabaRugiView = () => import('@/views/sales/LabaRugiView.vue')
+const SalesRingkasanKasirView = () => import('@/views/sales/RingkasanKasirView.vue')
+const SalesRekapPiutangView = () => import('@/views/sales/RekapPiutangView.vue')
+const SalesDetailPiutangView = () => import('@/views/sales/DetailPiutangView.vue')
+
 const FormInputPasienComponent = () => import('@/views/Pendaftaran/FormInputPasienComponent.vue')
 
 const OdontogramComponent = () => import('@/views/Poliklinik/Gigi/OdontogramComponent.vue')
@@ -145,6 +155,9 @@ const PemesananFormPage = () => import('@/views/pemesanan/PemesananCreateView.vu
 const PemesananEditView = () => import('@/views/pemesanan/PemesananEditView.vue')
 const PrintSuratPesananView = () => import('@/views/pemesanan/PrintSuratPesananView.vue')
 
+// Sales Langsung — struk penjualan & tutup shift (standalone, tab baru, satu file untuk keduanya)
+const PrintStrukView = () => import('@/views/sales/PrintStrukView.vue')
+
 // Penerimaan
 const PenerimaanListView = () => import('@/views/penerimaan/PenerimaanListView.vue')
 const PenerimaanFormView = () => import('@/views/penerimaan/PenerimaanFormView.vue')
@@ -153,6 +166,8 @@ const RekapSupplierView = () => import('@/views/penerimaan/RekapSupplierView.vue
 const RekapSupplierDetailView = () => import('@/views/penerimaan/RekapSupplierDetailView.vue')
 const RekapBarangView = () => import('@/views/penerimaan/RekapBarangView.vue')
 const RekapBarangDetailView = () => import('@/views/penerimaan/RekapBarangDetailView.vue')
+const RekapHutangView = () => import('@/views/penerimaan/RekapHutangView.vue')
+const BayarHutangView = () => import('@/views/penerimaan/BayarHutangView.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -222,6 +237,14 @@ const router = createRouter({
       name: 'PrintSuratPesanan',
       component: PrintSuratPesananView,
     },
+    {
+      // Struk penjualan & tutup shift Kasir POS — satu view untuk keduanya (bedanya lewat payload.type).
+      // Data dikirim lewat sessionStorage (lihat KasirView.doCheckout/submitTutupShift), bukan API,
+      // karena datanya sudah lengkap di tangan FE begitu transaksi/tutup-shift sukses.
+      path: '/sales/print-struk',
+      name: 'PrintStruk',
+      component: PrintStrukView,
+    },
 
     {
       path: '/',
@@ -256,6 +279,56 @@ const router = createRouter({
           name: 'KasirView',
           meta: { requiresAuth: true }, // ✅ Protect this route
           component: KasirView,
+        },
+
+        // Sales Langsung (Kasir Apotik)
+        {
+          path: 'sales/pos',
+          name: 'SalesKasirView',
+          meta: { requiresAuth: true },
+          component: SalesKasirView,
+        },
+        {
+          path: 'sales/laporan',
+          name: 'SalesLaporanPenjualanView',
+          meta: { requiresAuth: true },
+          component: SalesLaporanPenjualanView,
+        },
+        {
+          path: 'sales/pengaturan',
+          name: 'SalesPosSettingView',
+          meta: { requiresAuth: true },
+          component: SalesPosSettingView,
+        },
+        {
+          path: 'sales/transaksi-lain',
+          name: 'SalesTransaksiLainView',
+          meta: { requiresAuth: true },
+          component: SalesTransaksiLainView,
+        },
+        {
+          path: 'sales/laba-rugi',
+          name: 'SalesLabaRugiView',
+          meta: { requiresAuth: true },
+          component: SalesLabaRugiView,
+        },
+        {
+          path: 'sales/ringkasan',
+          name: 'SalesRingkasanKasirView',
+          meta: { requiresAuth: true },
+          component: SalesRingkasanKasirView,
+        },
+        {
+          path: 'sales/rekap-piutang',
+          name: 'RekapPiutang',
+          meta: { requiresAuth: true },
+          component: SalesRekapPiutangView,
+        },
+        {
+          path: 'sales/rekap-piutang/detail',
+          name: 'DetailPiutang',
+          meta: { requiresAuth: true },
+          component: SalesDetailPiutangView,
         },
 
         {
@@ -743,6 +816,18 @@ const router = createRouter({
           name: 'RekapBarangDetail',
           meta: { requiresAuth: true },
           component: RekapBarangDetailView,
+        },
+        {
+          path: 'penerimaan/rekap-hutang',
+          name: 'RekapHutang',
+          meta: { requiresAuth: true },
+          component: RekapHutangView,
+        },
+        {
+          path: 'penerimaan/rekap-hutang/bayar',
+          name: 'BayarHutang',
+          meta: { requiresAuth: true },
+          component: BayarHutangView,
         },
       ],
     },
